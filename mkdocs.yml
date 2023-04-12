@@ -1,0 +1,106 @@
+# Project Information
+site_name: baseline
+site_author: Skyler Kuhn
+site_description: >-
+  An awesome OpenOmics baseline pipeline
+
+# Repository
+repo_name: OpenOmics/baseline
+repo_url: https://github.com/OpenOmics/baseline
+edit_uri: https://github.com/OpenOmics/baseline/edit/main/docs/
+
+# Extra
+extra_css:
+  - css/extra.css
+
+# Copyright
+copyright: Copyright &copy; 2023 OpenOmics
+
+# Configuration
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - toc.integrate 
+  palette:
+    # Palette toggle for light mode 
+    - scheme: default
+      toggle:
+        icon: material/lightbulb-on
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  logo: assets/icons/doc-book.svg
+  favicon: assets/favicon/favicon.ico
+
+# Plugins
+plugins:
+  - search
+  - git-revision-date
+  - minify:
+      minify_html: true
+
+# Customization
+extra:
+  social:
+    - icon: fontawesome/solid/users
+      link: https://ncbr.ncifcrf.gov/
+    - icon: fontawesome/brands/github
+      link: https://github.com/OpenOmics
+    - icon: fontawesome/brands/docker
+      link: https://hub.docker.com/u/skchronicles
+  version:
+    provider: mike
+
+# Extensions
+markdown_extensions:
+  - markdown.extensions.md_in_html
+  - markdown.extensions.admonition
+  - markdown.extensions.attr_list
+  - markdown.extensions.def_list
+  - markdown.extensions.footnotes
+  - markdown.extensions.meta
+  - markdown.extensions.toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.critic
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: squidfunk
+      repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Page Tree
+nav:
+  - About: index.md
+  - Commands: 
+    - baseline run: usage/run.md
+    - baseline unlock: usage/unlock.md
+    - baseline cache: usage/cache.md
+  - FAQ:
+    - General Questions: faq/questions.md
+  - License: license.md
