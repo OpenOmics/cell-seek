@@ -6,4 +6,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2022-08-22
 ### Added
-  - Recommended [scaffold](https://github.com/OpenOmics/baseline) for building a snakemake pipeline
+  - Recommended [scaffold](https://github.com/OpenOmics/cell-seek) for building a snakemake pipeline

@@ -1,12 +1,12 @@
 # Build documentation  
 
-> **Please Note:** When a commit is pushed to the `docs/` directory, it triggers a [github actions workflow](https://github.com/OpenOmics/baseline/actions) to build the static-site and push it to the gh-pages branch.
+> **Please Note:** When a commit is pushed to the `docs/` directory, it triggers a [github actions workflow](https://github.com/OpenOmics/cell-seek/actions) to build the static-site and push it to the gh-pages branch.
 
 ### Installation
 ```bash
 # Clone the Repository
-git clone https://github.com/OpenOmics/baseline.git
-cd baseline/
+git clone https://github.com/OpenOmics/cell-seek.git
+cd cell-seek/
 # Create a virtual environment
 python3 -m venv .venv
 # Activate the virtual environment

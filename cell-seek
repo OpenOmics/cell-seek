@@ -25,9 +25,9 @@ merchantability or fitness for any particular purpose.
 Please cite the author and NIH resources like the "Biowulf Cluster" 
 in any work or product based on this material.
 USAGE:
-  $ baseline <command> [OPTIONS]
+  $ cell-seek <command> [OPTIONS]
 EXAMPLE:
-  $ baseline run --input *.R?.fastq.gz --output output/
+  $ cell-seek run --input *.R?.fastq.gz --output output/
 """
 
 # Python standard library
@@ -49,16 +49,17 @@ from src.utils import (
     hashed,
     permissions,
     check_cache,
-    require)
+    require
+)
 
 
 # Pipeline Metadata
 __version__ = version
-__authors__ = 'Skyler Kuhn'
-__email__ = 'skyler.kuhn@nih.gov'
+__authors__ = 'Skyler Kuhn, Vicky Chen'
+__email__ = 'skyler.kuhn@nih.gov, vicky.chen@nih.gov'
 __home__  =  os.path.dirname(os.path.abspath(__file__))
 _name = os.path.basename(sys.argv[0])
-_description = 'An awesome baseline pipeline'
+_description = 'One single-cell pipeline to rule them all!'
 
 
 def unlock(sub_args):
@@ -217,7 +218,7 @@ def parsed_arguments(name, description):
     """
     # Add styled name and description
     c = Colors
-    styled_name = "{0}{1}{2}baseline{3}".format(c.bold, c.bg_black, c.cyan, c.end)
+    styled_name = "{0}{1}{2}cell-seek{3}".format(c.bold, c.bg_black, c.cyan, c.end)
     description = "{0}{1}{2}".format(c.bold, description, c.end)
 
     # Create a top-level parser
