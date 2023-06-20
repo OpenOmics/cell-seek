@@ -1,4 +1,10 @@
 {
     "references": {
+        "hg38": {
+            "transcriptome": "/data/OpenOmics/references/cyte-seek/hg38/refdata-gex-GRCh38-2020-A/"
+        },
+        "mm10": {
+            "transcriptome": "/data/OpenOmics/references/cyte-seek/mm10/refdata-gex-mm10-2020-A"
+        }
     }
 }

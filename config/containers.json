@@ -1,4 +1,5 @@
 {
     "images": {
+        "cite_base": "docker://skchronicles/chicyte:v0.1.0"
     }
 }
