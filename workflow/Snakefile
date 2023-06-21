@@ -24,6 +24,7 @@ genome = config['options']['genome']
 exclude_introns = str_bool(                           # Use introns for pre mRNA,
     config['options']['exclude_introns']              # default: False
 )
+input_fastq = config['options']['input']
 pipeline_output = []
 
 

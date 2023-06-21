@@ -12,6 +12,10 @@ pipeline_output += expand(
     sample=samples
 )
 
+def filterFastq(wildcards):
+    return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
+
+
 # Function defitions
 def count_intron(wildcards):
     """
@@ -19,7 +23,7 @@ def count_intron(wildcards):
     See config['options']['pre_mrna'] for the encoded value.
     """
     if exclude_introns:
-        return('--include-introns=false')
+        return('--include-introns false')
     else:
         return('')
 
@@ -35,7 +39,8 @@ rule count:
         batch = "-l nodes=1:ppn=16,mem=96gb",
         prefix = "{sample}",
         transcriptome = config["references"][genome]["transcriptome"],
-        excludeintrons = count_intron
+        excludeintrons = count_intron,
+        fastqs = filterFastq
     envmodules: config["tools"]["cellranger"]
     shell:
         """
@@ -46,8 +51,10 @@ rule count:
         fi
 
         cellranger count \\
-            --id={params.prefix} \\
-            --transcriptome={params.transcriptome} \\
+            --id {params.prefix} \\
+            --sample {params.prefix} \\
+            --transcriptome {params.transcriptome} \\
+            --fastqs {params.fastqs} \\
             {params.excludeintrons} \\
         2>{log.err} 1>{log.log}
         """
