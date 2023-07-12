@@ -24,10 +24,8 @@ def createMetricsSummary(arg1):
         os.makedirs(metricsPath)
     except OSError:
         if not os.path.isdir(metricsPath):
-            raise
+            raise Exception('Error: provided metricsPath, {}, is not a path!'.format(metricsPath))
     files = glob.glob('./*/outs/metrics_summary.csv')
-    #Filter out aggregate runs if they exist
-    files = [i for i in files if i.split('/')[1] in [j.split('/')[1] for j in glob.glob('./*/*COUNTER*')]]
     files.sort()
 
     workbook = xlsxwriter.Workbook(metricsPath + arg1+'.xlsx')
@@ -37,11 +35,13 @@ def createMetricsSummary(arg1):
     worksheet.set_column(17,20, 10)
 
     formatNum = workbook.add_format({'num_format': '#,###'})
+    formatFlt = workbook.add_format({'num_format': '#,###.#'})
     formatPer = workbook.add_format({'num_format': '0.00%'})
     formatHead = workbook.add_format({'bold': True, 'italic': True, 'text_wrap': True, 'align': 'center'})
 
     row = 1
     samples = list()
+    header = ''
     for filename in files:
         with open(filename, 'r') as csvfile:
             f = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -54,6 +54,11 @@ def createMetricsSummary(arg1):
                 i = i.strip('"')
                 if '%' in i:
                     worksheet.write(row, col, float(i.strip('%'))/100, formatPer)
+                elif '.' in i:
+                    if float(i.replace(',','')).is_integer():
+                        worksheet.write(row, col, float(i.replace(',','')), formatNum)
+                    else:
+                        worksheet.write(row, col, float(i.replace(',','')), formatFlt)
                 else:
                     worksheet.write(row, col, int(i.replace(',','')), formatNum)
                 col += 1
@@ -76,7 +81,7 @@ def copyWebSummary():
         os.makedirs(summaryPath)
     except OSError:
         if not os.path.isdir(summaryPath):
-            raise
+            raise Exception('Error: provided summaryPath, {}, is not a path!'.format(summaryPath))
     files = glob.glob('./*/outs/web_summary.html')
     for filename in files:
     	copyfile(filename, '%s/%s_web_summary.html' % (summaryPath, filename.split('/')[1]))
