@@ -18,13 +18,18 @@ from scripts.common import (
 #Global workflow variables
 configfile: 'config.json'
 pipeline = config['options']['version']
+inputs = config['options']['input']
 samples  = list(set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']]))
 workpath = config['project']['workpath']
 genome = config['options']['genome']
+features = config['options']['features']       # Features files for cellranger (not used in all pipelines)
+libraries = config['options']['libraries']     # Libraries files for cellranger (not used in all pipelines)
 exclude_introns = str_bool(                           # Use introns for pre mRNA,
     config['options']['exclude_introns']              # default: False
 )
 input_fastq = config['options']['input']
+if 'libraries' in config:
+    lib_samples = list(config['libraries'].keys()) # Libraries file samples
 pipeline_output = []
 
 

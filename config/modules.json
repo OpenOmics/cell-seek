@@ -3,5 +3,8 @@
         "cellranger": "cellranger/7.1.0",
         "python2": "python/2.7",
         "python3": "python/3.8"
+    },
+    "r_libs": {
+        "ext": "/data/OpenOmics/references/cyte-seek/R/4.1/library"
     }
 }

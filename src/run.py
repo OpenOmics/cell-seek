@@ -569,8 +569,9 @@ def add_rawdata_information(sub_args, config, ifiles):
     # Add the list of samples
     # provided in the libraries
     # file, i.e. libraries.csv
-    #libraries = sub_args.libraries
-    #config = parse_libraries(config = config, libraries_file = libraries)
+    if sub_args.libraries != None:
+        libraries = sub_args.libraries
+        config = parse_libraries(config = config, libraries_file = libraries)
 
     return config
 
