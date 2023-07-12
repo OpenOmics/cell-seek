@@ -20,7 +20,7 @@ def filterFastq(wildcards):
 def count_intron(wildcards):
     """
     Wrapper to decide whether to include introns for counting.
-    See config['options']['pre_mrna'] for the encoded value.
+    See config['options']['exclude-introns'] for the encoded value.
     """
     if exclude_introns:
         return('--include-introns false')
@@ -38,7 +38,7 @@ rule count:
         rname = "count",
         batch = "-l nodes=1:ppn=16,mem=96gb",
         prefix = "{sample}",
-        transcriptome = config["references"][genome]["transcriptome"],
+        transcriptome = config["references"][genome]["gex_transcriptome"],
         excludeintrons = count_intron,
         fastqs = filterFastq
     envmodules: config["tools"]["cellranger"]
@@ -59,7 +59,6 @@ rule count:
         2>{log.err} 1>{log.log}
         """
 
-print(expand(join(workpath, "finalreport", "summaries", "{sample}_web_summary.html"), sample=samples))
 rule summaryFiles:
     input:
         expand(join(workpath, "{sample}", "outs", "web_summary.html"), sample=samples)
