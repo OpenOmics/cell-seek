@@ -283,7 +283,7 @@ def parsed_arguments(name, description):
                                 options: hg38, mm10.
                                   Example: --genome hg38
         {3}{4}Analysis options:{5}
-           --libraries LIBRARIES
+          --libraries LIBRARIES
                                 Libraries file. A CSV file containing information about
                                 each library. It contains each sample's name, flowcell,
                                 demultiplexed name, and library type.
@@ -304,7 +304,7 @@ def parsed_arguments(name, description):
                                         • Antibody Capture
                                         • Custom
                                   Example: --libraries libraries.csv
-            --features FEATURES
+          --features FEATURES
                                 Features file. A feature reference CSV file containing
                                 information for processing a feature barcode data. This
                                 file should contain a unique ID for the feature, a human
@@ -334,6 +334,54 @@ def parsed_arguments(name, description):
                                         • Antibody Capture
                                         • Custom
                                   Example: --features features.csv
+          --cmo-reference CMOREFERENCE
+                                CMO reference file. A CMO reference CSV file containing
+                                information for processing hashtag data, which is used in
+                                multi analysis if custom hashtags will be processed. This
+                                file should contain a unique ID for the hashtag, a human
+                                readable name, sequence, feature type, read, and pattern.
+                                  Here is an example cmo_reference.csv file:
+                                    id,name,sequence,feature_type,read,pattern
+                                    CMO301,CMO301,ATGAGGAATTCCTGC,Multiplexing Capture,R2,5P(BC)
+                                    CMO302,CMO302,CATGCCAATAGAGCG,Multiplexing Capture,R2,5P(BC)
+                                  where:
+                                    • id: Unique ID for this feature. Must not contain
+                                      whitespace, quote or comma characters. Each ID
+                                      must be unique and must not collide with a gene
+                                      identifier from the transcriptome.
+                                    • name: Human-readable name for this feature. Must
+                                      not contain whitespace.
+                                    • sequence: Nucleotide barcode sequence associated
+                                      with this hashtag, e.g. the antibody barcode or
+                                      sgRNA protospacer sequence.
+                                    • read: Specifies which RNA sequencing read contains
+                                      the Feature Barcode sequence. Must be R1 or R2, but
+                                      in most cases R2 is the correct read.
+                                    • pattern: Specifies how to extract the sequence of
+                                      the feature barcode from the read.
+                                    • Type of the feature. This should always be Multiplexing Capture
+                                  Example: --cmo-reference cmo_reference.csv
+          --cmo-sample CMOSAMPLE
+                                CMO sample file. A CMO sample CSV file containing
+                                information sample to hashtag information used for multi
+                                analysis. CMO ID should match the one used in the CMO
+                                reference file. If no CMO reference is provided then CMO ID
+                                should match the ones used by 10x. The same CMO sample
+                                will be used on all multi libraries. This file should contain
+                                a unique sample ID for the sample, and the CMO IDs associated
+                                with that sample. If more than one CMO ID is associated with
+                                a sample then a | should be used to separate the tags.
+                                  Here is an example cmo_sample.csv file:
+                                    sample_id,cmo_ids
+                                    sample1,CMO301
+                                    sample2,CMO302|CMO303
+                                  where:
+                                    • sample_id: Unique sample ID for this hashtagged sample.
+                                      Must not contain, whitespace, quote or comma characters.
+                                      Each sample ID must be unique.
+                                    • cmo_ids: Unique CMO ID that the sample is hashtagged with.
+                                      Must match either entries in cmo_reference.csv file or 10x
+                                      CMO IDs.
           --exclude-introns
                                 Exclude introns from the count alignment.
                                   Example: --exclude-introns
@@ -513,6 +561,24 @@ def parsed_arguments(name, description):
     # Input Libraries files
     subparser_run.add_argument(
         '--features',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Input CMO Reference files
+    subparser_run.add_argument(
+        '--cmo-reference',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Input CMO Sample files
+    subparser_run.add_argument(
+        '--cmo-sample',
         # Check if the file exists and if it is readable
         type = lambda file: permissions(parser, file, os.R_OK),
         required = False,

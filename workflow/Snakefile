@@ -24,6 +24,8 @@ workpath = config['project']['workpath']
 genome = config['options']['genome']
 features = config['options']['features']       # Features files for cellranger (not used in all pipelines)
 libraries = config['options']['libraries']     # Libraries files for cellranger (not used in all pipelines)
+cmo_ref = config['options']['cmo_reference']     # CMO Reference files for cellranger (only used in multi pipeline)
+cmo_sample = config['options']['cmo_sample']     # CMO Sample files for cellranger (only used in multi pipelines)
 exclude_introns = str_bool(                           # Use introns for pre mRNA,
     config['options']['exclude_introns']              # default: False
 )
@@ -40,6 +42,8 @@ if pipeline == 'cite':
     include: join("rules", "cite.smk")
 if pipeline == "gex":
     include: join("rules", "gex.smk")
+if pipeline == 'multi':
+    include: join("rules", "multi.smk")
 
 # Final output files of the pipeline (fully definited within the pipeline smk files)
 rule all:
