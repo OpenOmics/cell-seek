@@ -46,6 +46,8 @@ if pipeline == 'multi':
     include: join("rules", "multi.smk")
 if pipeline == 'atac':
     include: join("rules", "atac.smk")
+if pipeline == 'vdj':
+    include: join("rules", "vdj.smk")
 
 # Final output files of the pipeline (fully definited within the pipeline smk files)
 rule all:
