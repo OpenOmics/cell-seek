@@ -52,7 +52,7 @@ def conditional_flags(wildcards):
     f = open(libraries, 'r')
     for line in f:
         if all([i in line for i in [wildcards.sample, 'VDJ']]):
-            flags.append(f'--vdjref {config["references"][genome]["gex_transcriptome"]}')
+            flags.append(f'--vdjref {config["references"][genome]["vdj_ref"]}')
             break
 
     return(' '.join(flags))
