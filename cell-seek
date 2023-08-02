@@ -524,7 +524,7 @@ def parsed_arguments(name, description):
         type = str.lower,
         required = True,
         default = "slurm",
-        choices = ['gex', 'cite', 'multi', 'vdj', 'atac'],
+        choices = ['gex', 'cite', 'multi', 'vdj', 'atac', 'multiome'],
         help = argparse.SUPPRESS
     )
 
