@@ -7,7 +7,7 @@
   [![tests](https://github.com/OpenOmics/cell-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/cell-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/cell-seek?color=brightgreen)](https://github.com/OpenOmics/cell-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/cell-seek)](https://github.com/OpenOmics/cell-seek/blob/main/LICENSE) 
   
   <i>
-    This is the home of the pipeline, cell-seek. Its long-term goals: to accurately ...insert goal, to infer ...insert goal, and to boldly ..insert goal like no pipeline before!
+    This is the home of the pipeline, cell-seek. Its long-term goals: to accurately process and analyze single cell data no pipeline before!
   </i>
 </div>
 
@@ -20,7 +20,7 @@ The **`./cell-seek`** pipeline is composed several inter-related sub commands to
  * [<code>cell-seek <b>unlock</b></code>](https://openomics.github.io/cell-seek/usage/unlock/): Unlocks a previous runs output directory.
  * [<code>cell-seek <b>cache</b></code>](https://openomics.github.io/cell-seek/usage/cache/): Cache remote resources locally, coming soon!
 
-**cell-seek** is a comprehensive ...insert long description. It relies on technologies like [Singularity<sup>1</sup>](https://singularity.lbl.gov/) to maintain the highest-level of reproducibility. The pipeline consists of a series of data processing and quality-control steps orchestrated by [Snakemake<sup>2</sup>](https://snakemake.readthedocs.io/en/stable/), a flexible and scalable workflow management system, to submit jobs to a cluster.
+**cell-seek** is a comprehensive set of pipelines to perform the initial processing of different single cell technologies. It relies on technologies like [Singularity<sup>1</sup>](https://singularity.lbl.gov/) to maintain the highest-level of reproducibility. The pipeline consists of a series of data processing and quality-control steps orchestrated by [Snakemake<sup>2</sup>](https://snakemake.readthedocs.io/en/stable/), a flexible and scalable workflow management system, to submit jobs to a cluster.
 
 The pipeline is compatible with data generated from Illumina short-read sequencing technologies. As input, it accepts a set of FastQ files and can be run locally on a compute instance or on-premise using a cluster. A user can define the method or mode of execution. The pipeline can submit jobs to a cluster using a job scheduler like SLURM (more coming soon!). A hybrid approach ensures the pipeline is accessible to all users.
 

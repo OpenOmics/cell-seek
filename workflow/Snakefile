@@ -1,7 +1,7 @@
 # Python standard library
 from os.path import join
 from os import listdir
-import os, sys
+import os, sys, re
 
 # 3rd party imports from pypi
 from snakemake.workflow import workflow as wf_api
@@ -10,17 +10,48 @@ from snakemake.utils import R
 # Local imports
 from scripts.common import (
     allocated,
-    provided, 
+    provided,
     references,
     str_bool
 )
 
+#Global workflow variables
+configfile: 'config.json'
+pipeline = config['options']['version']
+inputs = config['options']['input']
+samples  = list(set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']]))
+workpath = config['project']['workpath']
+genome = config['options']['genome']
+features = config['options']['features']       # Features files for cellranger (not used in all pipelines)
+libraries = config['options']['libraries']     # Libraries files for cellranger (not used in all pipelines)
+cmo_ref = config['options']['cmo_reference']     # CMO Reference files for cellranger (only used in multi pipeline)
+cmo_sample = config['options']['cmo_sample']     # CMO Sample files for cellranger (only used in multi pipelines)
+exclude_introns = str_bool(                           # Use introns for pre mRNA,
+    config['options']['exclude_introns']              # default: False
+)
+input_fastq = config['options']['input']
+if 'libraries' in config:
+    lib_samples = list(config['libraries'].keys()) # Libraries file samples
+pipeline_output = []
 
-# Final ouput files of the pipeline
+
+# Import rules
+include: join("rules", "common.smk")
+
+if pipeline == 'cite':
+    include: join("rules", "cite.smk")
+if pipeline == "gex":
+    include: join("rules", "gex.smk")
+if pipeline == 'multi':
+    include: join("rules", "multi.smk")
+if pipeline == 'atac':
+    include: join("rules", "atac.smk")
+if pipeline == 'vdj':
+    include: join("rules", "vdj.smk")
+if pipeline == 'multiome':
+    include: join("rules", "multiome.smk")
+
+# Final output files of the pipeline (fully definited within the pipeline smk files)
 rule all:
     input:
-        []
-
-
-# Import rules 
-include: join("rules", "common.smk")
+        pipeline_output

@@ -1,4 +1,18 @@
 {
     "references": {
+        "hg38": {
+            "gex_transcriptome": "/data/OpenOmics/references/cyte-seek/hg38/refdata-gex-GRCh38-2020-A/",
+	    "cite_transcriptome": "/data/OpenOmics/references/cyte-seek/hg38/refdata-gex-GRCh38-2020-A/",
+	    "atac_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0",
+	    "vdj_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0/",
+	    "arc_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-arc-GRCh38-2020-A-2.0.0"
+        },
+        "mm10": {
+            "gex_transcriptome": "/data/OpenOmics/references/cyte-seek/mm10/refdata-gex-mm10-2020-A",
+	    "cite_transcriptome": "/data/OpenOmics/references/cyte-seek/mm10/refdata-gex-mm10-2020-A",
+	    "atac_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-arc-mm10-2020-A-2.0.0",
+	    "vdj_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-vdj-GRCm38-alts-ensembl-7.0.0/",
+	    "arc_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-arc-mm10-2020-A-2.0.0"
+        }
     }
 }

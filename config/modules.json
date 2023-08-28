@@ -1,4 +1,12 @@
 {
     "tools": {
+        "cellranger": "cellranger/7.1.0",
+	"cellranger-atac": "cellranger-atac/2.1.0",
+	"cellranger-arc": "cellranger-arc/2.0.1",
+        "python2": "python/2.7",
+        "python3": "python/3.8"
+    },
+    "r_libs": {
+        "ext": "/data/OpenOmics/references/cyte-seek/R/4.1/library"
     }
 }
