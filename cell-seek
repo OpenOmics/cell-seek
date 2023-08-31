@@ -27,7 +27,7 @@ in any work or product based on this material.
 USAGE:
   $ cell-seek <command> [OPTIONS]
 EXAMPLE:
-  $ cell-seek run --input *.R?.fastq.gz --output output/
+  $ cell-seek run --input *.R?.fastq.gz --output output --version gex --genome hg38/
 """
 
 # Python standard library
@@ -245,13 +245,18 @@ def parsed_arguments(name, description):
                 [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \\
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
+                [--libraries LIBRARIES] [--features FEATURES] \\
+                [--cmo-reference CMOREFERENCE] [--cmo-sample CMOSAMPLE] \\
+                [--exclude-introns] \\
                 --input INPUT [INPUT ...] \\
-                --output OUTPUT
+                --output OUTPUT \\
+                --version {{gex, ...}} \\
+                --genome {{hg38, ...}}
 
         Optional arguments are shown in square brackets above.
 
         {3}{4}Description:{5}
-          To run the ...long pipeline name with your data raw data, please
+          To run the cell-seek pipeline with your data raw data, please
         provide a space seperated list of FastQ (globbing is supported) and an output
         directory to store results.
 
@@ -270,11 +275,11 @@ def parsed_arguments(name, description):
                                 provided working directory has not been initialized,
                                 it will be created automatically.
                                   Example: --output /data/$USER/output
-          --version VERSION
+          --version {{gex,vdj,cite,multi,atac}}
                                 The version of the pipeline to run. Can be chosen from
                                 the options gene expression (GEX), VDJ, feature
                                 barcode (CITE), Cell Ranger multi (Multi), or ATAC.
-                                (GEX, VDJ, CITE, MULTI, ATAC)
+                                  Example: --version gex
           --genome  {{hg38,mm10}}
                                 Reference genome. This option defines the reference
                                 genome of the samples. {2} does comes bundled with
@@ -285,8 +290,9 @@ def parsed_arguments(name, description):
         {3}{4}Analysis options:{5}
           --libraries LIBRARIES
                                 Libraries file. A CSV file containing information about
-                                each library. It contains each sample's name, flowcell,
-                                demultiplexed name, and library type.
+                                each library.  This file is used in feature barcode (cite), 
+                                multi, and multiome analysis.It contains each sample's 
+                                name, flowcell, demultiplexed name, and library type.
                                   Here is an example libraries.csv file:
                                     Name,Flowcell,Sample,Type
                                     IL15_LNs,H7CNNBGXG,IL15_LNs,Gene Expression
@@ -352,8 +358,9 @@ def parsed_arguments(name, description):
                                     • name: Human-readable name for this feature. Must
                                       not contain whitespace.
                                     • sequence: Nucleotide barcode sequence associated
-                                      with this hashtag, e.g. the antibody barcode or
-                                      sgRNA protospacer sequence.
+                                      with this hashtag.
+                                    • feature_type: Type of the feature. This should always be 
+                                      multiplexing capture.
                                     • read: Specifies which RNA sequencing read contains
                                       the Feature Barcode sequence. Must be R1 or R2, but
                                       in most cases R2 is the correct read.
@@ -363,12 +370,12 @@ def parsed_arguments(name, description):
                                   Example: --cmo-reference cmo_reference.csv
           --cmo-sample CMOSAMPLE
                                 CMO sample file. A CMO sample CSV file containing
-                                information sample to hashtag information used for multi
-                                analysis. CMO ID should match the one used in the CMO
-                                reference file. If no CMO reference is provided then CMO ID
-                                should match the ones used by 10x. The same CMO sample
-                                will be used on all multi libraries. This file should contain
-                                a unique sample ID for the sample, and the CMO IDs associated
+                                sample to hashtag information used for multi analysis.
+                                CMO IDs should match the ones used in the CMO reference
+                                file. If no CMO reference is provided then CMO ID should
+                                match the ones used by 10x. The same CMO sample will be
+                                used on all multi libraries. This file should contain a
+                                unique sample ID for the sample, and the CMO IDs associated
                                 with that sample. If more than one CMO ID is associated with
                                 a sample then a | should be used to separate the tags.
                                   Here is an example cmo_sample.csv file:
@@ -379,11 +386,14 @@ def parsed_arguments(name, description):
                                     • sample_id: Unique sample ID for this hashtagged sample.
                                       Must not contain, whitespace, quote or comma characters.
                                       Each sample ID must be unique.
-                                    • cmo_ids: Unique CMO ID that the sample is hashtagged with.
-                                      Must match either entries in cmo_reference.csv file or 10x
-                                      CMO IDs.
+                                    • cmo_ids: Unique CMO ID(s) that the sample is hashtagged 
+                                      with. Must match either entries in cmo_reference.csv file
+                                      or 10x CMO IDs.
+                                  Example: --cmo-sample cmo_sample.csv
           --exclude-introns
-                                Exclude introns from the count alignment.
+                                Exclude introns from the count alignment. This flag is 
+                                only applicable when dealing with gene expression related 
+                                data.
                                   Example: --exclude-introns
 
         {3}{4}Orchestration options:{5}
@@ -472,6 +482,8 @@ def parsed_arguments(name, description):
           # Step 2A.) Dry-run the pipeline
           ./{0} run --input .tests/*.R?.fastq.gz \\
                          --output /data/$USER/output \\
+                         --version gex \\
+                         --genome hg38 \\
                          --mode slurm \\
                          --dry-run
 
@@ -481,6 +493,8 @@ def parsed_arguments(name, description):
           # the pipeline in this mode.
           ./{0} run --input .tests/*.R?.fastq.gz \\
                          --output /data/$USER/output \\
+                         --version gex \\
+                         --genome hg38 \\
                          --mode slurm
 
         {2}{3}Version:{4}
