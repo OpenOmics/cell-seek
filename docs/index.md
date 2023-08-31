@@ -17,14 +17,14 @@
   </a>
 
   <p>
-    This is the home of the pipeline, cell-seek. Its long-term goals: to accurately process and analyze single cell data no pipeline before!
+    This is the home of the pipeline, cell-seek. Its long-term goals: to accurately process and analyze single cell data like no pipeline before!
   </p>
 
 </div>  
 
 
 ## Overview
-Welcome to cell-seek's documentation! This guide is the main source of documentation for users that are getting started with the [long pipeline name](https://github.com/OpenOmics/cell-seek/). 
+Welcome to cell-seek's documentation! This guide is the main source of documentation for users that are getting started with [cell-seek](https://github.com/OpenOmics/cell-seek/). 
 
 The **`./cell-seek`** pipeline is composed several inter-related sub commands to setup and run the pipeline across different systems. Each of the available sub commands perform different functions: 
 
