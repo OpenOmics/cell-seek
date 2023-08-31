@@ -14,13 +14,18 @@ $ cell-seek run [--help] \
       [--tmp-dir TMP_DIR] [--silent] [--sif-cache SIF_CACHE] \ 
       [--singularity-cache SINGULARITY_CACHE] \
       [--dry-run] [--threads THREADS] \
+      [--libraries LIBRARIES] [--features FEATURES] \
+      [--cmo-reference CMOREFERENCE] [--cmo-sample CMOSAMPLE] \
+      [--exclude-introns] \
       --input INPUT [INPUT ...] \
-      --output OUTPUT
+      --output OUTPUT \
+      --version {gex, ...} \
+      --genome {hg38, ...}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
 
-A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument and an output directory to store results via `--output` argument.
+A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument, an output directory to store results via `--output` argument, the version of the pipeline to run via `--version` argument, and the reference genome to use via `--genome` argument.
 
 Use you can always use the `-h` option for information on a specific command. 
 
@@ -29,7 +34,7 @@ Use you can always use the `-h` option for information on a specific command.
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ or BAM file(s).**  
+> **Input FastQ file(s).**  
 > *type: file(s)*  
 > 
 > One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
@@ -45,12 +50,138 @@ Each of the following arguments are required. Failure to provide a required argu
 > 
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
+---  
+  `--version {gex, vdj, cite, multi, atac, multiome}`
+> **The version of the pipeline to run.**   
+> *type: string*
+>   
+> This option selects the version of the pipeline to run. Can be chosen from the options gene expression (GEX), VDJ, feature barcode (CITE), Cell Ranger multi (Multi), ATAC, or multiome.
+> 
+> ***Example:*** `--version gex`
+
+---  
+  `--genome {hg38, mm10}`
+> **Reference genome.**   
+> *type: string*
+>   
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> 
+> ***Example:*** `--genome hg38`
+
 ### 2.2 Analysis options
 
 Each of the following arguments are optional, and do not need to be provided. 
 
-...add non-required analysis options 
+  `--libraries LIBRARIES`
+> **Libraries file.**   
+> *type: file*
+>   
+> A CSV file containing information about each library. This file is used in feature barcode (cite), multi, and multiome analysis. It contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
 
+> *Here is an example libraries.csv file:*
+> ```
+> Name,Flowcell,Sample,Type
+> IL15_LNs,H7CNNBGXG,IL15_LNs,Gene Expression
+> IL15_LNs,H7CT7BGXG,IL15_LNs_BC,Antibody Capture
+> ``` 
+
+> *Where:* 
+
+> - *Name:* name of the sample passed to CellRanger.  
+> - *Flowcell:* The flowcell ID that contains the FASTQ files for this set of data.  
+> - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
+> - *Type:* library type for each sample. List of supported options:  
+>        * Gene Expression
+>        * CRISPR Guide Capture
+>        * Antibody Capture
+>        * Custom
+
+> ***Example:*** `--libraries libraries.csv`
+
+
+---  
+  `--features FEATURES`
+> **Features file.**   
+> *type: file*
+>   
+> A feature reference CSV file containing information for processing a feature barcode data. This file is used in feature barcode, and may be used in multi analysis. This file should contain a unique ID for the feature, a human readable name, sequence, feature type, read, and pattern. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
+
+> *Here is an example features.csv file:*
+> ```
+> id,name,sequence,feature_type,read,pattern
+> CITE_CD64,CD64,AGTGGG,Antibody Capture,R2,5PNN(BC)
+> CITE_CD8,CD8,TCACCGT,Antibody Capture,R2,5PNNN(BC)
+> ``` 
+
+> *Where:*  
+
+> - *id:* Unique ID for this feature. Must not contain whitespace, quote or comma characters. Each ID must be unique and must not collide with a gene identifier from the transcriptome. 
+> - *name:* Human-readable name for this feature. Must not contain whitespace. 
+> - *sequence:* Nucleotide barcode sequence associated with this feature, e.g. the antibody barcode or sgRNA protospacer sequence. 
+> - *read:* Specifies which RNA sequencing read contains the Feature Barcode sequence. Must be R1 or R2, but in most cases R2 is the correct read. 
+> - *pattern:* Specifies how to extract the sequence of the feature barcode from the read.
+
+> - *Type:* Type of the feature. List of supported options:  
+>        * Gene Expression
+>        * CRISPR Guide Capture
+>        * Antibody Capture
+>        * Custom
+
+> ***Example:*** `--features features.csv`
+
+
+---  
+  `--cmo-reference CMOREFERENCE`
+> **CMO reference file.**   
+> *type: file*
+>   
+> A CMO reference CSV file containing information for processing hashtag data, which is used in multi analysis if custom hashtags will be processed. This file should contain a unique ID for the hashtag, a human readable name, sequence, feature type, read, and pattern. More information about the cmo reference file and its requirements can be found on the [10x Genomics website](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/multi).
+
+> *Here is an example cmo_reference.csv file:*
+> ```
+> id,name,sequence,feature_type,read,pattern
+> CMO301,CMO301,ATGAGGAATTCCTGC,Multiplexing Capture,R2,5P(BC)
+> CMO302,CMO302,CATGCCAATAGAGCG,Multiplexing Capture,R2,5P(BC)
+> ``` 
+
+> *Where:*  
+
+> - *id:* Unique ID for this feature. Must not contain whitespace, quote or comma characters. Each ID must be unique and must not collide with a gene identifier from the transcriptome. 
+> - *name:* Human-readable name for this feature. Must not contain whitespace. 
+> - *sequence:* Nucleotide barcode sequence associated with this hashtag
+> - *feature_type: Type of the feature. This should always be multiplexing capture. 
+> - *read:* Specifies which RNA sequencing read contains the Feature Barcode sequence. Must be R1 or R2, but in most cases R2 is the correct read. 
+> - *pattern:* Specifies how to extract the sequence of the feature barcode from the read.
+> ***Example:*** `--cmo-reference cmo_reference.csv`
+
+---  
+  `--cmo-sample CMOSAMPLE`
+> **CMO sample file.**   
+> *type: file*
+>   
+> A CMO sample CSV file containing sample to hashtag information used for multi analysis. CMO IDs should match the ones used in the CMO reference file. If no CMO reference is provided then CMO ID should match the ones used by 10x. The same CMO sample will be used on all multi libraries. This file should contain a unique sample ID for the sample, and the CMO IDs associated with that sample. If more than one CMO ID is associated with a sample then a | should be used to separate the tags. More information and examples about the samples section of the multi config file and its requirements can be found on the [10x Genomics website](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/multi).
+
+> *Here is an example cmo_sample.csv file:*
+> ```
+> sample_id,cmo_ids
+> sample1,CMO301
+> sample2,CMO302|CMO303
+> ``` 
+
+> *Where:*  
+
+> - *sample_id:* Unique sample ID for this hashtagged sample. Must not contain whitespace, quote or comma characters. Each sample ID must be unique. 
+> - *cmo_ids:* Unique CMO ID(s) that the sample is hashtagged with. Must match either entries in the cmo_reference.csv file or 10x CMO IDs.
+> ***Example:*** `--cmo-sample cmo_sample.csv`
+
+---  
+  `--exclude-introns`
+> **Exclude introns from the count alignment.**   
+> *type: boolean flag*
+>   
+> Turns off the option of including introns when performing alignment. This flag is only applicable when dealing with gene expression related data.
+> ***Example:*** `--exclude-introns`
+                                      
 ### 2.3 Orchestration options
 
 Each of the following arguments are optional, and do not need to be provided. 
@@ -160,6 +291,8 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
+                  --version gex \
+                  --genome hg38 \
                   --mode slurm \
                   --dry-run
 
@@ -169,5 +302,7 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
+                  --version gex \
+                  --genome hg38 \
                   --mode slurm
 ```
