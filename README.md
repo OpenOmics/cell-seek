@@ -7,7 +7,7 @@
   [![tests](https://github.com/OpenOmics/cell-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/cell-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/cell-seek?color=brightgreen)](https://github.com/OpenOmics/cell-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/cell-seek)](https://github.com/OpenOmics/cell-seek/blob/main/LICENSE) 
   
   <i>
-    This is the home of the pipeline, cell-seek. Its long-term goals: to accurately process and analyze single cell data no pipeline before!
+    This is the home of the pipeline, cell-seek. Its long-term goals: to accurately process and analyze single cell data like no pipeline before!
   </i>
 </div>
 
