@@ -247,7 +247,7 @@ def parsed_arguments(name, description):
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
                 [--libraries LIBRARIES] [--features FEATURES] \\
                 [--cmo-reference CMOREFERENCE] [--cmo-sample CMOSAMPLE] \\
-                [--exclude-introns] \\
+                [--exclude-introns] [--filter FILTER] \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
                 --version {{gex, ...}} \\
@@ -290,8 +290,8 @@ def parsed_arguments(name, description):
         {3}{4}Analysis options:{5}
           --libraries LIBRARIES
                                 Libraries file. A CSV file containing information about
-                                each library.  This file is used in feature barcode (cite), 
-                                multi, and multiome analysis.It contains each sample's 
+                                each library.  This file is used in feature barcode (cite),
+                                multi, and multiome analysis.It contains each sample's
                                 name, flowcell, demultiplexed name, and library type.
                                   Here is an example libraries.csv file:
                                     Name,Flowcell,Sample,Type
@@ -359,7 +359,7 @@ def parsed_arguments(name, description):
                                       not contain whitespace.
                                     • sequence: Nucleotide barcode sequence associated
                                       with this hashtag.
-                                    • feature_type: Type of the feature. This should always be 
+                                    • feature_type: Type of the feature. This should always be
                                       multiplexing capture.
                                     • read: Specifies which RNA sequencing read contains
                                       the Feature Barcode sequence. Must be R1 or R2, but
@@ -386,15 +386,43 @@ def parsed_arguments(name, description):
                                     • sample_id: Unique sample ID for this hashtagged sample.
                                       Must not contain, whitespace, quote or comma characters.
                                       Each sample ID must be unique.
-                                    • cmo_ids: Unique CMO ID(s) that the sample is hashtagged 
+                                    • cmo_ids: Unique CMO ID(s) that the sample is hashtagged
                                       with. Must match either entries in cmo_reference.csv file
                                       or 10x CMO IDs.
                                   Example: --cmo-sample cmo_sample.csv
           --exclude-introns
-                                Exclude introns from the count alignment. This flag is 
-                                only applicable when dealing with gene expression related 
+                                Exclude introns from the count alignment. This flag is
+                                only applicable when dealing with gene expression related
                                 data.
                                   Example: --exclude-introns
+          --filter FILTER
+                                Filter threshold file. A CSV file containing the different
+                                thresholds to be applied for individual samples within the
+                                project during the QC analysis. The file should contain a
+                                header row with Sample as the column name for the sample IDs,
+                                and the name of each metric that will be filtered along with
+                                if it is the high or low threshold for that metric. Each row
+                                is then the entries for each sample that the manual thresholds
+                                will be applied. If no file is provided then the default
+                                thresholds will be used. If a cell is left blank for a sample
+                                then that sample would not be filtered based on that criteria.
+                                This flag is currently only applicable when dealing with GEX
+                                projects.
+                                  Here is an example filter.csv file:
+                                    Sample,nFeature_RNA_low,nFeature_RNA_high,percent.mito_high
+                                    sample1,500,6000,15
+                                    sample2,500,6000,5
+                                    sample4,500,6000,5
+                                  where:
+                                    • Sample: Unique sample ID that should match the sample name
+                                      used for Cell Ranger count.
+                                    • nFeature_RNA_low,nFeature_RNA_high,percent.mito_high: Example
+                                      entries that can be used for manual thresholding. The column
+                                      names need to be formatted as metadataname_high/low. Entries
+                                      that ends with high will be treated as the upper threshold.
+                                      Entries that ends with low will be treated as the lower
+                                      threshold. Valid metadata names include nCount_RNA,
+                                      nFeature_RNA, and percent.mito.
 
         {3}{4}Orchestration options:{5}
           --mode {{slurm,local}}
@@ -605,6 +633,15 @@ def parsed_arguments(name, description):
         action = 'store_true',
         required = False,
         default = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Thresholds to use for filtering in QC Analysis
+    subparser_run.add_argument(
+        '--filter',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
         help = argparse.SUPPRESS
     )
 
