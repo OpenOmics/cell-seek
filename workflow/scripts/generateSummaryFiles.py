@@ -26,6 +26,7 @@ def createMetricsSummary(arg1):
         if not os.path.isdir(metricsPath):
             raise Exception('Error: provided metricsPath, {}, is not a path!'.format(metricsPath))
     files = glob.glob('./*/outs/metrics_summary.csv')
+    files.sort()
     #Filter out aggregate runs if they exist
 
     workbook = xlsxwriter.Workbook(metricsPath + arg1+'.xlsx')

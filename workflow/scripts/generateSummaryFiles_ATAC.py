@@ -1,8 +1,6 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Jul 31 2018
-
 @author: Vicky
 
 usage: python generateSummaryFiles.py metric_summary
