@@ -12,10 +12,18 @@ pipeline_output += expand(
     sample=samples
 )
 
+# CellRanger aggregate analysis
 pipeline_output += ['aggregate.complete']
 
+# Seurat inital sample QC
 pipeline_output += expand(
     join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
+    sample=samples
+)
+
+#Seurat sample QC reports
+pipeline_output += expand(
+    join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html"),
     sample=samples
 )
 
@@ -152,4 +160,21 @@ rule seuratQC:
             --sample {params.sample} \\
             {params.filter} \\
             > {log}
+        """
+
+rule seuratQCReport:
+    input:
+        rds = rules.seuratQC.output.rds,
+        cell_filter = rules.seuratQC.output.cell_filter
+    output:
+        report = join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html")
+    params:
+        rname = "seuratQCReport",
+        sample = "{sample}",
+        seuratdir = join(workpath, "seurat", "{sample}"),
+        script = join("workflow", "scripts", "seuratSampleQCReport.Rmd")
+    shell:
+        """
+        module load R/4.3.0
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}'), output_file='{output.report}')"
         """
