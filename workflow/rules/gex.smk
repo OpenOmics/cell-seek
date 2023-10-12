@@ -13,7 +13,7 @@ pipeline_output += expand(
 )
 
 # CellRanger aggregate analysis
-pipeline_output += ['aggregate.complete']
+pipeline_output += [join(workpath, 'aggregate.complete')]
 
 # Seurat inital sample QC
 pipeline_output += expand(
@@ -21,11 +21,14 @@ pipeline_output += expand(
     sample=samples
 )
 
-#Seurat sample QC reports
+# Seurat sample QC reports
 pipeline_output += expand(
     join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html"),
     sample=samples
 )
+
+# Cell Filter Summary File
+pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
 
 # Function definitions
 def filterFastq(wildcards):
@@ -120,7 +123,7 @@ rule aggregate:
     input:
         csv=join(workpath, "AggregatedDatasets.csv")
     output:
-        touch("aggregate.complete")
+        touch(join(workpath, "aggregate.complete"))
     log:
         err="run_10x_aggregate.err",
         log="run_10x_aggregate.log"
@@ -177,4 +180,20 @@ rule seuratQCReport:
         """
         module load R/4.3.0
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}'), output_file='{output.report}')"
+        """
+
+rule cellFilterSummary:
+    input:
+        cell_filters = expand(rules.seuratQC.output.cell_filter, sample=samples)
+    output:
+        cell_filter_summary = join(workpath, "Project_Cell_Filters.csv")
+    params:
+        rname = "cellFilterSummary",
+        seuratdir = join(workpath, "seurat"),
+        filename = "cell_filter_info.csv",
+        script = join("workflow", "scripts", "cellFilterSummary.R")
+    shell:
+        """
+        module load R/4.3.0
+        Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
         """
