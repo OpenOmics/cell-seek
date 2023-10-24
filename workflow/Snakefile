@@ -17,6 +17,7 @@ from scripts.common import (
 
 #Global workflow variables
 configfile: 'config.json'
+tmpdir = config['options']['tmp_dir']
 pipeline = config['options']['version']
 inputs = config['options']['input']
 samples  = list(set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']]))

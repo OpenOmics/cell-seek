@@ -57,10 +57,9 @@ def filterFile(wildcards):
         return(f"--filterfile {filter_file}")
 
 
-
 rule count:
     output:
-        join(workpath, "{sample}", "outs", "web_summary.html")
+        html = join(workpath, "{sample}", "outs", "web_summary.html")
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
@@ -130,6 +129,7 @@ rule aggregate:
     params:
         rname = "aggregate",
         id = "AggregateDatasets"
+    envmodules: config["tools"]["cellranger"]
     shell:
         """
         cellranger aggr \\
@@ -175,11 +175,14 @@ rule seuratQCReport:
         rname = "seuratQCReport",
         sample = "{sample}",
         seuratdir = join(workpath, "seurat", "{sample}"),
-        script = join("workflow", "scripts", "seuratSampleQCReport.Rmd")
+	tmpdir = tmpdir,
+        script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
     shell:
         """
         module load R/4.3.0
-        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}'), output_file='{output.report}')"
+	cd {params.tmpdir}
+	cp {params.script} ./{params.sample}.Rmd
+        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}'), output_file='{output.report}')"
         """
 
 rule cellFilterSummary:
@@ -197,3 +200,4 @@ rule cellFilterSummary:
         module load R/4.3.0
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
         """
+
