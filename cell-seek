@@ -435,6 +435,7 @@ def parsed_arguments(name, description):
                                       Entries that ends with low will be treated as the lower
                                       threshold. Valid metadata names include nCount_RNA,
                                       nFeature_RNA, and percent.mito.
+                                  Example: --filter filter.csv
           --create-bam
                                 Create bam files. By default the no-bam flag is used when running
                                 Cell Ranger. Use this flag to ensure that a bam file is created for
