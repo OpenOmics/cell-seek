@@ -30,6 +30,10 @@ cmo_sample = config['options']['cmo_sample']     # CMO Sample files for cellrang
 exclude_introns = str_bool(                           # Use introns for pre mRNA,
     config['options']['exclude_introns']              # default: False
 )
+create_bam = str_bool(                           # Create BAM files during Cell Ranger analysis,
+    config['options']['create_bam']              # default: False
+)
+aggr = config['options']['aggregate']
 input_fastq = config['options']['input']
 filter_file = config['options']['filter']	# Filter threshold file for QC analysis (not used in all pipelines)
 if 'libraries' in config:

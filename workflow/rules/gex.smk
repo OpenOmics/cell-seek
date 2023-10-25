@@ -13,7 +13,8 @@ pipeline_output += expand(
 )
 
 # CellRanger aggregate analysis
-pipeline_output += [join(workpath, 'aggregate.complete')]
+if aggr != "":
+    pipeline_output += [join(workpath, 'aggregate.complete')]
 
 # Seurat inital sample QC
 pipeline_output += expand(
@@ -38,12 +39,34 @@ def filterFastq(wildcards):
 def count_intron(wildcards):
     """
     Wrapper to decide whether to include introns for counting.
-    See config['options']['exclude-introns'] for the encoded value.
+    See config['options']['exclude_introns'] for the encoded value.
     """
     if exclude_introns:
         return('--include-introns false')
     else:
         return('')
+
+def count_bam(wildcards):
+    """
+    Wrapper to decide whether to create BAM files during Cell Ranger alignment.
+    See config['options']['create_bam'] for the encoded value.
+    """
+    if create_bam:
+        return('')
+    else:
+        return('--no-bam')
+
+def aggr_norm(wildcards):
+    """
+    Wrapper to decide which normalization method to use for Cell Ranger aggregate.
+    If no option was provided while running then aggregate will not be run.
+    See config['options']['aggregate'] for the encoded value.
+    """
+    supported = ['mapped', 'none']
+    if aggr.lower() in supported:
+        return(aggr.lower())
+    else:
+        raise Exception(f"\nAn unsupported input was provided for the aggregate flag. Please check the aggregate value under options in the config file to change it so that either the entry is left blank or is one of the following: {supported}\n\nThe currently provided value is: {aggr}\n")
 
 def filterFile(wildcards):
     """
@@ -69,6 +92,7 @@ rule count:
         prefix = "{sample}",
         transcriptome = config["references"][genome]["gex_transcriptome"],
         excludeintrons = count_intron,
+        createbam = count_bam,
         fastqs = filterFastq
     envmodules: config["tools"]["cellranger"]
     shell:
@@ -85,6 +109,7 @@ rule count:
             --transcriptome {params.transcriptome} \\
             --fastqs {params.fastqs} \\
             {params.excludeintrons} \\
+            {params.createbam} \\
         2>{log.err} 1>{log.log}
         """
 
@@ -128,14 +153,15 @@ rule aggregate:
         log="run_10x_aggregate.log"
     params:
         rname = "aggregate",
-        id = "AggregateDatasets"
+        id = "AggregateDatasets",
+        norm = aggr_norm
     envmodules: config["tools"]["cellranger"]
     shell:
         """
         cellranger aggr \\
             --id {params.id} \\
             --csv {input.csv} \\
-            --normalize=none \\
+            --normalize={params.norm} \\
         2>{log.err} 1>{log.log}
         """
 
@@ -200,4 +226,3 @@ rule cellFilterSummary:
         module load R/4.3.0
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
         """
-
