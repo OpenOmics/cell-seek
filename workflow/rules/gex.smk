@@ -12,9 +12,19 @@ pipeline_output += expand(
     sample=samples
 )
 
-# CellRanger aggregate analysis
+# CellRanger counts intermediate cleanup
+pipeline_output += expand(
+    join(workpath, "cleanup", "{sample}.samplecleanup"),
+    sample=samples
+)
+
+#CellRanger aggregate
 if aggr != "":
+    # CellRanger aggregate analysis
     pipeline_output += [join(workpath, 'aggregate.complete')]
+
+    # CellRanger aggregate intermediate cleanup
+    pipeline_output += [join(workpath, "cleanup", "aggregate.aggregatecleanup")]
 
 # Seurat inital sample QC
 pipeline_output += expand(
@@ -225,4 +235,30 @@ rule cellFilterSummary:
         """
         module load R/4.3.0
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
+        """
+
+rule sampleCleanup:
+    input:
+        html = rules.count.output.html
+    output:
+        cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
+    params:
+        rname = "sampleCleanup",
+        cr_temp = join(workpath, "{sample}", "SC_RNA_COUNTER_CS")
+    shell:
+        """
+        rm -r {params.cr_temp}
+        """
+
+rule aggregateCleanup:
+    input:
+        rules.aggregate.output
+    output:
+        cleanup = touch(join(workpath, "cleanup", "{sample}.aggregatecleanup"))
+    params:
+        rname = "aggregateCleanup",
+        cr_temp = join(workpath, "AggregateDatasets", "SC_RNA_AGGREGATOR_CS")
+    shell:
+        """
+        rm -r {params.cr_temp}
         """
