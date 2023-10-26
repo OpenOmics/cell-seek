@@ -24,8 +24,6 @@ def createMetricsSummary(arg1):
         if not os.path.isdir(metricsPath):
             raise
     files = glob.glob('./*/outs/summary.csv')
-    #Filter out aggregate runs if they exist
-    files = [i for i in files if i.split('/')[1] in [j.split('/')[1] for j in glob.glob('./*/*COUNTER*')]]
     files.sort()
 
     workbook = xlsxwriter.Workbook(metricsPath + arg1+'.xlsx')
@@ -55,7 +53,7 @@ def createMetricsSummary(arg1):
                 if len(set(finalheaders).difference(header)) == 0:
                     finalheaders = header
                 else:
-                    finalheaders = header + list(set(finalheaders).difference(header))
+                    finalheaders = finalheaders + [heading for heading in header if heading in set(header).difference(finalheaders)]
 
     row = 1
     #samples = list()

@@ -56,7 +56,7 @@ def createMetricsSummary(arg1):
             if len(set(finalheaders).difference(header)) == 0:
                 finalheaders = header
             else:
-                finalheaders = header + list(set(finalheaders).difference(header))
+                finalheaders = finalheaders + [heading for heading in header if heading in set(header).difference(finalheaders)]
 
     row = 1
     samples = list()
