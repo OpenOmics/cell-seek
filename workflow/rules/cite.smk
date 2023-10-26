@@ -18,6 +18,12 @@ pipeline_output += expand(
             sample=lib_samples
         )
 
+# CellRanger counts intermediate cleanup
+pipeline_output += expand(
+    join(workpath, "cleanup", "{sample}.samplecleanup"),
+    sample=lib_samples
+)
+
 # Get set of input paths
 input_paths = [os.path.dirname(p) for p in inputs]
 input_paths_set = []
@@ -38,6 +44,15 @@ def count_intron(wildcards):
     else:
         return('')
 
+def count_bam(wildcards):
+    """
+    Wrapper to decide whether to create BAM files during Cell Ranger alignment.
+    See config['options']['create_bam'] for the encoded value.
+    """
+    if create_bam:
+        return('')
+    else:
+        return('--no-bam')
 
 # Rule definitions
 rule librariesCSV:
@@ -72,7 +87,8 @@ rule count:
         prefix = "{sample}",
 #        numcells = lambda wildcards:s2c[wildcards.sample],
         transcriptome = config["references"][genome]["cite_transcriptome"],
-        introns = count_intron
+        introns = count_intron,
+        createbam = count_bam
     envmodules: config["tools"]["cellranger"]
     shell:
         """
@@ -88,6 +104,7 @@ rule count:
             --libraries={input.lib} \\
             --feature-ref={input.features} \\
             {params.introns} \\
+            {params.createbam} \\
         2>{log.err} 1>{log.log}
         """
 
@@ -204,3 +221,15 @@ rule seurat_aggregate_rmd_report:
         R -e "rmarkdown::render('{params.seurat}', params=list(workdir = '{params.outdir}', sample='{params.sample}'), output_file = '{params.html}')"
         """
 
+rule sampleCleanup:
+    input:
+        rules.count.output
+    output:
+        cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
+    params:
+        rname = "sampleCleanup",
+        cr_temp = join(workpath, "{sample}", "SC_RNA_COUNTER_CS")
+    shell:
+        """
+        rm -r {params.cr_temp}
+        """
