@@ -35,6 +35,8 @@ def main(raw_args=None):
         help="Use force-cells flag instead of expect-cells")
     parser.add_argument("-i", "--exclude_introns", action="store_true",
         help="Set include-introns flag to false")
+    parser.add_argument("-b", "--create_bam", action="store_true",
+        help="Set no-bam flag to false")
 
 
     args = parser.parse_args(raw_args)
@@ -52,6 +54,10 @@ def main(raw_args=None):
             spamwriter.writerow(['cmo-set', args.cmoref])
         if args.exclude_introns:
             spamwriter.writerow(['include-introns', 'false'])
+        if args.create_bam:
+            spamwriter.writerow(['no-bam', 'false'])
+        else:
+            spamwriter.writerow(['no-bam', 'true'])
 
         if args.feature != None:
             spamwriter.writerow([])
@@ -74,7 +80,7 @@ def main(raw_args=None):
                 line = line.strip().split(',')
                 spamwriter.writerow([line[1], line[0], 'Any', line[2]])
 
-        if args.cmoref != None or args.cmosample != None: 
+        if args.cmoref != None or args.cmosample != None:
             spamwriter.writerow([])
             spamwriter.writerow(['[samples]'])
             spamwriter.writerow(['sample_id', 'cmo_ids', 'description'])
