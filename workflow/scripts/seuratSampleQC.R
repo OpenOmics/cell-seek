@@ -154,7 +154,7 @@ figures$PreFilter_UMAP_RNA <- DimPlot(seur, reduction='umap', label = TRUE) + gg
 figures$PreFilter_UMAP_RNA_Filter <- DimPlot(seur, reduction='umap', label = TRUE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5))
 
 
-seur <- subset(seur, cells = cellsToRemove, inver=T)
+seur <- subset(seur, cells = cellsToRemove, invert=T)
 
 ## ----Post-Filter Gene Plot----
 #Post-Filter Plots
@@ -183,7 +183,7 @@ seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
 
-for(resolution in seq(0.2,0.8,0.2)){
+for(resolution in c(seq(0.2,1.0,0.2), 1.5, 2.0)){
   seur <- FindClusters(seur, resolution = resolution)
 }
 
