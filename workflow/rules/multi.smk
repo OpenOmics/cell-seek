@@ -15,6 +15,11 @@ pipeline_output += expand(
 # Output from summaryFiles
 pipeline_output += [join(workpath, "finalreport", "metric_summary.xlsx")]
 
+# CellRanger counts intermediate cleanup
+pipeline_output += expand(
+    join(workpath, "cleanup", "{sample}.samplecleanup"),
+    sample=lib_samples
+)
 
 
 # Get set of input paths
@@ -36,6 +41,9 @@ def conditional_flags(wildcards):
     flags = []
     if exclude_introns:
         flags.append('--exclude_introns')
+
+    if create_bam:
+        flags.append('--create_bam')
 
 #    if forcecells:
 #        flags.append('--force')
@@ -135,4 +143,17 @@ rule summaryFiles:
     shell:
         """
         python {params.summarize}
+        """
+
+rule sampleCleanup:
+    input:
+        html = rules.multi.output
+    output:
+        cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
+    params:
+        rname = "sampleCleanup",
+        cr_temp = join(workpath, "{sample}", "SC_MULTI_CS")
+    shell:
+        """
+        rm -r {params.cr_temp}
         """

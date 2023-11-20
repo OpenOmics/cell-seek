@@ -12,6 +12,12 @@ pipeline_output += expand(
     sample=samples
 )
 
+# CellRanger counts intermediate cleanup
+pipeline_output += expand(
+    join(workpath, "cleanup", "{sample}.samplecleanup"),
+    sample=samples
+)
+
 def filterFastq(wildcards):
     return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
 
@@ -48,7 +54,6 @@ rule count:
         2>{log.err} 1>{log.log}
         """
 
-print(expand(join(workpath, "finalreport", "summaries", "{sample}_web_summary.html"), sample=samples))
 rule summaryFiles:
     input:
         expand(join(workpath, "{sample}", "outs", "web_summary.html"), sample=samples)
@@ -63,4 +68,17 @@ rule summaryFiles:
     shell:
         """
         python {params.summarize}
+        """
+
+rule sampleCleanup:
+    input:
+        rules.count.output
+    output:
+        cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
+    params:
+        rname = "sampleCleanup",
+        cr_temp = join(workpath, "{sample}", "SC_VDJ_ASSEMBLER_CS")
+    shell:
+        """
+        rm -r {params.cr_temp}
         """

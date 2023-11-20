@@ -28,8 +28,6 @@ def createMetricsSummary(arg1):
 
 
     files = glob.glob('./*/outs/per_sample_outs/*/metrics_summary.csv')
-    #Filter out aggregate runs if they exist
-    files = [i for i in files if i.split('/')[1] in [j.split('/')[1] for j in glob.glob('./*/*MULTI*')]]
     files.sort()
 
     stats = dict()

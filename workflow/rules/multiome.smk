@@ -17,6 +17,14 @@ pipeline_output += expand(
             join(workpath, "finalreport", "summaries", "{sample}_web_summary.html"),
             sample=lib_samples
         )
+pipeline_output += [join(workpath, "finalreport", "metric_summary.xlsx")]
+
+# CellRanger counts intermediate cleanup
+pipeline_output += expand(
+    join(workpath, "cleanup", "{sample}.samplecleanup"),
+    sample=samples
+)
+
 
 # Get set of input paths
 input_paths = [os.path.dirname(p) for p in inputs]
@@ -37,6 +45,17 @@ def count_introns(wildcards):
         return('--gex-exclude-introns true')
     else:
         return('')
+
+
+def count_bam(wildcards):
+    """
+    Wrapper to decide whether to create BAM files during Cell Ranger alignment - currently unused
+    See config['options']['create_bam'] for the encoded value.
+    """
+    if create_bam:
+        return('')
+    else:
+        return('--no-bam')
 
 
 # Rule definitions
@@ -103,3 +122,15 @@ rule summaryFiles:
         python {params.summarize}
         """
 
+rule sampleCleanup:
+    input:
+        rules.count.output
+    output:
+        cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
+    params:
+        rname = "sampleCleanup",
+        cr_temp = join(workpath, "{sample}", "SC_ATAC_GEX_COUNTER_CS")
+    shell:
+        """
+        rm -r {params.cr_temp}
+        """
