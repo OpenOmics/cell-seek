@@ -2,7 +2,16 @@
 
   <h1 style="font-size: 250%">cell-seek 🔬</h1>
 
-  <b><i>One single-cell pipeline to rule them all!</i></b><br> 
+  <b><i>One single-cell pipeline to rule them all!</i></b><br>
+  <a href="https://doi.org/10.5281/zenodo.101815241">
+      <img src="https://zenodo.org/badge/DOI/10.5281/zenodo.101815241.svg" alt="DOI">
+  </a>
+  <a href="https://github.com/OpenOmics/cell-seek/releases">
+    <img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenOmics/cell-seek?color=blue&include_prereleases">
+  </a>
+  <a href="https://hub.docker.com/repository/docker/skchronicles/chicyte">
+    <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/skchronicles/chicyte">
+  </a><br>
   <a href="https://github.com/OpenOmics/cell-seek/actions/workflows/main.yaml">
     <img alt="tests" src="https://github.com/OpenOmics/cell-seek/workflows/tests/badge.svg">
   </a>
@@ -44,6 +53,31 @@ For more information about issues or trouble-shooting a problem, please checkout
 
 This site is a living document, created for and by members like you. cell-seek is maintained by the members of NCBR and is improved by continous feedback! We encourage you to contribute new content and make improvements to existing content via pull request to our [GitHub repository :octicons-heart-fill-24:{ .heart }](https://github.com/OpenOmics/cell-seek).
 
+## Citation
+
+If you use this software, please cite it as below:  
+
+=== "BibTex"
+
+    ```
+    @software{Chen_Kuhn_OpenOmics_cell-seek_2023,
+      author       = {Vicky Chen and Skyler Kuhn},
+      title        = {OpenOmics/cell-seek},
+      month        = nov,
+      year         = 2023,
+      publisher    = {Zenodo},
+      doi          = {10.5281/zenodo.10181524},
+      url          = {https://doi.org/10.5281/zenodo.10181524}
+    }
+    ```
+
+=== "APA"
+
+    ```
+    Vicky Chen, & Skyler Kuhn. (2023). OpenOmics/cell-seek [Computer software]. https://doi.org/10.5281/zenodo.10181524
+    ```
+
+For more citation style options, please visit the pipeline's [Zenodo page](https://doi.org/10.5281/zenodo.10181524).
 
 ## References
 <sup>**1.**  Kurtzer GM, Sochat V, Bauer MW (2017). Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459.</sup>  
