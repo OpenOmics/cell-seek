@@ -4,7 +4,7 @@
   
   **_One single-cell pipeline to rule them all!_**
 
-  [![tests](https://github.com/OpenOmics/cell-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/cell-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/cell-seek?color=brightgreen)](https://github.com/OpenOmics/cell-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/cell-seek)](https://github.com/OpenOmics/cell-seek/blob/main/LICENSE) 
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10181524.svg)](https://doi.org/10.5281/zenodo.10181524) [![GitHub release (latest SemVer including pre-releases)](https://img.shields.io/github/v/release/OpenOmics/cell-seek?color=blue&include_prereleases)](https://github.com/OpenOmics/cell-seek/releases) [![Docker Pulls](https://img.shields.io/docker/pulls/skchronicles/chicyte)](https://hub.docker.com/repository/docker/skchronicles/chicyte)<br>[![tests](https://github.com/OpenOmics/cell-seek/workflows/tests/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/main.yaml) [![docs](https://github.com/OpenOmics/cell-seek/workflows/docs/badge.svg)](https://github.com/OpenOmics/cell-seek/actions/workflows/docs.yml) [![GitHub issues](https://img.shields.io/github/issues/OpenOmics/cell-seek?color=brightgreen)](https://github.com/OpenOmics/cell-seek/issues)  [![GitHub license](https://img.shields.io/github/license/OpenOmics/cell-seek)](https://github.com/OpenOmics/cell-seek/blob/main/LICENSE) 
   
   <i>
     This is the home of the pipeline, cell-seek. Its long-term goals: to accurately process and analyze single cell data like no pipeline before!
@@ -49,6 +49,39 @@ module load snakemake singularity
 
 ## Contribute 
 This site is a living document, created for and by members like you. cell-seek is maintained by the members of OpenOmics and is improved by continous feedback! We encourage you to contribute new content and make improvements to existing content via pull request to our [GitHub repository](https://github.com/OpenOmics/cell-seek).
+
+
+## Cite
+
+If you use this software, please cite it as below:  
+
+<details>
+  <summary><b><i>@BibText</i></b></summary>
+ 
+```text
+@software{Chen_Kuhn_OpenOmics_cell-seek_2023,
+  author       = {Vicky Chen and Skyler Kuhn},
+  title        = {OpenOmics/cell-seek},
+  month        = nov,
+  year         = 2023,
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.10181524},
+  url          = {https://doi.org/10.5281/zenodo.10181524}
+}
+```
+
+</details>
+
+<details>
+  <summary><b><i>@APA</i></b></summary>
+
+```text
+Vicky Chen, & Skyler Kuhn. (2023). OpenOmics/cell-seek [Computer software]. https://doi.org/10.5281/zenodo.10181524
+```
+
+</details>
+
+For more citation style options, please visit the pipeline's [Zenodo page](https://doi.org/10.5281/zenodo.10181524).
 
 ## References
 <sup>**1.**  Kurtzer GM, Sochat V, Bauer MW (2017). Singularity: Scientific containers for mobility of compute. PLoS ONE 12(5): e0177459.</sup>  
