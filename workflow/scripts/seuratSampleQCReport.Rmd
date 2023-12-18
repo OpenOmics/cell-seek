@@ -150,9 +150,11 @@ cat("\n")
 The following are the UMAP plots for the sample that was generated after filtering out the potential low quality and multiplet cells.
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
-for (filename in Sys.glob(file.path(seuratdir, "UMAP_RNA_res*.png"))) {
-  resolution <- strsplit(tools::file_path_sans_ext(basename(filename)), 'res.')[[1]][2]
-  cat("### Resolution", resolution, "\n\n")
+files <- Sys.glob(file.path(seuratdir, "UMAP_RNA_res*.png"))
+resolutions <- sapply(files, function(x) (x %>% basename %>% tools::file_path_sans_ext() %>% strsplit(split='res.'))[[1]][2]) %>% str_sort(numeric=T)
+for (resolution in resolutions) {
+  filename <- grep(paste0('res.', resolution, '.png'), files, value=T)
+  cat("### Resolution", resolution, "{-}\n\n")
 
   cat(paste0("![](", filename, ')'), "\n\n")
 }
