@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import argparse, sys
+import argparse, sys, os, re
 
 class SmartFormatter(argparse.HelpFormatter):
 
@@ -27,24 +27,32 @@ def main(raw_args=None):
     with open(args.file_name) as f:
         headers = next(f).strip().split(',')
         #print(headers)
+        try:
+            name_index = [i for i in range(len(headers)) if headers[i].casefold() == 'Name'.casefold()][0] 
+            flowcell_index = [i for i in range(len(headers)) if headers[i].casefold() == 'Flowcell'.casefold()][0]
+            sample_index = [i for i in range(len(headers)) if headers[i].casefold() == 'Sample'.casefold()][0]
+            library_index = [i for i in range(len(headers)) if headers[i].casefold() == 'Type'.casefold()][0]
+        except:
+            print("File headers could not be parsed. Please check that they match the expected format of: Name,Flowcell,Sample,Type\n")
         samples = dict()
         for line in f:
             line = line.strip().split(',')
-            if line[0] in samples:
-                samples[line[0]].append(line[1:])
+            if line[name_index] in samples:
+                samples[line[name_index]].append([line[flowcell_index], line[sample_index], line[library_index]])
             else:
-                samples[line[0]] = [line[1:]]
-
+                samples[line[name_index]] = [[line[flowcell_index], line[sample_index], line[library_index]]]
     for sample in samples:
         text = []
         for values in samples[sample]:
             if args.fastqs != None:
                 runs = [path for path in fastqs if values[0].rstrip('/') in path]
                 if len(runs) != 1:
-                    runs = [run for run in runs if values[1] in run]
+#                    runs = [run for run in runs if values[1] in run]
+                    runs = [run for run in runs for j in run.split(os.sep) if len(re.findall(values[1] + r'$', j)) > 0]
                 if len(runs) != 1:
                     sys.exit("Problems finding unique match for %s in %s" % (values[0], args.fastqs))
                 else:
+                    print([runs[0], values[1], values[2]])
                     text.append(",".join([runs[0], values[1], values[2]]))
             else:
                 text.append(",".join(values))
