@@ -19,7 +19,7 @@ pipeline_output += expand(
 )
 
 #CellRanger aggregate
-if aggr != "":
+if aggr != "" and len(samples) > 1:
     # CellRanger aggregate analysis
     pipeline_output += [join(workpath, 'aggregate.complete')]
 
@@ -37,6 +37,10 @@ pipeline_output += expand(
     join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html"),
     sample=samples
 )
+
+# Seurat summary QC report
+if len(samples) > 1:
+  pipeline_output += [join(workpath, "seurat", "Summary_QC_Report.html")]
 
 # Cell Filter Summary File
 pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
@@ -235,6 +239,23 @@ rule cellFilterSummary:
         """
         module load R/4.3.0
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
+        """
+
+rule seuratQCSummaryReport:
+    input:
+        rds = expand(rules.seuratQC.output.rds, sample=samples),
+        cell_filter = rules.cellFilterSummary.output.cell_filter_summary
+    output:
+        report = join(workpath, "seurat", "Summary_QC_Report.html")
+    params:
+        rname = "seuratQCSummaryReport",
+        samples = samples,
+        seuratdir = join(workpath, "seurat"),
+        script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
+    shell:
+        """
+        module load R/4.3.0
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples=c({params.samples}), cellfilter='{input.cell_filter}'), output_file='{output.report}')"
         """
 
 rule sampleCleanup:
