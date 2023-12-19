@@ -360,6 +360,8 @@ Each of the following arguments are required. Failure to provide a required argu
 >        * Gene Expression
 >        * CRISPR Guide Capture
 >        * Antibody Capture
+>        * Multiplexing Capture
+>        * VDJ
 >        * Custom
 >
 > ***Example:*** `--libraries libraries.csv`
@@ -573,9 +575,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  
 >        * Gene Expression
->        * CRISPR Guide Capture
->        * Antibody Capture
->        * Custom
+>        * Chromatin Accessibility
 >
 > ***Example:*** `--libraries libraries.csv`
 
