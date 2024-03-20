@@ -111,14 +111,14 @@ write.csv(thresh, 'cell_filter_info.csv', row.names=FALSE)
 ## ----Pre-Filter RNA Violin Plot-------
 doVlnPlot <- function(aspect, seur, thresh) {
   temp_plot <- VlnPlot(seur, group.by='Sample', features=aspect) + NoLegend()
-  if (length(grep(paste0('^', aspect, '_low$'), colnames(thresh), ignore.case=T)) > 0) {
+  if (length(grep(paste0('^', aspect, '_low$'), names(thresh), ignore.case=T)) > 0) {
     try(
-      temp_plot <- temp_plot + geom_hline(yintercept=thresh[grep(paste0('^', aspect, '_low$'), colnames(thresh), ignore.case=T)][[1]], linetype="dashed")
+      temp_plot <- temp_plot + geom_hline(yintercept=thresh[grep(paste0('^', aspect, '_low$'), names(thresh), ignore.case=T)][[1]], linetype="dashed")
     )
   }
-  if (length(grep(paste0('^', aspect, '_high$'), colnames(thresh), ignore.case=T)) > 0) {
+  if (length(grep(paste0('^', aspect, '_high$'), names(thresh), ignore.case=T)) > 0) {
     try(
-      temp_plot <- temp_plot + geom_hline(yintercept=thresh[grep(paste0('^', aspect, '_high$'), colnames(thresh), ignore.case=T)][[1]], linetype="dashed")
+      temp_plot <- temp_plot + geom_hline(yintercept=thresh[grep(paste0('^', aspect, '_high$'), names(thresh), ignore.case=T)][[1]], linetype="dashed")
     )
   }
   return(temp_plot)
