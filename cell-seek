@@ -248,7 +248,7 @@ def parsed_arguments(name, description):
                 [--aggregate {{mapped, none}}][--libraries LIBRARIES] \\
                 [--features FEATURES] [--cmo-reference CMOREFERENCE] \\
                 [--cmo-sample CMOSAMPLE] [--exclude-introns] [--filter FILTER] \\
-                [--create-bam] \\
+                [--create-bam] [--rename RENAMEFILE] \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
                 --version {{gex, ...}} \\
@@ -318,8 +318,11 @@ def parsed_arguments(name, description):
                                     • Type: library type for each sample. List of
                                       supported options:
                                         • Gene Expression
-                                        • CRISPR Guide Capture,
+                                        • CRISPR Guide Capture
                                         • Antibody Capture
+                                        • Multiplexing Capture
+                                        • VDJ
+                                        • Chromatin Accessibility
                                         • Custom
                                   Example: --libraries libraries.csv
           --features FEATURES
@@ -442,6 +445,18 @@ def parsed_arguments(name, description):
                                 each sample during analysis. This flag is only applicable when
                                 dealing with gene expression related data.
                                   Example: --create-bam
+          --rename RENAME
+                                Rename sample file. A CSV file containing the name of the FASTQ
+                                file and the new name of the sample. Only the samples listed in
+                                the CSV files will be ran. This flag is currently only applicable
+                                when dealing with GEX projects.
+                                  Here is an example rename.csv file:
+                                    FASTQ,Sample
+                                    original_name1,new_name1
+                                    original_name2,new_name1
+                                    original_name3,new_name2
+                                    original_name4,new_name3
+                                  Example: --rename rename.csv
 
         {3}{4}Orchestration options:{5}
           --mode {{slurm,local}}
@@ -609,6 +624,15 @@ def parsed_arguments(name, description):
     )
 
     # Analysis options
+    # Rename fastq files for
+    # cellranger count
+    subparser_run.add_argument(
+        '--rename',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
     # Input Libraries files for
     # cellranger count
     subparser_run.add_argument(

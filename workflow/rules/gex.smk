@@ -47,8 +47,21 @@ pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
 
 # Function definitions
 def filterFastq(wildcards):
-    return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
+    filter_paths = []
+    for sample in sample_rename(wildcards).split(','):
+        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0]
+    return(','.join(set(filter_paths)))
+    #return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
 
+def sample_rename(wildcards):
+    """
+    Wrapper to get the FASTQ file names to use processing if the sample was requested to be renamed
+    """
+    if wildcards.sample in rename_dict.values():
+        names = [i[0] for i in rename_dict.items() if wildcards.sample == i[1]]
+        return(','.join(names))
+    else:
+        return(wildcards.sample)
 
 def count_intron(wildcards):
     """
@@ -103,7 +116,8 @@ rule count:
     params:
         rname = "count",
         batch = "-l nodes=1:ppn=16,mem=96gb",
-        prefix = "{sample}",
+        id = "{sample}",
+        sample = sample_rename,
         transcriptome = config["references"][genome]["gex_transcriptome"],
         excludeintrons = count_intron,
         createbam = count_bam,
@@ -113,13 +127,15 @@ rule count:
         """
         # Remove output directory
         # prior to running cellranger
-        if [ -d '{params.prefix}' ]; then
-            rm -rf '{params.prefix}/'
+        if [ -d '{params.id}' ]; then
+	  if ! [ -f '{output.html}' ]; then
+            rm -rf '{params.id}/'
+	  fi
         fi
 
         cellranger count \\
-            --id {params.prefix} \\
-            --sample {params.prefix} \\
+            --id {params.id} \\
+            --sample {params.sample} \\
             --transcriptome {params.transcriptome} \\
             --fastqs {params.fastqs} \\
             {params.excludeintrons} \\

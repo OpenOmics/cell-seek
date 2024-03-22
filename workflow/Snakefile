@@ -27,6 +27,7 @@ features = config['options']['features']       # Features files for cellranger (
 libraries = config['options']['libraries']     # Libraries files for cellranger (not used in all pipelines)
 cmo_ref = config['options']['cmo_reference']     # CMO Reference files for cellranger (only used in multi pipeline)
 cmo_sample = config['options']['cmo_sample']     # CMO Sample files for cellranger (only used in multi pipelines)
+rename = config['options']['rename']            # File containing how to rename samples when running Cell Ranger analysis
 exclude_introns = str_bool(                           # Use introns for pre mRNA,
     config['options']['exclude_introns']              # default: False
 )
@@ -40,6 +41,18 @@ if 'libraries' in config:
     lib_samples = list(config['libraries'].keys()) # Libraries file samples
 pipeline_output = []
 
+
+rename_dict = dict()
+if rename != 'None':
+    with open(rename) as f:
+        tabs = [i.lower() for i in next(f).strip().split(',')]
+        index_fastq = [i for i in range(len(tabs)) if 'fastq' in tabs[i]][0]
+        index_sample = [i for i in range(len(tabs)) if 'sample' in tabs[i]][0]
+        for line in f:
+            line = line.strip().split(',')
+            rename_dict[line[index_fastq]] = line[index_sample]
+    samples = list((set(samples) - set(rename_dict.keys())).union(rename_dict.values()))
+    samples.sort()
 
 # Import rules
 include: join("rules", "common.smk")
