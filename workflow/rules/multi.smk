@@ -92,6 +92,7 @@ rule multiConfig:
         rname = "multiconfig",
         flags = conditional_flags,
         transcriptome = config["references"][genome]['gex_transcriptome'],
+        cellranger = CELLRANGER,
         multiconfig = join("workflow", "scripts", "write_multiconfig.py")
     shell:
         """
@@ -99,6 +100,7 @@ rule multiConfig:
             -o {output} \\
             --ref {params.transcriptome} \\
             -l {input} \\
+            --cellranger {params.cellranger} \\
             {params.flags}
         """
 

@@ -14,7 +14,7 @@ def main(raw_args=None):
         action = "store", type=str, required=True,
         help="Path to libraries file to create the config file based off of")
     parser.add_argument("--cellranger", metavar="8.0.0",
-        actip = "store", type=str, required=True,
+        action = "store", type=str, required=True,
         help="Version of CellRanger that is being run to handle changes in flags")
 #    parser.add_argument("--cell", metavar = 3000, default=3000,
 #        nargs='?', action = "store", type=int,
