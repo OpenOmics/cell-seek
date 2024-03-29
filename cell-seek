@@ -27,7 +27,7 @@ in any work or product based on this material.
 USAGE:
   $ cell-seek <command> [OPTIONS]
 EXAMPLE:
-  $ cell-seek run --input *.R?.fastq.gz --output output --version gex --genome hg38/
+  $ cell-seek run --input *.R?.fastq.gz --output output --pipeline gex --genome hg38/
 """
 
 # Python standard library
@@ -251,7 +251,7 @@ def parsed_arguments(name, description):
                 [--create-bam] [--rename RENAMEFILE] \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
-                --version {{gex, ...}} \\
+                --pipeline {{gex, ...}} \\
                 --genome {{hg38, ...}}
 
         Optional arguments are shown in square brackets above.
@@ -276,19 +276,25 @@ def parsed_arguments(name, description):
                                 provided working directory has not been initialized,
                                 it will be created automatically.
                                   Example: --output /data/$USER/output
-          --version {{gex,vdj,cite,multi,atac}}
-                                The version of the pipeline to run. Can be chosen from
+          --pipeline {{gex,vdj,cite,multi,atac}}
+                                The pipeline to run. Can be chosen from
                                 the options gene expression (GEX), VDJ, feature
                                 barcode (CITE), Cell Ranger multi (Multi), or ATAC.
-                                  Example: --version gex
-          --genome  {{hg38,mm10}}
+                                  Example: --pipeline gex
+          --genome  {{hg38,mm10,hg2024,mm2024}}
                                 Reference genome. This option defines the reference
                                 genome of the samples. {2} does comes bundled with
                                 prebuilt reference files for human and mouse samples,
-                                e.g. hg38 or mm10. Please select one of the following
-                                options: hg38, mm10.
+                                e.g. hg38 or mm10. The newest 10X reference (2024-A) is
+                                available for GEX, CITE, and Multi analysis (hg2024,
+                                mm2024). Please select one of the following
+                                options: hg38, mm10, hg2024, mm2024.
                                   Example: --genome hg38
         {3}{4}Analysis options:{5}
+          --cellranger {{7.1.0, 7.2.0, 8.0.0}}
+                                The version of CellRanger to run. This option specifies
+                                which of CellRanger to use when running GEX, CITE, or MULTI.
+                                  Example: --cellranger 7.1.0
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
                                 normalization mode that should be used. Mapped is what
@@ -544,7 +550,7 @@ def parsed_arguments(name, description):
           # Step 2A.) Dry-run the pipeline
           ./{0} run --input .tests/*.R?.fastq.gz \\
                          --output /data/$USER/output \\
-                         --version gex \\
+                         --pipeline gex \\
                          --genome hg38 \\
                          --mode slurm \\
                          --dry-run
@@ -555,7 +561,7 @@ def parsed_arguments(name, description):
           # the pipeline in this mode.
           ./{0} run --input .tests/*.R?.fastq.gz \\
                          --output /data/$USER/output \\
-                         --version gex \\
+                         --pipeline gex \\
                          --genome hg38 \\
                          --mode slurm
 
@@ -596,7 +602,7 @@ def parsed_arguments(name, description):
     # Version of pipeline to run
     # i.e. GEX, VDJ, Multi, etc.
     subparser_run.add_argument(
-        '--version',
+        '--pipeline',
         type = str.lower,
         required = True,
         default = "gex",
@@ -611,7 +617,7 @@ def parsed_arguments(name, description):
         '--genome',
         type = str,
         required = True,
-        choices = ['hg38', 'mm10'],
+        choices = ['hg38', 'mm10', 'hg2024', 'mm2024'],
         help = argparse.SUPPRESS
     )
 
@@ -704,6 +710,16 @@ def parsed_arguments(name, description):
         action = 'store_true',
         required = False,
         default = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Create BAM file during run
+    subparser_run.add_argument(
+        '--cellranger',
+        type = str.lower,
+        required = False,
+        default = "",
+        choices = ['7.1.0', '7.2.0', '8.0.0'],
         help = argparse.SUPPRESS
     )
 

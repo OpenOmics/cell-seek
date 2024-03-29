@@ -37,7 +37,7 @@ rule count:
         prefix = "{sample}",
         reference = config["references"][genome]["vdj_ref"],
         fastqs = filterFastq
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory

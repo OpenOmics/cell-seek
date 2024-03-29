@@ -79,9 +79,15 @@ def count_bam(wildcards):
     See config['options']['create_bam'] for the encoded value.
     """
     if create_bam:
-        return('')
+        if CELLRANGER in ['7.1.0', '7.2.0']:
+            return('')
+        else:
+            return('--create-bam true')
     else:
-        return('--no-bam')
+        if CELLRANGER in ['7.1.0', '7.2.0']:
+            return('--no-bam')
+        else:
+            return('--create-bam false')
 
 def aggr_norm(wildcards):
     """
@@ -122,7 +128,7 @@ rule count:
         excludeintrons = count_intron,
         createbam = count_bam,
         fastqs = filterFastq
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory

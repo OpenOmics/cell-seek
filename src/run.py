@@ -19,7 +19,7 @@ from . import version as __version__
 
 def init(repo_path, output_path, links=[], required=['workflow', 'resources', 'config'], sym_link = True):
     """Initialize the output directory. If user provides a output
-    directory path that already exists on the filesystem as a file 
+    directory path that already exists on the filesystem as a file
     (small chance of happening but possible), a OSError is raised. If the
     output directory PATH already EXISTS, it will not try to create the directory.
     @param repo_path <str>:
@@ -37,7 +37,7 @@ def init(repo_path, output_path, links=[], required=['workflow', 'resources', 'c
         os.makedirs(output_path)
 
     elif exists(output_path) and os.path.isfile(output_path):
-        # Provided Path for pipeline 
+        # Provided Path for pipeline
         # output directory exists as file
         raise OSError("""\n\tFatal: Failed to create provided pipeline output directory!
         User provided --output PATH already exists on the filesystem as a file.
@@ -48,7 +48,7 @@ def init(repo_path, output_path, links=[], required=['workflow', 'resources', 'c
     # Copy over templates are other required resources
     copy_safe(source = repo_path, target = output_path, resources = required)
 
-    # Create renamed symlinks for each rawdata 
+    # Create renamed symlinks for each rawdata
     # file provided as input to the pipeline
     inputs = sym_safe(input_data = links, target = output_path, link = sym_link)
 
@@ -177,12 +177,12 @@ def setup(sub_args, ifiles, repo_path, output_path):
     """
     # Check for mixed inputs,
     # inputs which are a mixture
-    # of FastQ and BAM files 
+    # of FastQ and BAM files
     mixed_inputs(ifiles)
 
-    # Resolves PATH to reference file 
-    # template or a user generated 
-    # reference genome built via build 
+    # Resolves PATH to reference file
+    # template or a user generated
+    # reference genome built via build
     # subcommand
     genome_config = os.path.join(repo_path,'config','genome.json')
     # if sub_args.genome.endswith('.json'):
@@ -201,14 +201,14 @@ def setup(sub_args, ifiles, repo_path, output_path):
         "tools": os.path.join(repo_path,'config', 'modules.json'),
     }
 
-    # Create the global or master config 
+    # Create the global or master config
     # file for pipeline, config.json
-    config = join_jsons(required.values()) # uses templates in config/*.json 
+    config = join_jsons(required.values()) # uses templates in config/*.json
     config['project'] = {}
     config = add_user_information(config)
     config = add_rawdata_information(sub_args, config, ifiles)
 
-    # Resolves if an image needs to be pulled 
+    # Resolves if an image needs to be pulled
     # from an OCI registry or a local SIF exists
     config = image_cache(sub_args, config, repo_path)
 
@@ -229,6 +229,9 @@ def setup(sub_args, ifiles, repo_path, output_path):
             v = str(v)
         config['options'][opt] = v
 
+    # Run a check for conditional parameters with all metadata full compiled
+    check_conditional_parameters(config)
+
     # Save config to output directory
     with open(os.path.join(output_path, 'config.json'), 'w') as fh:
         json.dump(config, fh, indent = 4, sort_keys = True)
@@ -240,19 +243,19 @@ def unpacked(nested_dict):
     """Generator to recursively retrieves all values in a nested dictionary.
     @param nested_dict dict[<any>]:
         Nested dictionary to unpack
-    @yields value in dictionary 
+    @yields value in dictionary
     """
-    # Iterate over all values of 
+    # Iterate over all values of
     # given dictionary
     for value in nested_dict.values():
         # Check if value is of dict type
         if isinstance(value, dict):
-            # If value is dict then iterate 
+            # If value is dict then iterate
             # over all its values recursively
             for v in unpacked(value):
                 yield v
         else:
-            # If value is not dict type 
+            # If value is not dict type
             # then yield the value
             yield value
 
@@ -315,9 +318,9 @@ def resolve_additional_bind_paths(search_paths):
             index = path_list[1] # ref startswith /
         if index not in indexed_paths:
             indexed_paths[index] = []
-        # Create an INDEX to find common PATHS for each root 
-        # child directory like /scratch or /data. This prevents 
-        # issues when trying to find the common path betweeen 
+        # Create an INDEX to find common PATHS for each root
+        # child directory like /scratch or /data. This prevents
+        # issues when trying to find the common path betweeen
         # these two different directories (resolves to /)
         indexed_paths[index].append(str(os.sep).join(path_list))
 
@@ -326,7 +329,7 @@ def resolve_additional_bind_paths(search_paths):
         p = os.path.dirname(os.path.commonprefix(paths))
         if p == os.sep:
             # Aviods adding / to bind list when
-            # given /tmp or /scratch as input 
+            # given /tmp or /scratch as input
             p = os.path.commonprefix(paths)
         common_paths.append(p)
 
@@ -340,7 +343,7 @@ def bind(sub_args, config):
     @param configfile dict[<any>]:
         Config dictionary generated by setup command.
     @return bindpaths list[<str>]:
-        List of singularity/docker bind paths 
+        List of singularity/docker bind paths
     """
     bindpaths = []
     for value in unpacked(config):
@@ -351,9 +354,9 @@ def bind(sub_args, config):
                 value = os.path.dirname(value)
             if value not in bindpaths:
                 bindpaths.append(value)
-    
-    # Bind input file paths, working 
-    # directory, and other reference 
+
+    # Bind input file paths, working
+    # directory, and other reference
     # genome paths
     rawdata_bind_paths = [os.path.realpath(p) for p in config['project']['datapath'].split(',')]
     working_directory =  os.path.realpath(config['project']['workpath'])
@@ -376,7 +379,7 @@ def mixed_inputs(ifiles):
     bams = False
     for file in ifiles:
         if file.endswith('.R1.fastq.gz') or file.endswith('.R2.fastq.gz'):
-            fastqs = True 
+            fastqs = True
             fq_files.append(file)
         elif file.endswith('.bam'):
             bams = True
@@ -384,17 +387,17 @@ def mixed_inputs(ifiles):
 
     if fastqs and bams:
         # User provided a mix of FastQs and BAMs
-        raise TypeError("""\n\tFatal: Detected a mixture of --input data types. 
+        raise TypeError("""\n\tFatal: Detected a mixture of --input data types.
             A mixture of BAM and FastQ files were provided; however, the pipeline
             does NOT support processing a mixture of input FastQ and BAM files.
             Input FastQ Files:
                 {}
             Input BAM Files:
-                {}        
+                {}
             Please do not run the pipeline with a mixture of FastQ and BAM files.
             This feature is currently not supported within '{}', and it is not
             recommended to process samples in this way either. If this is a priority
-            for your project, please run the set of FastQ and BAM files separately 
+            for your project, please run the set of FastQ and BAM files separately
             (in two separate output directories). If you feel like this functionality
             should exist, feel free to open an issue on Github.
             """.format(" ".join(fq_files), " ".join(bam_files), sys.argv[0])
@@ -408,14 +411,14 @@ def add_user_information(config):
          Updated config dictionary containing user information (username and home directory)
     """
     # Get PATH to user's home directory
-    # Method is portable across unix-like 
+    # Method is portable across unix-like
     # OS and Windows
     home = os.path.expanduser("~")
 
     # Get username from home directory PATH
     username = os.path.split(home)[-1]
 
-    # Update config with home directory and 
+    # Update config with home directory and
     # username
     config['project']['userhome'] = home
     config['project']['username'] = username
@@ -438,7 +441,7 @@ def add_sample_metadata(input_files, config, group=None):
     """
     import re
 
-    # TODO: Add functionality for basecase 
+    # TODO: Add functionality for basecase
     # when user has samplesheet
     added = []
     config['samples'] = []
@@ -454,15 +457,15 @@ def add_sample_metadata(input_files, config, group=None):
 
 
 def parse_libraries(config, libraries_file, delimeter = ','):
-    """Adds sample information from the libraries 
-    file. The libraries file is a CSV file containing 
-    information about each library. It contains each 
-    sample's name, flowcell, demultiplexed name, and 
-    library type. The relationship between samples 
-    provided to the --input option and samples listed 
-    in the libraries file is 1:many. This is because 
-    you can have a set of FastQ file for different 
-    single-cell applications, like Gene Expression and 
+    """Adds sample information from the libraries
+    file. The libraries file is a CSV file containing
+    information about each library. It contains each
+    sample's name, flowcell, demultiplexed name, and
+    library type. The relationship between samples
+    provided to the --input option and samples listed
+    in the libraries file is 1:many. This is because
+    you can have a set of FastQ file for different
+    single-cell applications, like Gene Expression and
     Antibody Capture, etc.
     @params config <dict>:
         Config dictionary containing metadata to run pipeline
@@ -474,7 +477,7 @@ def parse_libraries(config, libraries_file, delimeter = ','):
     """
     def _require(fields, d, lib):
         """Private function that checks to see if all required fields
-        are provided in the libraries file. If nan item in fields does 
+        are provided in the libraries file. If nan item in fields does
         not  exist in d, then the user forget to add this required field.
         """
         missing = []
@@ -483,7 +486,7 @@ def parse_libraries(config, libraries_file, delimeter = ','):
                 i = d[f]
             except KeyError:
                 missing.append(f)
-                pass 
+                pass
         if missing:
             fatal(
                 "Error: Missing required fields in --libraries {} file!\n \
@@ -492,20 +495,20 @@ def parse_libraries(config, libraries_file, delimeter = ','):
                     ','.join([f.title() for f in missing])
                 )
             )
-        
-        return 
+
+        return
 
     config['libraries'] = {}
-    # Get file extension to determine 
+    # Get file extension to determine
     # the appropriate file delimeter
     extension = os.path.splitext(libraries_file)[-1].lower()
     if extension in ['.tsv', '.txt', '.text', '.tab']:
         # file is tab seperated
         delimeter = '\t'
     # Find index of file dynamically,
-    # makes it so the order of the 
+    # makes it so the order of the
     # columns does not matter
-    indices = {} 
+    indices = {}
     with open(libraries_file) as fh:
         try:
             header = next(fh).strip().split(delimeter)
@@ -520,7 +523,7 @@ def parse_libraries(config, libraries_file, delimeter = ','):
         _require(['name', 'flowcell', 'sample', 'type'], indices, libraries_file)
         for line in fh:
             linelist = line.strip().split(delimeter)
-            # Get indices of fields and 
+            # Get indices of fields and
             # parse value in file
             i_name = indices['name']
             name = linelist[i_name]
@@ -531,6 +534,113 @@ def parse_libraries(config, libraries_file, delimeter = ','):
             config['libraries'][name].append(flowcell)
 
     return config
+
+
+
+
+def check_reference_file(reference_file, flag, delimeter = ','):
+    """Check reference information from the features
+    or cmo reference file. The reference file is a CSV
+    file containing information about each feature or
+    hashtag/cmo. It contains each feature's id, name,
+    read that the barcode is located on, pattern to
+    specify the location of the barcode in the read,
+    barcode sequence, and feature type.
+    @params reference_file <string>:
+        10x reference file containing information about each feature
+    @params flag <string>:
+        Config flag that was used to provide the reference file
+
+    """
+    def _require(fields, d, lib, flag):
+        """Private function that checks to see if all required fields
+        are provided in the reference file. If nan item in fields does
+        not  exist in d, then the user forget to add this required field.
+        """
+        missing = []
+        for f in fields:
+            try:
+                i = d[f]
+            except KeyError:
+                missing.append(f)
+                pass
+        if missing:
+            fatal(
+                f"Error: Missing required fields in --{flag} {{}} file!\n \
+                └── Please add information for the following field(s): {{}}".format(
+                    lib,
+                    ','.join([f.lower() for f in missing])
+                )
+            )
+
+        return
+
+    # Get file extension to determine
+    # the appropriate file delimeter
+    extension = os.path.splitext(reference_file)[-1].lower()
+    if extension in ['.tsv', '.txt', '.text', '.tab']:
+        # file is tab seperated
+        delimeter = '\t'
+    # Find index of file dynamically,
+    # makes it so the order of the
+    # columns does not matter
+    indices = {}
+    with open(reference_file) as fh:
+        try:
+            header = next(fh).strip().split(delimeter)
+        except StopIteration:
+            fatal(
+                f'Error: --{flag} {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            )
+        for i in range(len(header)):
+            colname = header[i].strip().lower()
+            indices[colname] = i
+        _require(['id', 'name', 'read', 'pattern', 'sequence', 'feature_type'], indices, reference_file, flag)
+
+
+def check_conditional_parameters(config):
+    """Check the compiled config fictionary to ensure
+    that any parameters that are only required for
+    certain pipelines are provided if that is the version
+    of the pipeline that is being run.
+    @params config <dict>:
+        Config dictionary containing metadata to run pipeline
+    """
+    errorMessage = []
+    #Check if cellranger version is provided when required
+    if config['options']['pipeline'] in ['gex', 'cite', 'multi'] and config['options']['cellranger'] == '':
+        errorMessage += [
+            "Error: Version of cellranger to use is required for {} pipeline\n \
+            └── Please use the --cellranger flag to select one of the available versions: {}".format(
+                config['options']['pipeline'],
+                ', '.join(['7.1.0', '7.2.0', '8.0.0'])
+            )
+        ]
+
+    #Check if libraries file is provided when required
+    if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options']['libraries'] == 'None':
+        errorMessage += [
+            "Error: Libraries file is required for {} pipeline\n \
+            └── Please use the --libraries flag to provide the CSV file with the columns: {}".format(
+                config['options']['pipeline'],
+                ','.join(['Name', 'Flowcell', 'Sample', 'Type'])
+            )
+        ]
+
+    #Check if features file is provided when required
+    if config['options']['pipeline'] in ['cite'] and config['options']['features'] == 'None':
+        errorMessage += [
+            "Error: Features file is required for {} pipeline\n \
+            └── Please use the --features flag to provide the CSV file with the columns: {}".format(
+                config['options']['pipeline'],
+                ','.join(['id', 'name', 'sequence', 'feature_type', 'read', 'pattern'])
+            )
+        ]
+
+    if len(errorMessage) > 0:
+        errorMessage += ["\nAdditional information about flags can be found via cell-seek run --help or at https://openomics.github.io/cell-seek/usage/run/"]
+        fatal('\n'.join(errorMessage))
 
 
 def add_rawdata_information(sub_args, config, ifiles):
@@ -547,7 +657,7 @@ def add_rawdata_information(sub_args, config, ifiles):
     @return config <dict>:
          Updated config dictionary containing user information (username and home directory)
     """
-    
+
     # Determine whether dataset is paired-end
     # or single-end
     # Updates config['project']['nends'] where
@@ -562,8 +672,8 @@ def add_rawdata_information(sub_args, config, ifiles):
     config['project']['datapath'] = ','.join(rawdata_paths)
 
     # Add each sample's basename
-    # from the list of supplied 
-    # FastQ files provided via 
+    # from the list of supplied
+    # FastQ files provided via
     # the --input option
     config = add_sample_metadata(input_files = ifiles, config = config)
     # Add the list of samples
@@ -572,6 +682,20 @@ def add_rawdata_information(sub_args, config, ifiles):
     if sub_args.libraries != None:
         libraries = sub_args.libraries
         config = parse_libraries(config = config, libraries_file = libraries)
+
+    # Check to see if submitted
+    # features reference file has
+    # required columns
+    if sub_args.features != None:
+        reference = sub_args.features
+        check_reference_file(reference_file = reference, flag = "features")
+
+    # Check to see if submitted
+    # HTO reference file has
+    # required columns
+    if sub_args.cmo_reference != None:
+        reference = sub_args.cmo_reference
+        check_reference_file(reference_file = reference, flag = "cmo_reference")
 
     return config
 
@@ -591,20 +715,20 @@ def image_cache(sub_args, config, repo_path):
     """
     images = os.path.join(repo_path, 'config','containers.json')
 
-    # Read in config for docker image uris 
+    # Read in config for docker image uris
     with open(images, 'r') as fh:
         data = json.load(fh)
-    # Check if local sif exists 
+    # Check if local sif exists
     for image, uri in data['images'].items():
         if sub_args.sif_cache:
             sif = os.path.join(sub_args.sif_cache, '{}.sif'.format(os.path.basename(uri).replace(':', '_')))
             if not exists(sif):
-                # If local sif does not exist on in cache, 
-                # print warning and default to pulling from 
+                # If local sif does not exist on in cache,
+                # print warning and default to pulling from
                 # URI in config/containers.json
                 print('Warning: Local image "{}" does not exist in singularity cache'.format(sif), file=sys.stderr)
             else:
-                # Change pointer to image from Registry URI 
+                # Change pointer to image from Registry URI
                 # to local SIF
                 data['images'][image] = sif
 
@@ -636,7 +760,7 @@ def get_nends(ifiles):
             nends_status = 2
             break # dataset is paired-end
 
-    # Check to see if both mates (R1 and R2) 
+    # Check to see if both mates (R1 and R2)
     # are present paired-end data
     if paired_end:
         nends = {} # keep count of R1 and R2 for each sample
@@ -662,8 +786,8 @@ def get_nends(ifiles):
                 Please do not run the pipeline with a mixture of single-end and paired-end
                 samples. This feature is currently not supported within {}, and it is
                 not recommended either. If this is a priority for your project, please run
-                paired-end samples and single-end samples separately (in two separate output 
-                directories). If you feel like this functionality should exist, feel free to 
+                paired-end samples and single-end samples separately (in two separate output
+                directories). If you feel like this functionality should exist, feel free to
                 open an issue on Github.
                 """.format(missing_mates, sys.argv[0])
             )
@@ -672,7 +796,7 @@ def get_nends(ifiles):
         # not supported or recommended
         raise TypeError("""\n\tFatal: Single-end data detected.
             {} does not support single-end data. Calling variants from single-end
-            data is not recommended either. If you feel like this functionality should 
+            data is not recommended either. If you feel like this functionality should
             exist, feel free to open an issue on Github.
             """.format(sys.argv[0])
         )
@@ -732,7 +856,7 @@ def dryrun(outdir, config='config.json', snakefile=os.path.join('workflow', 'Sna
     return dryrun_output
 
 
-def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None, 
+def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     threads=2,  jobname='pl:master', submission_script='run.sh',
     tmp_dir = '/lscratch/$SLURM_JOBID/'):
     """Runs the pipeline via selected executor: local, slurm, uge.
@@ -762,21 +886,21 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     @return masterjob <subprocess.Popen() object>:
     """
     # Add additional singularity bind PATHs
-    # to mount the local filesystem to the 
-    # containers filesystem, NOTE: these 
+    # to mount the local filesystem to the
+    # containers filesystem, NOTE: these
     # PATHs must be an absolute PATHs
     outdir = os.path.abspath(outdir)
-    # Add any default PATHs to bind to 
-    # the container's filesystem, like 
+    # Add any default PATHs to bind to
+    # the container's filesystem, like
     # tmp directories, /lscratch
     bindpaths = "{},{}".format(outdir, os.path.dirname(tmp_dir.rstrip('/')))
-    # Set ENV variable 'SINGULARITY_CACHEDIR' 
+    # Set ENV variable 'SINGULARITY_CACHEDIR'
     # to output directory
     my_env = {}; my_env.update(os.environ)
     cache = os.path.join(outdir, ".singularity")
     my_env['SINGULARITY_CACHEDIR'] = cache
     if alt_cache:
-        # Override the pipeline's default 
+        # Override the pipeline's default
         # cache location
         my_env['SINGULARITY_CACHEDIR'] = alt_cache
         cache = alt_cache
@@ -788,13 +912,13 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     if not exists(os.path.join(outdir, 'logfiles')):
         # Create directory for logfiles
         os.makedirs(os.path.join(outdir, 'logfiles'))
-    
-    # Create .singularity directory for 
+
+    # Create .singularity directory for
     # installations of snakemake without
     # setuid which creates a sandbox in
     # the SINGULARITY_CACHEDIR
     if not exists(cache):
-        # Create directory for sandbox 
+        # Create directory for sandbox
         # and image layers
         os.makedirs(cache)
 

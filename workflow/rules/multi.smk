@@ -115,7 +115,7 @@ rule multi:
         batch = "-l nodes=1:ppn=16,mem=96gb",
         prefix = "{sample}",
         transcriptome = config["references"][genome]["gex_transcriptome"],
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
