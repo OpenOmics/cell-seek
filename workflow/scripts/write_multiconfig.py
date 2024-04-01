@@ -105,7 +105,10 @@ def main(raw_args=None):
                 with (open(args.cmosample, 'r')) as lib:
                     line = next(lib)
                     for line in lib:
-                        spamwriter.writerow(line.strip().split(','))
+                        if len(line.strip().split(',')) == 3:
+                            spamwriter.writerow(line.strip().split(','))
+                        else:
+                            spamwriter.writerow(line.strip().split(',') + [''])
 
 
 
