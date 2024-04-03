@@ -218,7 +218,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Libraries file.**   
 > *type: file*
 >   
-> A CSV file containing information about each library. TIt contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/analysis/running-pipelines/cr-feature-bc-analysis).
+> A CSV file containing information about each library. It contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/analysis/running-pipelines/cr-feature-bc-analysis).
 
 > *Here is an example libraries.csv file:*
 > ```
@@ -342,7 +342,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Libraries file.**   
 > *type: file*
 >   
-> A CSV file containing information about each library. TIt contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/analysis/running-pipelines/cr-feature-bc-analysis).
+> A CSV file containing information about each library. It contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/analysis/running-pipelines/cr-feature-bc-analysis).
 
 > *Here is an example libraries.csv file:*
 > ```
@@ -360,6 +360,8 @@ Each of the following arguments are required. Failure to provide a required argu
 >        * Gene Expression
 >        * CRISPR Guide Capture
 >        * Antibody Capture
+>        * Multiplexing Capture
+>        * VDJ
 >        * Custom
 >
 > ***Example:*** `--libraries libraries.csv`
@@ -557,7 +559,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Libraries file.**   
 > *type: file*
 >   
-> A CSV file containing information about each library. TIt contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://support.10xgenomics.com/single-cell-multiome-atac-gex/software/pipelines/latest/using/count#library-csv).
+> A CSV file containing information about each library. It contains each sample's name, flowcell, demultiplexed name, and library type. More information about the libraries file and its requirements can be found on the [10x Genomics website](https://support.10xgenomics.com/single-cell-multiome-atac-gex/software/pipelines/latest/using/count#library-csv).
 
 > *Here is an example libraries.csv file:*
 > ```
@@ -573,9 +575,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  
 >        * Gene Expression
->        * CRISPR Guide Capture
->        * Antibody Capture
->        * Custom
+>        * Chromatin Accessibility
 >
 > ***Example:*** `--libraries libraries.csv`
 
