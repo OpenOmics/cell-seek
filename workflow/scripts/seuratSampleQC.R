@@ -18,7 +18,9 @@ option_list <- list(
   make_option(c("-p", "--project"), type='character', action='store', default="project",
               help="Project name to be stored within Seurat metadata"),
   make_option(c("-f", "--filterfile"), type='character', action='store', default=NA,
-              help="Project name to be stored within Seurat metadata")
+              help="CSV file containing filters to be applied"),
+  make_option(c("-m", "--metadata"), type='character', action='store', default=NA,
+              help="Metadata file with information to add to samples")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
@@ -28,6 +30,16 @@ data <- Read10X(opt$datapath)
 seur <- CreateSeuratObject(counts=data, project = opt$project)
 
 seur$Sample <- opt$sample
+
+if (!is.na(opt$metadata)) {
+  metadata <- read.csv(opt$metadata)
+  index <- which(metadata[,grep('sample', colnames(metadata), ignore.case=T)] == opt$sample)
+  if (length(index) > 0) {
+    for (header in grep('sample', colnames(metadata), ignore.case=T, invert=T, value=T)) {
+      seur[[header]] <- metadata[index,header]
+    }
+  }
+}
 
 dir.create(opt$workdir, recursive=TRUE)
 setwd(opt$workdir)
@@ -206,4 +218,5 @@ for (resolution in grep('_res.', colnames(seur@meta.data), value=T)) {
 saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
 
-sessionInfo()
+writeLines(capture.output(devtools::session_info()), 'sessionInfo.txt')
+
