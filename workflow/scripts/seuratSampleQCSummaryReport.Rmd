@@ -4,6 +4,7 @@ subtitle: "Single Cell RNA-seq - QC"
 date: "`r Sys.Date()`"
 output: 
   html_document:
+    lightbox: true
     toc: false
     toc_float: 
         collapsed: false
@@ -26,6 +27,7 @@ params:
 
 knitr::opts_chunk$set(echo = TRUE)
 library(knitr, quietly = T)
+library(kableExtra)
 
 plt <- function(sample, plot.name) {
   plot.loc <- file.path(maindir, sample, plot.name)
@@ -37,6 +39,7 @@ plt1 <- "PreFilter_Gene_Plot.png"
 plt2 <- "PostFilter_Gene_Plot.png"
 plt3 <- "PreFilter_VlnPlot_RNA.png"
 plt4 <- "PostFilter_VlnPlot_RNA.png"
+plt5 <- "PreFilter_UMAP_RNA_Filter.png"
 #plt8 <- "TopVariableGenes.png"
 plt9 <- "UMAP_RNA_res.0.8.png"
 
@@ -49,35 +52,33 @@ sample_short <- sample_list
 
 Removing thresholds for cell filtering.
 
-## RNA Pre filter plots
+## RNA Pre-Filter QC Plots
 
 ```{r  echo=F ,results='asis'}
+#cbind(sample_list, lapply(sample_list, function(x) file.path(maindir, x, plt3) %>% pander::pandoc.image.return()), lapply(sample_list, function(x) file.path(maindir, x, plt1) %>% pander::pandoc.image.return())) %>% as.data.frame %>% pander
 
-cat('<table border="1">
-<tr>
-<td height="50" width = "70"> Sample </td>
-<td height="50" width = "300"> Violin Plots  </td>
-<td height="50" width = "520"> Scatter Plots </td>
-</tr>
-</table>')
+#data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=520px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
+#colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots', 'UMAP Plots')
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=520px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
+data %>% kable(format='html') %>% 
+	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
+	row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+	row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
+```
+## Pre-Filter Clustering
 
-
-for (i in 1:length(sample_list)){
-  sample <- sample_list[i]
-  cat('<table border="1">
-  <tr>
-  <td height="300" width = "70">', sample,' </td>
-  <td height="300" width = "300"><img src=', plt(sample, plt3) , 'height="260" width="260"/></td>
-  <td height="300" width = "520"><img src=', plt(sample, plt1) ,' height="260" width="520"/></td>
-
-  </tr>
-  </table>')
-  
-}
+```{r  echo=F ,results='asis'}
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Pre Filter UMAP')
+data %>% kable(format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 
 ```
 
-## Cell filter thresholds
+## Cell Filter Thresholds
 
 ```{r  echo=F ,results='asis'}
 data <- read.csv(params$cellfilter)
@@ -85,59 +86,33 @@ colnames(data) <- gsub('_low', ' - Lower', colnames(data))
 colnames(data) <- gsub('_high', ' - Upper', colnames(data))
 colnames(data) <- gsub('numCellsRemove', 'Number of Cells Removed', colnames(data))
 colnames(data) <- gsub('pctCellsRemove', 'Percentage of Cells Removed', colnames(data))
-kable(data)
+kable(data, format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 ```
 
-## RNA Post-filter plots
+## RNA Post-Filter plots
 
 ```{r  echo=F ,results='asis'}
-cat('<table border="1">
-<tr>
-<td height="50" width = "70"> Sample </td>
-<td height="50" width = "300"> Violin Plots  </td>
-<td height="50" width = "520"> Scatter Plots </td>
-</tr>
-</table>')
-
-
-for (i in 1:length(sample_list)){
-  sample <- sample_list[i]
-  
-  cat('<table border="1">
-  <tr>
-  <td height="300" width = "70">', sample,' </td>
-  <td height="300" width = "300"><img src=', plt(sample, plt4) , 'height="260" width="260"/></td>
-  <td height="300" width = "520"><img src=', plt(sample, plt2) ,' height="260" width="520"/></td>
-
-  </tr>
-  </table>')
-  
-}
-
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt4) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt2) %>% pander::pandoc.image.return(), '{height=260px, width=520px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
+data %>% kable(format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 
 ```
 
 ## Clustering 
 
 ```{r  echo=F ,results='asis'}
-cat('<table border="1">
-<tr>
-<td height="50" width = "70">', 'Sample',' </td>
-<td height="50" width = "576"> Seurat Clusters </td>
-</tr>
-</table>')
-
-for (i in 1:length(sample_list)){
-  sample <- sample_list[i]
-  
-  cat('<table border="1">
-  <tr>
-  <td height="512" width = "70">', sample,' </td>
-  <td height="512" width = "576"><img src=', plt(sample, plt9) ,' height="512" width="576"/></td>
-  </tr>
-  </table>')
-
-}
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt9) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Seurat Clusters')
+data %>% kable(format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 
 ```
 
