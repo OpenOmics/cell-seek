@@ -271,7 +271,7 @@ rule seuratQCSummaryReport:
         report = join(workpath, "seurat", "Summary_QC_Report.html")
     params:
         rname = "seuratQCSummaryReport",
-        samples = samples,
+        samples = "','".join(samples),
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
     shell:
