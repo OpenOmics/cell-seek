@@ -112,6 +112,25 @@ def filterFile(wildcards):
     else:
         return(f"--filterfile {filter_file}")
 
+def metadataFile(wildcards):
+    """
+    Wrapper to decide whether to provide a metadata file for Seurat
+    QC analysis.
+    See config['options']['metadata'] for the encoded value.
+    """
+    if METADATA_FILE == "None":
+        return("")
+    else:
+        return(f"--metadata {METADATA_FILE}")
+
+
+def seuratQCSummarySamples(wildcards):
+    """
+    Wrapper to return the sample list into an R friendly input format
+    """
+    return("c('{}')".format("','".join(samples)))
+    #"','".join(samples)
+
 
 rule count:
     output:
@@ -215,7 +234,8 @@ rule seuratQC:
         outdir = join(workpath, "seurat", "{sample}"),
         data = join(workpath, "{sample}", "outs", "filtered_feature_bc_matrix"),
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
-        filter = filterFile
+        filter = filterFile,
+        metadata = metadataFile
     shell:
         """
         module load R/4.3.0
@@ -224,6 +244,7 @@ rule seuratQC:
             --datapath {params.data} \\
             --sample {params.sample} \\
             {params.filter} \\
+            {params.metadata} \\
             > {log}
         """
 
@@ -271,13 +292,13 @@ rule seuratQCSummaryReport:
         report = join(workpath, "seurat", "Summary_QC_Report.html")
     params:
         rname = "seuratQCSummaryReport",
-        samples = "','".join(samples),
+        samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
     shell:
         """
         module load R/4.3.0
-        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples=c({params.samples}), cellfilter='{input.cell_filter}'), output_file='{output.report}')"
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
         """
 
 rule sampleCleanup:
