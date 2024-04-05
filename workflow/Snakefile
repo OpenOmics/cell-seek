@@ -38,6 +38,7 @@ create_bam = str_bool(                           # Create BAM files during Cell 
 aggr = config['options']['aggregate']
 input_fastq = config['options']['input']
 filter_file = config['options']['filter']	# Filter threshold file for QC analysis (not used in all pipelines)
+METADATA_FILE = config['options']['metadata']	# Metadata file for QC analysis (not used in all pipelines)
 if 'libraries' in config:
     lib_samples = list(config['libraries'].keys()) # Libraries file samples
 pipeline_output = []

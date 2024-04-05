@@ -200,8 +200,41 @@ def cache(sub_args):
         Parsed arguments for unlock sub-command
     """
     print(sub_args)
-    fatal('NotImplementedError... Comming Soon!')
+    fatal('NotImplementedError... Coming Soon!')
 
+def genome_options(parser, user_option, prebuilt):
+    """Dynamically checks if --genome option is a vaild choice. Compares against a
+    list of prebuilt or bundled genome reference genomes and accepts a custom reference
+    genome that was built using the 'rna-seek build' commmand. The ability to also
+    accept a custom reference JSON file allows for chaining of the rna-seek build and run
+    commands in succession.
+    @param parser <argparse.ArgumentParser object>:
+        Parser object from which an exception is raised not user_option is not valid
+    @param user_option <str>:
+        Provided value to the rna-seek run, --genome argument
+    @param prebuilt list[<str>]:
+        List of prebuilt or builded reference genomes
+    return user_option <str>:
+        Provided value to the rna-seek run, --genome argument
+        If vaule is not valid or custom reference genome JSON file not readable,
+        an exception is raised.
+    """
+    # Checks for custom built genomes using rna-seek build
+    if user_option.endswith('.json'):
+        # Check file is readable or accessible
+        permissions(parser, user_option, os.R_OK)
+    # Checks against vaild pre-built options
+    # TODO: makes this more dynamic in the future to have it check against
+    # a list of genomes (files) in config/genomes/*.json
+    elif not user_option in prebuilt:
+        # User did NOT provide a vaild choice
+        parser.error("""provided invalid choice, '{}', to --genome argument!\n
+        Choose from one of the following pre-built genome options: \n
+        \t{}\n
+        or supply a custom reference genome JSON file with reference generated using cellranger mkref.
+        """.format(user_option, prebuilt))
+
+    return user_option
 
 def parsed_arguments(name, description):
     """Parses user-provided command-line arguments. Requires argparse and textwrap
@@ -281,19 +314,22 @@ def parsed_arguments(name, description):
                                 the options gene expression (GEX), VDJ, feature
                                 barcode (CITE), Cell Ranger multi (Multi), or ATAC.
                                   Example: --pipeline gex
-          --genome  {{hg38,mm10,hg2024,mm2024}}
+          --genome  {{hg38,mm10,hg2024,mm2024,custom.json}}
                                 Reference genome. This option defines the reference
                                 genome of the samples. {2} does comes bundled with
-                                prebuilt reference files for human and mouse samples,
-                                e.g. hg38 or mm10. The newest 10X reference (2024-A) is
-                                available for GEX, CITE, and Multi analysis (hg2024,
-                                mm2024). Please select one of the following
+                                prebuilt reference files for human and mouse samples.
+                                The newest 10X reference (2024-A) is available for
+                                GEX, CITE, and Multi analysis (hg2024, mm2024).
+                                A custom reference genome can also be provided. For
+                                prebuilt references, please select one of the following
                                 options: hg38, mm10, hg2024, mm2024.
                                   Example: --genome hg38
         {3}{4}Analysis options:{5}
           --cellranger {{7.1.0, 7.2.0, 8.0.0}}
                                 The version of CellRanger to run. This option specifies
-                                which of CellRanger to use when running GEX, CITE, or MULTI.
+                                which version of CellRanger to use when running GEX,
+                                CITE, or MULTI. Please select one of the following
+                                options: 7.1.0, 7.2.0, 8.0.0
                                   Example: --cellranger 7.1.0
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
@@ -445,6 +481,32 @@ def parsed_arguments(name, description):
                                       threshold. Valid metadata names include nCount_RNA,
                                       nFeature_RNA, and percent.mito.
                                   Example: --filter filter.csv
+          --metadata METADATA
+                                Sample metadata file. A CSV file containing sample level
+                                metadata information that will be included as new metadata
+                                columns during QC analysis. The file should contain a header
+                                row with Sample as the column name for the sample IDs, and
+                                the name of each metadata column that will be added to their
+                                associated samples. Each row is then the entries for each
+                                sample with the values that will be included as metadata. If
+                                no file is provided then no metadata will be added to the
+                                samples. If a cell is left blank for a sample then the metadata
+                                column for that sample would be an empty string. This flag is
+                                currently only applicable when dealing with GEX projects.
+                                  Here is an example metadata.csv file:
+                                    Sample,Type,batch
+                                    sample1,tumor,1
+                                    sample2,normal,1
+                                    sample4,tumor,2
+                                  where:
+                                    • Sample: Unique sample ID that should match the sample name
+                                      used for Cell Ranger count.
+                                    • Type,batch: Example metadata entries that can be applied
+                                      to the created Seurat object. The column names will be the
+                                      resulting metadata entries, so it is recommended to use ones
+                                      that do not overlap with column names that would be created
+                                      automatically.
+                                  Example: --metadata metadata.csv
           --create-bam
                                 Create bam files. By default the no-bam flag is used when running
                                 Cell Ranger. Use this flag to ensure that a bam file is created for
@@ -615,9 +677,12 @@ def parsed_arguments(name, description):
     # SLURM job scheduler, etc.
     subparser_run.add_argument(
         '--genome',
-        type = str,
+        #type = str,
         required = True,
-        choices = ['hg38', 'mm10', 'hg2024', 'mm2024'],
+        type = lambda option: str(
+            genome_options(subparser_run, option, ['hg38', 'mm10', 'hg2024', 'mm2024'])
+        ),
+        #choices = ['hg38', 'mm10', 'hg2024', 'mm2024'],
         help = argparse.SUPPRESS
     )
 
@@ -698,6 +763,15 @@ def parsed_arguments(name, description):
     # Thresholds to use for filtering in QC Analysis
     subparser_run.add_argument(
         '--filter',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Metadata to add to Seurat Objects during QC Analysis
+    subparser_run.add_argument(
+        '--metadata',
         # Check if the file exists and if it is readable
         type = lambda file: permissions(parser, file, os.R_OK),
         required = False,
