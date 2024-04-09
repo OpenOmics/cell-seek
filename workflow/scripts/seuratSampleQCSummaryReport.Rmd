@@ -28,6 +28,7 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 library(knitr, quietly = T)
 library(kableExtra)
+library(stringr)
 
 plt <- function(sample, plot.name) {
   plot.loc <- file.path(maindir, sample, plot.name)
@@ -44,6 +45,7 @@ plt5 <- "PreFilter_UMAP_RNA_Filter.png"
 plt9 <- "UMAP_RNA_res.0.8.png"
 
 sample_list <- params$samples
+sample_list <- str_sort(sample_list, numeric=T)
 sample_short <- sample_list
 
 ```
