@@ -3,7 +3,7 @@
 ## 1. About
 The `cell-seek` executable is composed of several inter-related sub commands. Please see `cell-seek -h` for all available options.
 
-This part of the documentation describes options and concepts for <code>cell-seek <b>run</b></code> sub command in more detail. The following page lists only the options applicable when selecting the <code><b>--version gex</b></code> flag. With minimal configuration, the **`run`** sub command enables you to start running cell-seek pipeline.
+This part of the documentation describes options and concepts for <code>cell-seek <b>run</b></code> sub command in more detail. The following page lists the options applicable to each of the different pipelines available to select via the <code><b>--pipeline</b></code> flag. With minimal configuration, the **`run`** sub command enables you to start running cell-seek pipeline.
 
 Setting up the cell-seek pipeline is fast and easy! In its most basic form, <code>cell-seek <b>run</b></code> only has *four required inputs*.
 
@@ -13,17 +13,19 @@ $ cell-seek run [--help] \
       [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
+      [--cellranger {8.0.0, ...} \
       [--aggregate {{mapped, none}}] [--exclude-introns] \
-      [--filter FILTER] [--create-bam] \
+      [--library LIBRARIES] [--features FEATURES] \
+      [--filter FILTER] [--metadata METADATA] [--create-bam] \
       --input INPUT [INPUT ...] \
       --output OUTPUT \
-      --version {gex, ...} \
+      --pipeline {gex, ...} \
       --genome {hg38, ...}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
 
-A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument, an output directory to store results via `--output` argument, the version of the pipeline to run via `--version` argument, and the reference genome to use via `--genome` argument.
+A user **must** provide a list of FastQ (globbing is supported) to analyze via `--input` argument, an output directory to store results via `--output` argument, the version of the pipeline to run via `--pipeline` argument, and the reference genome to use via `--genome` argument.
 
 Use you can always use the `-h` option for information on a specific command.
 
@@ -31,7 +33,7 @@ The following is a breakdown of the required and optional arguments for each of 
 
 ### 2.1 GEX
 
-#### 2.1.1 Required arguments
+#### 2.1.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
@@ -53,24 +55,37 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
 ---  
-  `--version gex`
-> **The version of the pipeline to run.**   
+  `--pipeline gex`
+> **The pipeline to run.**   
 > *type: string*
 >   
-> This option selects the version of the pipeline to run. The documentation provided is based on choosing the option for gene expression (GEX).
+> This option selects the pipeline to run. The documentation provided is based on choosing the option for gene expression (GEX).
 >
-> ***Example:*** `--version gex`
+> ***Example:*** `--pipeline gex`
 
 ---  
-  `--genome {hg38, mm10}`
+  `--genome {hg38, mm10, hg2024, mm2024, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes).
 >
-> ***Example:*** `--genome hg38`
+> A custom reference genome can also be provided.
+>
+> For prebuilt references please select one of the following options: hg38, mm10, hg2024, mm2024
+>
+> ***Example:*** `--genome hg2024`
 
-#### 2.1.2 Analysis options
+---  
+  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+> **The version of Cell Ranger to run.**   
+> *type: string*
+>   
+> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+>
+> ***Example:*** `--cellranger 7.1.0`
+
+#### 2.1.2 Analysis Options
 
 Each of the following arguments are optional, and do not need to be provided.
 
@@ -124,11 +139,32 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > ***Example:*** `--filter filter.csv`
 
+---  
+  `--metadata METADATA`
+> **Sample metadata file.**   
+> *type: file*
+>   
+> Sample metadata file. A CSV file containing sample level metadata information that will be included as new metadata columns during QC analysis. The file should contain a header row with Sample as the column name for the sample IDs, and the name of each metadata column that will be added to their associated samples. Each row is then the entries for each sample with the values that will be included as metadata. If no file is provided then no metadata will be added to the samples. If a cell is left blank for a sample then the metadata column for that sample would be an empty string. This flag is currently only applicable when dealing with GEX projects.
+>
+> *Here is an example metadata.csv file:*
+> ```
+> Sample,Type,batch
+> sample1,tumor,1
+> sample2,normal,1
+> sample4,tumor,2
+> ```
+>
+> *Where:*  
+>
+> - *Sample:* Unique sample ID that should match the sample name used for Cell Ranger count.
+> - *Type,batch:* Example metadata entries that can be applied to the created Seurat object. The column names will be the resulting metadata entries, so it is recommended to use ones that do not overlap with column names that would be created automatically.
+>
+> ***Example:*** `--metadata metadata.csv`
 
 
 ### 2.2 VDJ
 
-#### 2.2.1 Required arguments
+#### 2.2.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
@@ -150,30 +186,43 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
 ---  
-  `--version vdj`
-> **The version of the pipeline to run.**   
+  `--pipeline vdj`
+> **The pipeline to run.**   
 > *type: string*
 >   
 > This option selects the version of the pipeline to run. The documentation provided is based on choosing the option for VDJ.
 >
-> ***Example:*** `--version vdj`
+> ***Example:*** `--pipeline vdj`
 
 ---  
-  `--genome {hg38, mm10}`
+  `--genome {hg38, mm10, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Since there is no 2024 release VDJ reference, if hg2024 or mm2024 is selected the VDJ reference CR 7.1 release will be used.
+>
+> A custom reference genome can also be provided.
+>
+> For prebuilt references please select one of the following options: hg38, mm10
 >
 > ***Example:*** `--genome hg38`
 
-#### 2.2.2 Analysis options
+---  
+  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+> **The version of Cell Ranger to run.**   
+> *type: string*
+>   
+> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+>
+> ***Example:*** `--cellranger 7.1.0`
+
+#### 2.2.2 Analysis Options
 
 The VDJ pipeline currently does not have any applicable analysis flags.
 
 ### 2.3 CITE
 
-#### 2.3.1 Required arguments
+#### 2.3.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
@@ -195,23 +244,35 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
 ---  
-  `--version cite`
-> **The version of the pipeline to run.**   
+  `--pipeline cite`
+> **The pipeline to run.**   
 > *type: string*
 >   
 > This option selects the version of the pipeline to run. The documentation provided is based on choosing the option for CITE-seek.
 >
-> ***Example:*** `--version cite`
+> ***Example:*** `--pipeline cite`
 
 ---  
-  `--genome {hg38, mm10}`
+  `--genome {hg38, mm10, hg2024, mm2024, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes).
+>
+> A custom reference genome can also be provided.
+>
+> For prebuilt references please select one of the following options: hg38, mm10, hg2024, mm2024
 >
 > ***Example:*** `--genome hg38`
 
+---  
+  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+> **The version of Cell Ranger to run.**   
+> *type: string*
+>   
+> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+>
+> ***Example:*** `--cellranger 7.1.0`
 
 ---
 `--libraries LIBRARIES`
@@ -266,14 +327,14 @@ Each of the following arguments are required. Failure to provide a required argu
 > - *pattern:* Specifies how to extract the sequence of the feature barcode from the read.
 
 > - *Type:* Type of the feature. List of supported options:  
->        * Gene Expression
->        * CRISPR Guide Capture
 >        * Antibody Capture
+>        * CRISPR Guide Capture
+>        * Antigen Capture
 >        * Custom
 >
 > ***Example:*** `--features features.csv`
 
-#### 2.3.2 Analysis options
+#### 2.3.2 Analysis Options
 
 `--exclude-introns`
 > **Exclude introns from the count alignment.**   
@@ -297,7 +358,7 @@ Each of the following arguments are required. Failure to provide a required argu
 
 There are multiple different combinations of library types that may result in the use of Cell Ranger `multi` analysis. Any combination that combines GEX and VDJ data for cell calls, or the use of HTO with the Cell Ranger hashtag caller would need `multi` analysis.
 
-#### 2.4.1 Required arguments
+#### 2.4.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
@@ -319,23 +380,35 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
 ---  
-  `--version multi`
-> **The version of the pipeline to run.**   
+  `--pipeline multi`
+> **The pipeline to run.**   
 > *type: string*
 >   
 > This option selects the version of the pipeline to run. The documentation provided is based on choosing the option for multi analysis.
 >
-> ***Example:*** `--version multi`
+> ***Example:*** `--pipeline multi`
 
 ---  
-  `--genome {hg38, mm10}`
+  `--genome {hg38, mm10, hg2024, mm2024, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes). Since there is no 2024 released VDJ reference, if hg2024 or mm2024 is selected in a run that includes VDJ data, the VDJ reference CR 7.1 release will be used.
+>
+> A custom reference genome can also be provided.
+>
+> For prebuilt references please select one of the following options: hg38, mm10, hg2024, mm2024
 >
 > ***Example:*** `--genome hg38`
 
+---  
+  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+> **The version of Cell Ranger to run.**   
+> *type: string*
+>   
+> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+>
+> ***Example:*** `--cellranger 7.1.0`
 
 ---
 `--libraries LIBRARIES`
@@ -366,7 +439,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--libraries libraries.csv`
 
-#### 2.4.2 Analysis options
+#### 2.4.2 Analysis Options
 
 Each of the following arguments are optional, and do not need to be provided.
 
@@ -392,7 +465,6 @@ Each of the following arguments are optional, and do not need to be provided.
 > - *pattern:* Specifies how to extract the sequence of the feature barcode from the read.
 
 > - *Type:* Type of the feature. List of supported options:  
->        * Gene Expression
 >        * CRISPR Guide Capture
 >        * Antibody Capture
 >        * Custom
@@ -468,7 +540,7 @@ Each of the following arguments are optional, and do not need to be provided.
 
 ### 2.5 ATAC
 
-#### 2.5.1 Required arguments
+#### 2.5.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
@@ -490,31 +562,35 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
 ---  
-  `--version atac`
-> **The version of the pipeline to run.**   
+  `--pipeline atac`
+> **The pipeline to run.**   
 > *type: string*
 >   
 > This option selects the version of the pipeline to run. The documentation provided is based on choosing the option for ATAC.
 >
-> ***Example:*** `--version atac`
+> ***Example:*** `--pipeline atac`
 
 ---  
-  `--genome {hg38, mm10}`
+  `--genome {hg38, mm10, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10.
+>
+> A custom reference genome can also be provided.
+>
+> For prebuilt references please select one of the following options: hg38, mm10
 >
 > ***Example:*** `--genome hg38`
 
 
-#### 2.5.2 Analysis options
+#### 2.5.2 Analysis Options
 
 The ATAC pipeline currently does not have any applicable analysis flags.
 
 ### 2.6 Multiome
 
-#### 2.6.1 Required arguments
+#### 2.6.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
@@ -536,20 +612,24 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--output /data/$USER/cell-seek_out`
 
 ---  
-  `--version multiome`
-> **The version of the pipeline to run.**   
+  `--pipeline multiome`
+> **The pipeline to run.**   
 > *type: string*
 >   
 > This option selects the version of the pipeline to run. The documentation provided is based on choosing the option for multiome.
 >
-> ***Example:*** `--version multiome`
+> ***Example:*** `--pipeline multiome`
 
 ---  
-  `--genome {hg38, mm10}`
+  `--genome {hg38, mm10, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Please select one of the following options: hg38, mm10
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10.
+>
+> A custom reference genome can also be provided.
+>
+> For prebuilt references please select one of the following options: hg38, mm10
 >
 > ***Example:*** `--genome hg38`
 
@@ -580,12 +660,12 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--libraries libraries.csv`
 
 
-#### 2.6.2 Analysis options
+#### 2.6.2 Analysis Options
 
 The multiome pipeline currently does not have any applicable analysis flags.
 
 
-### 2.7 Orchestration options
+### 2.7 Orchestration Options
 
 Each of the following arguments are optional, and do not need to be provided.
 
@@ -672,7 +752,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > ***Example:*** `--tmp-dir /scratch/$USER/`
 
-### 2.8 Miscellaneous options  
+### 2.8 Miscellaneous Options  
 Each of the following arguments are optional, and do not need to be provided.
 
   `-h, --help`            
@@ -696,8 +776,9 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version gex \
+                  --pipeline gex \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --mode slurm \
                   --dry-run
 
@@ -707,8 +788,9 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version gex \
+                  --pipeline gex \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --mode slurm
 ```
 
@@ -723,8 +805,9 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version vdj \
+                  --pipeline vdj \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --mode slurm \
                   --dry-run
 
@@ -734,8 +817,9 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version vdj \
+                  --pipeline vdj \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --mode slurm
 ```
 
@@ -751,8 +835,9 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version cite \
+                  --pipeline cite \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --mode slurm \
@@ -764,8 +849,9 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version cite \
+                  --pipeline cite \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --mode slurm
@@ -787,8 +873,9 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version multi \
+                  --pipeline multi \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --mode slurm \
                   --dry-run
@@ -799,8 +886,9 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version multi \
+                  --pipeline multi \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --mode slurm
 ```
@@ -819,8 +907,9 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version multi \
+                  --pipeline multi \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --cmo-reference cmo_reference.csv \
                   --mode slurm \
@@ -832,8 +921,9 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version multi \
+                  --pipeline multi \
                   --genome hg38 \
+                  --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --cmo-reference cmo_reference.csv \
                   --mode slurm
@@ -851,7 +941,7 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version atac \
+                  --pipeline atac \
                   --genome hg38 \
                   --mode slurm \
                   --dry-run
@@ -862,7 +952,7 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version atac \
+                  --pipeline atac \
                   --genome hg38 \
                   --mode slurm
 ```
@@ -879,7 +969,7 @@ module load singularity snakemake
 # Step 2A.) Dry-run the pipeline
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version multiome \
+                  --pipeline multiome \
                   --genome hg38 \
                   --libraries libraries.csv \
                   --mode slurm \
@@ -891,7 +981,7 @@ module load singularity snakemake
 # the pipeline in this mode.
 ./cell-seek run --input .tests/*.R?.fastq.gz \
                   --output /data/$USER/output \
-                  --version multiome \
+                  --pipeline multiome \
                   --genome hg38 \
                   --libraries libraries.csv \
                   --mode slurm

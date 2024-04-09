@@ -1014,12 +1014,14 @@ def parsed_arguments(name, description):
                                 The path to the gene expression reference. This
                                 reference is the same one used for the gene
                                 expression capture for the GEX, CITE, and MULTI
-                                pipelines. Only one of the two flags needs to be
-                                used to supply the value for all three pipelines.
+                                pipelines. This flag is the only one needed to
+                                supply the value for all three pipelines.
                                   Example: --gex GEX_PATH
           --vdj VDJ_PATH
-                                The path to the vdj reference. This reference can
-                                be used in both the VDJ and MULTI pipelines.
+                                The path to the vdj reference. This reference is
+                                the one used for the VDJ capture for the VDJ and
+                                MULTI pipelines. This flag is the only one
+                                needed to supply the value for the two pipelines.
                                   Example: --vd VDJ_PATH
           --atac ATAC_PATH
                                 The path to the atac reference. This reference is
@@ -1039,7 +1041,7 @@ def parsed_arguments(name, description):
     genome_epilog = textwrap.dedent("""\
         {2}{3}Example:{4}
           # Create custom json file
-          {0} genome --name species --gex /data/REF_PATH/gex
+          {0} genome --name NAME --gex /data/REF_PATH_GEX
 
         {2}{3}Version:{4}
           {1}
