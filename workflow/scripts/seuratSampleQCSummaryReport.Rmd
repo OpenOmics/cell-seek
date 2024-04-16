@@ -52,16 +52,12 @@ sample_short <- sample_list
 
 # QC analysis  {.tabset .tabset-fade}
 
-Removing thresholds for cell filtering.
-
 ## RNA Pre-Filter QC Plots
 
 ```{r  echo=F ,results='asis'}
-#cbind(sample_list, lapply(sample_list, function(x) file.path(maindir, x, plt3) %>% pander::pandoc.image.return()), lapply(sample_list, function(x) file.path(maindir, x, plt1) %>% pander::pandoc.image.return())) %>% as.data.frame %>% pander
 
-#data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=520px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
 #colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots', 'UMAP Plots')
-data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=520px}'))) %>% as.data.frame()
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
 data %>% kable(format='html') %>% 
 	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
@@ -94,10 +90,10 @@ kable(data, format='html') %>%
         row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 ```
 
-## RNA Post-Filter plots
+## RNA Post-Filter QC Plots
 
 ```{r  echo=F ,results='asis'}
-data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt4) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt2) %>% pander::pandoc.image.return(), '{height=260px, width=520px}'))) %>% as.data.frame()
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt4) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt2) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
 data %>% kable(format='html') %>%
         column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%

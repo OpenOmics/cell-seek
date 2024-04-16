@@ -4,6 +4,7 @@ library(gridExtra)
 library(SingleR)
 library(scRNAseq)
 library(scater)
+library(cluster)
 library(optparse)
 library(dplyr)
 library(stringr)
@@ -51,9 +52,10 @@ seur[["percent.mito"]] <- PercentageFeatureSet(seur, pattern="^[Mm][Tt]-")
 
 plot1 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "percent.mito") + NoLegend()
 plot2 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend()
+plot3 <- FeatureScatter(seur, group.by='Sample', feature1 = "nFeature_RNA", feature2 = "percent.mito") + NoLegend()
 
-png("PreFilter_Gene_Plot.png", height=5, width=10, units='in', res=300)
-plot1+plot2
+png("PreFilter_Gene_Plot.png", height=5, width=15, units='in', res=300)
+plot1+plot3+plot2
 dev.off()
 
 figures$PreFilter_Gene_Plot <- plot1+plot2
@@ -159,7 +161,7 @@ DimPlot(seur, reduction='umap', label = TRUE) + ggtitle("Pre-Filter UMAP") + the
 dev.off()
 
 png("PreFilter_UMAP_RNA_Filter.png", width=1800, height=1600, res = 300)
-DimPlot(seur, reduction='umap', label = TRUE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5))
+DimPlot(seur, reduction='umap', label = TRUE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5)) + scale_color_manual(labels = c("Kept Cells", "Filtered Cells"), values = c("grey", "#DE2D26"))
 dev.off()
 
 figures$PreFilter_UMAP_RNA <- DimPlot(seur, reduction='umap', label = TRUE) + ggtitle("Pre-Filter UMAP") + theme(plot.title = element_text(hjust=0.5))
@@ -170,10 +172,11 @@ seur <- subset(seur, cells = cellsToRemove, invert=T)
 
 ## ----Post-Filter Gene Plot----
 #Post-Filter Plots
-plot1 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "percent.mito")
-plot2 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "percent.mito") + NoLegend()
+plot2 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend()
+plot3 <- FeatureScatter(seur, group.by='Sample', feature1 = "nFeature_RNA", feature2 = "percent.mito") + NoLegend()
 png("PostFilter_Gene_Plot.png", height=5, width=10, units='in', res=300)
-plot1+plot2
+plot1+plot3+plot2
 dev.off()
 
 figures$PostFilter_Gene_Plot <- plot1+plot2
@@ -195,8 +198,19 @@ seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
 
+
+coord <- Embeddings(seur, reduction='pca')[,1:30]
+d <- dist(coord, method="euclidean")
 for(resolution in c(seq(0.2,1.0,0.2), 1.5, 2.0)){
   seur <- FindClusters(seur, resolution = resolution)
+  clusters <- Idents(seur)
+  sil<-silhouette(as.numeric(clusters), dist=d)
+  
+  pdf(paste0("SilhouettePlot_res.",resolution,".pdf"))
+  print(plot(sil, col=as.factor(clusters[order(clusters, decreasing=FALSE)]), main=paste("Silhouette plot of Seurat clustering - resolution ", resolution, sep=""), lty=2))
+  print(abline(v=mean(sil[,3]), col="red4", lty=2))
+  dev.off()
+  write.csv(sil, paste0('SilhouetteResult_res.', resolution, '.csv'), row.names=F, quote=F)
 }
 
 ## ----Elbow Plot----

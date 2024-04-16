@@ -27,6 +27,8 @@ library(knitr)
 library(stringr)
 library(flextable)
 library(dplyr)
+library(base64enc)
+library(xfun)
 # library(kableExtra)
 # library(scater)
 ```
@@ -151,15 +153,37 @@ The following are the UMAP plots for the sample that was generated after filteri
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
 files <- Sys.glob(file.path(seuratdir, "UMAP_RNA_res*.png"))
+sil_files <- Sys.glob(file.path(seuratdir, "SilhouetteResult_res*.csv"))
 resolutions <- sapply(files, function(x) (x %>% basename %>% tools::file_path_sans_ext() %>% strsplit(split='res.'))[[1]][2]) %>% str_sort(numeric=T)
-for (resolution in resolutions) {
-  filename <- grep(paste0('res.', resolution, '.png'), files, value=T)
-  cat("### Resolution", resolution, "{-}\n\n")
+sil_mean <- sapply(resolutions, function(resolution) {filename <- grep(paste0('res.', resolution, '.csv'), sil_files, value=T); if(length(filename) > 0) { data <- read.csv(filename); mean(data$sil_width)} else{0}})
 
-  cat(paste0("![](", filename, ')'), "\n\n")
+if (max(sil_mean) > 0) {
+  cat("The resolution with the highest detected silhouette score is resolution", sil_mean %>% which.max %>% names, "\n\n")
 }
 
+for (resolution in resolutions) {
+  filename <- grep(paste0('res.', resolution, '.png'), files, value=T)
+  cat("### Resolution", resolution, "{.tabset .tabset-fade .tabset-pills -}\n\n")
+#  cat("#### UMAP {-}\n\n")
+  cat(paste0("![](", filename, ')'), "\n\n")
+  sil_filename <- filename %>% gsub(pattern = 'UMAP_RNA', replacement = "SilhouettePlot") %>% gsub(pattern=".png", replacement=".pdf")
+  if (file.exists(sil_filename)) {
+     data <- read.csv(sil_filename %>% gsub(pattern='Plot', replacement='Result') %>% gsub(pattern='pdf', replacement='csv'))
+     cat("Silhouette score:", mean(data$sil_width) %>% round(digits=3), "\n\n")
+     print(xfun::embed_file(sil_filename, text = paste0("Download Silhouette Plot Resolution ", resolution)))#
+     cat("\n\n")
+#    cat("#### Silhouette Plot {-}\n\n")
+#    cat(paste0("![](", 'data:application/pdf;base64,', base64encode(sil_filename), "){width=100%}"), "\n\n")
+  }
+  #cat(paste0("![](", 'data:application/pdf;base64,', base64encode('/gpfs/gsfs12/users/NHLBI_IDSS/dev/cell-seek-test/cellranger8/testdata/custom_ref/NCBR339_8_gex/seurat/Tube_5__Sample_5_GEX_library/SilhouettePlot_res.0.2.pdf'), ")"), "\n\n")
+}
 
+```
+
+# Session Info
+
+``` {r Session Info, comment='', results='markup', attr.output='style="max-height: 500px;"'}
+cat(readLines(file.path(seuratdir, 'sessionInfo.txt')), sep="\n")
 ```
 
 <div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
