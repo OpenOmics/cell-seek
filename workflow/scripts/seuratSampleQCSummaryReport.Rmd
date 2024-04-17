@@ -65,11 +65,12 @@ data %>% kable(format='html') %>%
 	row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
 	row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 ```
-## Pre-Filter Clustering
+
+## Pre-Filter UMAP
 
 ```{r  echo=F ,results='asis'}
 data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
-colnames(data) <- c('Sample', 'Pre Filter UMAP')
+colnames(data) <- c('Sample', 'Pre-Filter UMAP')
 data %>% kable(format='html') %>%
         column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
         row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
@@ -103,7 +104,7 @@ data %>% kable(format='html') %>%
 
 ```
 
-## Clustering 
+## Post-Filter UMAP
 
 ```{r  echo=F ,results='asis'}
 #Setting default resolution to 0.8
@@ -133,5 +134,4 @@ data %>% kable(format='html') %>%
         row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
 
 ```
-
 
