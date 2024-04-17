@@ -70,7 +70,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >   
 > This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes).
 >
-> A custom reference genome can also be provided.
+> A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
 > For prebuilt references please select one of the following options: hg38, mm10, hg2024, mm2024
 >
@@ -81,7 +81,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -201,7 +201,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >   
 > This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Since there is no 2024 release VDJ reference, if hg2024 or mm2024 is selected the VDJ reference CR 7.1 release will be used.
 >
-> A custom reference genome can also be provided.
+> A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
 > For prebuilt references please select one of the following options: hg38, mm10
 >
@@ -212,7 +212,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -259,7 +259,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >   
 > This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes).
 >
-> A custom reference genome can also be provided.
+> A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
 > For prebuilt references please select one of the following options: hg38, mm10, hg2024, mm2024
 >
@@ -270,7 +270,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -292,7 +292,7 @@ Each of the following arguments are required. Failure to provide a required argu
 
 > *Where:*
 
-> - *Name:* name of the sample passed to CellRanger.  
+> - *Name:* name of the sample passed to Cell Ranger.  
 > - *Flowcell:* The flowcell ID that contains the FASTQ files for this set of data.  
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  
@@ -395,7 +395,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >   
 > This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes). Since there is no 2024 released VDJ reference, if hg2024 or mm2024 is selected in a run that includes VDJ data, the VDJ reference CR 7.1 release will be used.
 >
-> A custom reference genome can also be provided.
+> A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
 > For prebuilt references please select one of the following options: hg38, mm10, hg2024, mm2024
 >
@@ -406,7 +406,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of CellRanger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -426,7 +426,7 @@ Each of the following arguments are required. Failure to provide a required argu
 
 > *Where:*
 
-> - *Name:* name of the sample passed to CellRanger.  
+> - *Name:* name of the sample passed to Cell Ranger.  
 > - *Flowcell:* The flowcell ID that contains the FASTQ files for this set of data.  
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  
@@ -577,7 +577,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >   
 > This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10.
 >
-> A custom reference genome can also be provided.
+> A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
 > For prebuilt references please select one of the following options: hg38, mm10
 >
@@ -627,7 +627,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >   
 > This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10.
 >
-> A custom reference genome can also be provided.
+> A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
 > For prebuilt references please select one of the following options: hg38, mm10
 >
@@ -650,7 +650,7 @@ Each of the following arguments are required. Failure to provide a required argu
 
 > *Where:*
 
-> - *Name:* name of the sample passed to CellRanger.  
+> - *Name:* name of the sample passed to Cell Ranger.  
 > - *Flowcell:* The flowcell ID that contains the FASTQ files for this set of data.  
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  

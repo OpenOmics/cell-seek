@@ -34,13 +34,13 @@ pipeline_output += expand(
 
 # Seurat sample QC reports
 pipeline_output += expand(
-    join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html"),
+    join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html"),
     sample=samples
 )
 
 # Seurat summary QC report
 if len(samples) > 1:
-  pipeline_output += [join(workpath, "seurat", "Summary_QC_Report.html")]
+  pipeline_output += [join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")]
 
 # Cell Filter Summary File
 pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
@@ -111,6 +111,16 @@ def filterFile(wildcards):
         return("")
     else:
         return(f"--filterfile {filter_file}")
+
+def filterFileBool(wildcards):
+    """
+    Wrapper to get if a filter file was provided
+    See config['options']['filter'] for the encoded value.
+    """
+    if filter_file == "None":
+        return("TRUE")
+    else:
+        return("FALSE")
 
 def metadataFile(wildcards):
     """
@@ -258,6 +268,7 @@ rule seuratQCReport:
         rname = "seuratQCReport",
         sample = "{sample}",
         seuratdir = join(workpath, "seurat", "{sample}"),
+        filter = filterFileBool,
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
     shell:
@@ -265,8 +276,21 @@ rule seuratQCReport:
         module load R/4.3.0
 	cd {params.tmpdir}
 	cp {params.script} ./{params.sample}.Rmd
-        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}'), output_file='{output.report}')"
+        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{output.report}')"
         """
+
+rule copySeuratQCReport:
+  input:
+    report = rules.seuratQCReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html")
+  params:
+    rname = "copySeuratQCReport"
+  localrule: True
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
 
 rule cellFilterSummary:
     input:
@@ -300,6 +324,19 @@ rule seuratQCSummaryReport:
         module load R/4.3.0
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
         """
+
+rule copySeuratQCSummaryReport:
+  input:
+    report = rules.seuratQCSummaryReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")
+  params:
+    rname = "copySeuratQCSummaryReport"
+  localrule: True
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
 
 rule sampleCleanup:
     input:
