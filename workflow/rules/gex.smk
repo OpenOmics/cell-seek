@@ -286,7 +286,6 @@ rule copySeuratQCReport:
     report = join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html")
   params:
     rname = "copySeuratQCReport"
-  localrule: True
   shell:
     """
     cp {input.report} {output.report}
