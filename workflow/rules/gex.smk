@@ -47,6 +47,9 @@ pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
 
 # Function definitions
 def filterFastq(wildcards):
+    """
+    Wrapper to get a comma separated list of the directories where the FASTQ files associated with the sample are located
+    """
     filter_paths = []
     for sample in sample_rename(wildcards).split(','):
         filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0]
@@ -57,8 +60,8 @@ def sample_rename(wildcards):
     """
     Wrapper to get the FASTQ file names to use processing if the sample was requested to be renamed
     """
-    if wildcards.sample in rename_dict.values():
-        names = [i[0] for i in rename_dict.items() if wildcards.sample == i[1]]
+    if wildcards.sample in RENAME_DICT.values():
+        names = [i[0] for i in RENAME_DICT.items() if wildcards.sample == i[1]]
         return(','.join(names))
     else:
         return(wildcards.sample)
@@ -163,9 +166,9 @@ rule count:
         # Remove output directory
         # prior to running cellranger
         if [ -d '{params.id}' ]; then
-	  if ! [ -f '{output.html}' ]; then
-            rm -rf '{params.id}/'
-	  fi
+	        if ! [ -f '{output.html}' ]; then
+              rm -rf '{params.id}/'
+	        fi
         fi
 
         cellranger count \\

@@ -39,7 +39,7 @@ import argparse  # potential python3 3rd party package, added in python/3.5
 
 # Local imports
 from src import version
-from src.run import init, setup, bind, dryrun, runner
+from src.run import init, setup, bind, dryrun, runner, finalcheck
 from src.shells import bash
 from src.utils import (
     Colors,
@@ -139,7 +139,15 @@ def run(sub_args):
         # Dryrun pipeline
         dryrun_output = dryrun(outdir = sub_args.output) # python3 returns byte-string representation
         print("\nDry-running {} pipeline:\n{}".format(_name, dryrun_output.decode("utf-8")))
+        for arg_check in ['rename', 'libraries']:
+            if config['options'][arg_check] != 'None':
+                finalcheck(config=config, flag=arg_check)
         sys.exit(0)
+
+    # Step 4b. Perform final check of input files
+    for arg_check in ['rename', 'libraries']:
+        if config['options'][arg_check] != 'None':
+            finalcheck(config=config, flag=arg_check)
 
     # Step 5. Orchestrate pipeline execution,
     # run pipeline in locally on a compute node
@@ -542,14 +550,21 @@ def parsed_arguments(name, description):
           --rename RENAME
                                 Rename sample file. A CSV file containing the name of the FASTQ
                                 file and the new name of the sample. Only the samples listed in
-                                the CSV files will be ran. This flag is currently only applicable
-                                when dealing with GEX projects.
+                                the CSV files will be run. This flag is only applicable when
+                                dealing with GEX, VDJ, or ATAC projects. Renaming samples in the
+                                other pipelines can be achieved via the libraries file.
                                   Here is an example rename.csv file:
-                                    FASTQ,Sample
+                                    FASTQ,Name
                                     original_name1,new_name1
                                     original_name2,new_name1
                                     original_name3,new_name2
                                     original_name4,new_name3
+                                In this example, new_name3 has FASTQ files with two different
+                                names. With this input, both sets of FASTQ files will be used
+                                when processing the sample as new_name3. original_name4 will not
+                                be renamed. Any FASTQ file that does not have the name
+                                original_name1, original_name2, original_name3, or original_name4
+                                will not be run.
                                   Example: --rename rename.csv
 
         {3}{4}Orchestration options:{5}

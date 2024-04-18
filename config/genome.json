@@ -22,7 +22,7 @@
         "mm2024": {
             "gex_transcriptome": "/data/OpenOmics/references/cell-seek/mouse/refdata-gex-GRCm39-2024-A",
             "cite_transcriptome": "/data/OpenOmics/references/cell-seek/mouse/refdata-gex-GRCm39-2024-A",
-	    "vdj_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0/"
+	    "vdj_ref": "/data/NCBR/references/cellranger_references/refdata-cellranger-vdj-GRCm38-alts-ensembl-7.0.0/"
         }
     }
 }

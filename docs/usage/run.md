@@ -17,6 +17,7 @@ $ cell-seek run [--help] \
       [--aggregate {{mapped, none}}] [--exclude-introns] \
       [--library LIBRARIES] [--features FEATURES] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
+      [--rename RENAME] \
       --input INPUT [INPUT ...] \
       --output OUTPUT \
       --pipeline {gex, ...} \
@@ -161,6 +162,31 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > ***Example:*** `--metadata metadata.csv`
 
+---
+  `--rename RENAME`
+> **Rename sample file.**
+> *type: file*
+>
+> Rename sample file. A CSV file containing the name of the FASTQ file and the new name of the sample. Only the samples listed in the CSV files will be run.
+>
+> *Here is an example rename.csv file:*
+> ```
+> FASTQ,Name
+> original_name1,new_name1
+> original_name2,new_name2
+> original_name3,new_name3
+> original_name3-2,new_name3
+> original_name4,original_name4
+> ```
+>
+> *Where:*
+>
+> - *FASTQ:* The name that is used in the FASTQ file
+> - *Name:* Unique sample ID that is the sample name used for Cell Ranger count.
+> 
+> In this example, new_name3 has FASTQ files with two different names. With this input, both sets of FASTQ files will be used when processing the sample as new_name3. original_name4 will not be renamed. Any FASTQ file that does not have the name original_name1, original_name2, original_name3, or original_name4 will not be run.
+>
+> ***Example:*** `--rename rename.csv`
 
 ### 2.2 VDJ
 
@@ -199,7 +225,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Since there is no 2024 release VDJ reference, if hg2024 or mm2024 is selected the VDJ reference CR 7.1 release will be used.
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, e.g. hg38 or mm10. Since there is no 2024 release VDJ reference, if hg2024 or mm2024 is selected the VDJ reference CR 7.1 release will be used for human, and CR 7.0 release will be used for mouse.
 >
 > A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
@@ -218,7 +244,30 @@ Each of the following arguments are required. Failure to provide a required argu
 
 #### 2.2.2 Analysis Options
 
-The VDJ pipeline currently does not have any applicable analysis flags.
+  `--rename RENAME`
+> **Rename sample file.**
+> *type: file*
+>
+> Rename sample file. A CSV file containing the name of the FASTQ file and the new name of the sample. Only the samples listed in the CSV files will be run.
+>
+> *Here is an example rename.csv file:*
+> ```
+> FASTQ,Name
+> original_name1,new_name1
+> original_name2,new_name2
+> original_name3,new_name3
+> original_name3-2,new_name3
+> original_name4,original_name4
+> ```
+>
+> *Where:*
+>
+> - *FASTQ:* The name that is used in the FASTQ file
+> - *Name:* Unique sample ID that is the sample name used for Cell Ranger count.
+>
+> In this example, new_name3 has FASTQ files with two different names. With this input, both sets of FASTQ files will be used when processing the sample as new_name3. original_name4 will not be renamed. Any FASTQ file that does not have the name original_name1, original_name2, original_name3, or original_name4 will not be run.
+>
+> ***Example:*** `--rename rename.csv`
 
 ### 2.3 CITE
 
@@ -393,7 +442,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > **Reference genome.**   
 > *type: string*
 >   
-> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes). Since there is no 2024 released VDJ reference, if hg2024 or mm2024 is selected in a run that includes VDJ data, the VDJ reference CR 7.1 release will be used.
+> This option defines the reference genome of the samples. cell-seek does comes bundled with prebuilt reference files for human and mouse samples, The options hg38 or mm10 would select the 2020 release of the reference. The options hg2024 or mm2024 would select the 2024 release of the reference. More information about the officially released references can be found on the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/release-notes/cr-reference-release-notes). Since there is no 2024 released VDJ reference, if hg2024 or mm2024 is selected in a run that includes VDJ data, the VDJ reference CR 7.1 release will be used for human, and CR 7.0 release will be used for mouse.
 >
 > A custom reference genome can also be provided via a json file. Additional information for creating this json file can be found in [<code>cell-seek <b>genome</b></code>](../genome).
 >
@@ -586,7 +635,29 @@ Each of the following arguments are required. Failure to provide a required argu
 
 #### 2.5.2 Analysis Options
 
-The ATAC pipeline currently does not have any applicable analysis flags.
+> **Rename sample file.**
+> *type: file*
+>
+> Rename sample file. A CSV file containing the name of the FASTQ file and the new name of the sample. Only the samples listed in the CSV files will be run.
+>
+> *Here is an example rename.csv file:*
+> ```
+> FASTQ,Name
+> original_name1,new_name1
+> original_name2,new_name2
+> original_name3,new_name3
+> original_name3-2,new_name3
+> original_name4,original_name4
+> ```
+>
+> *Where:*
+>
+> - *FASTQ:* The name that is used in the FASTQ file
+> - *Name:* Unique sample ID that is the sample name used for Cell Ranger count.
+>
+> In this example, new_name3 has FASTQ files with two different names. With this input, both sets of FASTQ files will be used when processing the sample as new_name3. original_name4 will not be renamed. Any FASTQ file that does not have the name original_name1, original_name2, original_name3, or original_name4 will not be run.
+>
+> ***Example:*** `--rename rename.csv`
 
 ### 2.6 Multiome
 

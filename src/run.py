@@ -510,6 +510,7 @@ def parse_libraries(config, libraries_file, delimeter = ','):
     # makes it so the order of the
     # columns does not matter
     indices = {}
+
     with open(libraries_file) as fh:
         try:
             header = next(fh).strip().split(delimeter)
@@ -535,8 +536,6 @@ def parse_libraries(config, libraries_file, delimeter = ','):
             config['libraries'][name].append(flowcell)
 
     return config
-
-
 
 
 def check_reference_file(reference_file, flag, delimeter = ','):
@@ -598,6 +597,156 @@ def check_reference_file(reference_file, flag, delimeter = ','):
             colname = header[i].strip().lower()
             indices[colname] = i
         _require(['id', 'name', 'read', 'pattern', 'sequence', 'feature_type'], indices, reference_file, flag)
+
+
+
+def check_rename_file(config, rename_file, delimeter = ','):
+    """Check sample information from the rename file.
+    The rename file is a CSV file containing information
+    about each sample. It contains each sample's name
+    and its associated demultiplexed (FastQ) name. The
+    relationship between samples provided to the --input
+    option and samples listed in the rename file is 1:many.
+    This is because sets of FastQ files with different
+    names that are from the same sample. It contains each
+    unique set of FASTQ name and sample name.
+    @params config <dict>:
+        Config dictionary containing metadata to run pipeline
+    @params rename_file <string>:
+        rename file containing information about each sample
+    @params flag <string>:
+        Config flag that was used to provide the rename file
+
+    """
+    def _require(fields, d, lib):
+        """Private function that checks to see if all required fields
+        are provided in the reference file. If nan item in fields does
+        not  exist in d, then the user forget to add this required field.
+        """
+        missing = []
+        for f in fields:
+            try:
+                i = d[f]
+            except KeyError:
+                missing.append(f)
+                pass
+        if missing:
+            fatal(
+                f"Error: Missing required fields in --rename {{}} file!\n \
+                └── Please add information for the following field(s): {{}}".format(
+                    lib,
+                    ','.join([f.lower() for f in missing])
+                )
+            )
+
+        return
+
+    # Get file extension to determine
+    # the appropriate file delimeter
+    extension = os.path.splitext(rename_file)[-1].lower()
+    if extension in ['.tsv', '.txt', '.text', '.tab']:
+        # file is tab seperated
+        delimeter = '\t'
+    # Find index of file dynamically,
+    # makes it so the order of the
+    # columns does not matter
+    indices = {}
+    with open(rename_file) as fh:
+        try:
+            header = next(fh).strip().split(delimeter)
+        except StopIteration:
+            fatal(
+                f'Error: --rename {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            )
+        for i in range(len(header)):
+            colname = header[i].strip().lower()
+            indices[colname] = i
+        _require(['fastq', 'name'], indices, rename_file)
+
+
+
+def finalcheck(config, flag, delimeter=','):
+    """Check the contents of the rename or libraries
+    file against input. This function checks to see if
+    the input files are not used in the rename/libraries
+    file and prints a warning if that occurs. If either
+    file lists a FASTQ file or path that is not included
+    in the input and throws an error if that is detected.
+    @params config <dict>:
+        Config dictionary containing metadata to run pipeline
+    @params flag <string>:
+        Config flag that was used to provide the input file
+    """
+    filename = config['options'][flag]
+
+    extension = os.path.splitext(filename)[-1].lower()
+    if extension in ['.tsv', '.txt', '.text', '.tab']:
+        # file is tab seperated
+        delimeter = '\t'
+
+    # Find index of file dynamically,
+    # makes it so the order of the
+    # columns does not matter
+    indices = {}
+
+    # Dictionary holding unique contents from files to use for comparisons
+    contents = {}
+    with open(filename) as fh:
+        try:
+            header = next(fh).strip().split(delimeter)
+        except StopIteration:
+            fatal(
+                f'Error: --rename {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            )
+        for i in range(len(header)):
+            colname = header[i].strip().lower()
+            indices[colname] = i
+        for line in fh:
+            linelist = line.strip().split(delimeter)
+            for i in indices:
+                values = contents.get(i, set())
+                values.add(linelist[indices[i]])
+                contents[i] = values
+
+    # Compiles the sample names and fastq paths from the input (config)
+    samples  = set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']])
+    fastq_paths = set([os.path.dirname(i) for i in config['options']['input']])
+
+    for index_name in indices:
+        comparison = contents[index_name]
+
+        #Check the FASTQ names against the sample (fastq) names provided in the input files
+        if index_name in ['sample', 'fastq']:
+            if samples != comparison:
+                if len(samples-comparison) > 0:
+                    print(f"\nWarning: Some FASTQs will be skipped! \nWarning: --{{}} {{}} does not contain values for all provided FASTQ files.\n \
+            └── Please note that no sample names have been provided for FASTQ files with the following id(s): {{}} \n \
+            These FASTQ files will be skipped when running the pipeline.".format(flag, filename, ','.join(samples-comparison)))
+                if len(comparison-samples) > 0:
+                    fatal(
+                        f'\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
+            └── Please note that the followed listed FASTQ names are not found in the input files: {{}} '.format(flag, filename, ','.join(comparison-samples))
+                    )
+
+        if index_name == 'flowcell':
+            # Check to see which values in file are not found in fastq_paths
+            missing_file = set([i for i in comparison if sum([i in fastq_path for fastq_path in fastq_paths]) == 0])
+
+            # Check to see which fastq_paths from input are not found in the flowcell values in file
+            missing_path = set([fastq_path for fastq_path in fastq_paths if sum([i in fastq_path for i in comparison]) == 0])
+
+            if len(missing_path) > 0:
+                print(f"\nWarning: Some FASTQs will be skipped! \nWarning: --{{}} {{}} does not contain values for all provided FASTQ paths.\n \
+            └── Please note that no samples contain flowcells that are on the following path(s): \n \
+            {{}} \n \
+            Any FASTQ files in these paths will be skipped when running the pipeline.".format(flag, filename, ','.join(missing_path)))
+            if len(missing_file) > 0:
+                fatal(
+                    f'\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
+            └── Please note that the followed listed FASTQ names are not found in the input files: {{}} '.format(flag, filename, ','.join(missing_file))
+                )
 
 
 def check_conditional_parameters(config):
@@ -709,6 +858,10 @@ def add_rawdata_information(sub_args, config, ifiles):
     if sub_args.cmo_reference != None:
         reference = sub_args.cmo_reference
         check_reference_file(reference_file = reference, flag = "cmo_reference")
+
+    if sub_args.rename != None:
+        rename = sub_args.rename
+        check_rename_file(rename_file = rename, config=config)
 
     return config
 
