@@ -33,11 +33,12 @@
 
 
 ## Overview
-Welcome to cell-seek's documentation! This guide is the main source of documentation for users that are getting started with [cell-seek](https://github.com/OpenOmics/cell-seek/). 
+Welcome to cell-seek's documentation! This guide is the main source of documentation for users that are getting started with [cell-seek](https://github.com/OpenOmics/cell-seek/).
 
-The **`./cell-seek`** pipeline is composed several inter-related sub commands to setup and run the pipeline across different systems. Each of the available sub commands perform different functions: 
+The **`./cell-seek`** pipeline is composed several inter-related sub commands to setup and run the pipeline across different systems. Each of the available sub commands perform different functions:
 
  * [<code>cell-seek <b>run</b></code>](usage/run.md): Run the cell-seek pipeline with your input files.
+ * [<code>cell-seek <b>genome</b></code>](usage/genome.md): Create a custom genome reference file that can be used with the pipeline.
  * [<code>cell-seek <b>unlock</b></code>](usage/unlock.md): Unlocks a previous runs output directory.
  * [<code>cell-seek <b>cache</b></code>](usage/cache.md): Cache remote resources locally, coming soon!
 
@@ -49,7 +50,7 @@ Before getting started, we highly recommend reading through the [usage](usage/ru
 
 For more information about issues or trouble-shooting a problem, please checkout our [FAQ](faq/questions.md) prior to [opening an issue on Github](https://github.com/OpenOmics/cell-seek/issues).
 
-## Contribute 
+## Contribute
 
 This site is a living document, created for and by members like you. cell-seek is maintained by the members of NCBR and is improved by continous feedback! We encourage you to contribute new content and make improvements to existing content via pull request to our [GitHub repository :octicons-heart-fill-24:{ .heart }](https://github.com/OpenOmics/cell-seek).
 

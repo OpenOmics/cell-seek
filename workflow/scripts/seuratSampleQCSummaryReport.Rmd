@@ -1,0 +1,137 @@
+---
+title: "`r params$project`"
+subtitle: "Single Cell RNA-seq - QC"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    lightbox: true
+    toc: false
+    toc_float: 
+        collapsed: false
+    toc_depth: 3
+    fig_width: 8
+    fig_height: 5
+    number_sections: false
+params:
+  project: Project
+  seuratdir: directory
+  samples: samples
+  cellfilter: cellfilter
+---
+
+
+
+```{r setup, include=FALSE}
+
+# Setup directory ####
+
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr, quietly = T)
+library(kableExtra)
+library(stringr)
+
+plt <- function(sample, plot.name) {
+  plot.loc <- file.path(maindir, sample, plot.name)
+  return(try(plot.loc))
+}
+
+maindir <-params$seuratdir
+plt1 <- "PreFilter_Gene_Plot.png"
+plt2 <- "PostFilter_Gene_Plot.png"
+plt3 <- "PreFilter_VlnPlot_RNA.png"
+plt4 <- "PostFilter_VlnPlot_RNA.png"
+plt5 <- "PreFilter_UMAP_RNA_Filter.png"
+#plt8 <- "TopVariableGenes.png"
+plt9 <- "UMAP_RNA_res.0.8.png"
+sil_wildcard <- "SilhouetteResult_res*.csv"
+
+sample_list <- params$samples
+sample_list <- str_sort(sample_list, numeric=T)
+sample_short <- sample_list
+
+```
+
+# QC analysis  {.tabset .tabset-fade}
+
+## RNA Pre-Filter QC Plots
+
+```{r  echo=F ,results='asis'}
+
+#colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots', 'UMAP Plots')
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
+data %>% kable(format='html') %>% 
+	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
+	row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+	row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
+```
+
+## Pre-Filter UMAP
+
+```{r  echo=F ,results='asis'}
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Pre-Filter UMAP')
+data %>% kable(format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
+
+```
+
+## Cell Filter Thresholds
+
+```{r  echo=F ,results='asis'}
+data <- read.csv(params$cellfilter)
+colnames(data) <- gsub('_low', ' - Lower', colnames(data))
+colnames(data) <- gsub('_high', ' - Upper', colnames(data))
+colnames(data) <- gsub('numCellsRemove', 'Number of Cells Removed', colnames(data))
+colnames(data) <- gsub('pctCellsRemove', 'Percentage of Cells Removed', colnames(data))
+kable(data, format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
+```
+
+## RNA Post-Filter QC Plots
+
+```{r  echo=F ,results='asis'}
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt4) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt2) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
+data %>% kable(format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
+
+```
+
+## Post-Filter UMAP
+
+```{r  echo=F ,results='asis'}
+#Setting default resolution to 0.8
+resolutions <- sapply(sample_list, function(x) 0.8)
+
+#Trying to extract the resolution with the highest silhouette score for each sample. Error messages are suppressed to prevent them from showing up on the report if this fails.
+try(expr={
+
+  #Going through each sample to get the mean silhouette score for each resolution where the silhouette results are found
+  sil_max <- sapply(sample_list, function(x) {
+    sil_files <- Sys.glob(file.path(maindir, x, sil_wildcard))
+    which.max(sapply(sil_files, function(filename) {data <- read.csv(filename); mean(data$sil_width)}))
+  } )
+
+  #Extracting resolution from file name and sample name for each resolution
+  resolutions <- (sil_max %>% names %>% basename %>% tools::file_path_sans_ext() %>% str_split_fixed(pattern='_res.', n=Inf))[,2]
+  names(resolutions) <- sil_max %>% names %>% dirname %>% basename
+  cat("The UMAP plot for the resolution with the highest silhouette score was selected for each sample.\n\n")
+}, silent=TRUE)
+
+#Create data table while replacing the 0.8 from the original plt9 file name and replacing it with resolution from resolution list
+data <- cbind(sample_list, lapply(sample_list, function(x) paste0(file.path(maindir, x, plt9 %>% gsub(pattern='0.8', replacement=resolutions[x])) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
+colnames(data) <- c('Sample', 'Seurat Clusters')
+data %>% kable(format='html') %>%
+        column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
+        row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
+        row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
+
+```
+

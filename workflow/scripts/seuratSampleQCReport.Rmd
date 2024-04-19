@@ -15,6 +15,7 @@ output:
 params:
   seuratdir: seurat
   sample: sample
+  defaultfilter: True
 ---
 
 ```{r setup, include=FALSE}
@@ -27,6 +28,8 @@ library(knitr)
 library(stringr)
 library(flextable)
 library(dplyr)
+library(base64enc)
+library(xfun)
 # library(kableExtra)
 # library(scater)
 ```
@@ -42,7 +45,6 @@ seuratdir <- params$seuratdir
 #htmltools::tagList(DT::datatable(data, extensions='Buttons', options=list(dom='lBfrtip', buttons = c('copy', 'csv', 'excel'), lengthMenu = list(c(10,25,50,-1), c(10,25,50,"All")))))
 
 ```
-
 
 # QC Analysis
 
@@ -73,12 +75,12 @@ The following are the UMAP plots for the sample that was generated prior to filt
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
 if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA.png'))) {
-  cat("### Clustering\n\n")
+  cat("### Clustering{-}\n\n")
   cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA.png)")), "\n")
 }
 cat("\n\n")
 if(file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA_Filter.png'))) {
-    cat("### Filtered Cells\n\n")
+    cat("### Filtered Cells{-}\n\n")
     cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA_Filter.png)")), "\n")
 }
 cat("\n\n")
@@ -87,9 +89,13 @@ cat("\n\n")
 
 ## Cell Filter Thresholds
 
-Thresholds were calculated and used to filter out potential low quality cells and multiplets. The following are the thresholds that were set for each set of statistics.
-
 ```{r Cell Filter, warning=FALSE, message=FALSE, results='asis', fig.width=5, fig.height=7, out.width="70%"}
+if (params$defaultfilter) {
+  cat("Adaptive thresholds based on the feature distributions were used to filter out potential low quality cells and multiplets. The values were log-transformed and a threshold of 3 median absolute deviations (MADs) above and below the median was calculated. Only an upper threshold was calculated for mitochondrial percentage.^1^\n\n")
+}else {
+  cat("Thresholds were used to filter out potential low quality cells and multiplets.\n\n")
+}
+cat("The following are the thresholds that were set for each set of statistics.\n\n")
 
 thresh <- read.csv(file.path(seuratdir, 'cell_filter_info.csv'))
 
@@ -150,14 +156,44 @@ cat("\n")
 The following are the UMAP plots for the sample that was generated after filtering out the potential low quality and multiplet cells.
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
-for (filename in Sys.glob(file.path(seuratdir, "UMAP_RNA_res*.png"))) {
-  resolution <- strsplit(tools::file_path_sans_ext(basename(filename)), 'res.')[[1]][2]
-  cat("### Resolution", resolution, "\n\n")
+files <- Sys.glob(file.path(seuratdir, "UMAP_RNA_res*.png"))
+sil_files <- Sys.glob(file.path(seuratdir, "SilhouetteResult_res*.csv"))
+resolutions <- sapply(files, function(x) (x %>% basename %>% tools::file_path_sans_ext() %>% strsplit(split='res.'))[[1]][2]) %>% str_sort(numeric=T)
+sil_mean <- sapply(resolutions, function(resolution) {filename <- grep(paste0('res.', resolution, '.csv'), sil_files, value=T); if(length(filename) > 0) { data <- read.csv(filename); mean(data$sil_width)} else{-Inf}})
 
-  cat(paste0("![](", filename, ')'), "\n\n")
+if (max(sil_mean) > -Inf) {
+  cat("The average silhouette score and a silhouette plot was calculated for each cluster resolution. This was done by calculating the score for each cell using the euclidean distance generated based on the cell's principal components to obtain an independent measure of the clustering results. The silhouette score ranges from -1 to 1, where: \n\n* 1 means that clusters are far apart and data points close to each other are assigned the same cluster label\n\n* 0 means that the distance between clusters are not signifcant and data points are close to more than one cluster\n\n* -1 means that clusters may be incorrectly assigned and data points are closer to other clusters than other data points in its own cluster\n\nThe resolution with the highest detected average silhouette score is resolution", sil_mean %>% which.max %>% names, "\n\n")
 }
 
+for (resolution in resolutions) {
+  filename <- grep(paste0('res.', resolution, '.png'), files, value=T)
+  cat("### Resolution", resolution, "{.tabset .tabset-fade .tabset-pills -}\n\n")
+#  cat("#### UMAP {-}\n\n")
+  cat(paste0("![](", filename, ')'), "\n\n")
+  sil_filename <- filename %>% gsub(pattern = 'UMAP_RNA', replacement = "SilhouettePlot") %>% gsub(pattern=".png", replacement=".pdf")
+  if (file.exists(sil_filename)) {
+     data <- read.csv(sil_filename %>% gsub(pattern='Plot', replacement='Result') %>% gsub(pattern='pdf', replacement='csv'))
+     cat("Average silhouette score:", mean(data$sil_width) %>% round(digits=3), "\n\n")
+     print(xfun::embed_file(sil_filename, text = paste0("Download Silhouette Plot Resolution ", resolution)))#
+     cat("The silhouette plot itself labels the clusters starting from the number 1. The clusters are still in the order that is listed in the UMAP figure, it is just labeled from 1 onward.\n\n")
+     cat("\n\n")
+#    cat("#### Silhouette Plot {-}\n\n")
+#    cat(paste0("![](", 'data:application/pdf;base64,', base64encode(sil_filename), "){width=100%}"), "\n\n")
+  }
+  #cat(paste0("![](", 'data:application/pdf;base64,', base64encode('/gpfs/gsfs12/users/NHLBI_IDSS/dev/cell-seek-test/cellranger8/testdata/custom_ref/NCBR339_8_gex/seurat/Tube_5__Sample_5_GEX_library/SilhouettePlot_res.0.2.pdf'), ")"), "\n\n")
+}
 
+```
+
+# Session Info
+
+``` {r Session Info, comment='', results='markup', attr.output='style="max-height: 500px;"'}
+cat(readLines(file.path(seuratdir, 'sessionInfo.txt')), sep="\n")
+```
+
+``` {r References, eval=params$defaultfilter}
+cat("# References\n\n")
+cat("1. Lun AT, McCarthy DJ, Marioni JC. A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor. F1000Res. 2016 Aug 31;5:2122. doi: 10.12688/f1000research.9501.2. PMID: 27909575; PMCID: PMC5112579.\n\n")
 ```
 
 <div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>

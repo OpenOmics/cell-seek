@@ -99,6 +99,7 @@ nav:
   - About: index.md
   - Commands: 
     - cell-seek run: usage/run.md
+    - cell-seek genome: usage/genome.md
     - cell-seek unlock: usage/unlock.md
     - cell-seek cache: usage/cache.md
   - FAQ:

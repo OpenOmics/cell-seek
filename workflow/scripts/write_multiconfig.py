@@ -13,6 +13,9 @@ def main(raw_args=None):
     parser.add_argument("-l", "--lib", metavar="libraries.csv",
         action = "store", type=str, required=True,
         help="Path to libraries file to create the config file based off of")
+    parser.add_argument("--cellranger", metavar="8.0.0",
+        action = "store", type=str, required=True,
+        help="Version of CellRanger that is being run to handle changes in flags")
 #    parser.add_argument("--cell", metavar = 3000, default=3000,
 #        nargs='?', action = "store", type=int,
 #        help="Cell count")
@@ -36,7 +39,7 @@ def main(raw_args=None):
     parser.add_argument("-i", "--exclude_introns", action="store_true",
         help="Set include-introns flag to false")
     parser.add_argument("-b", "--create_bam", action="store_true",
-        help="Set no-bam flag to false")
+        help="Set flag to for creating bam file")
 
 
     args = parser.parse_args(raw_args)
@@ -55,9 +58,15 @@ def main(raw_args=None):
         if args.exclude_introns:
             spamwriter.writerow(['include-introns', 'false'])
         if args.create_bam:
-            spamwriter.writerow(['no-bam', 'false'])
+            if int(args.cellranger.split('.')[0]) >= 8:
+                spamwriter.writerow(['create-bam', 'true'])
+            else:
+                spamwriter.writerow(['no-bam', 'false'])
         else:
-            spamwriter.writerow(['no-bam', 'true'])
+            if int(args.cellranger.split('.')[0]) >= 8:
+                spamwriter.writerow(['create-bam', 'false'])
+            else:
+                spamwriter.writerow(['no-bam', 'true'])
 
         if args.feature != None:
             spamwriter.writerow([])
@@ -96,7 +105,10 @@ def main(raw_args=None):
                 with (open(args.cmosample, 'r')) as lib:
                     line = next(lib)
                     for line in lib:
-                        spamwriter.writerow(line.strip().split(','))
+                        if len(line.strip().split(',')) == 3:
+                            spamwriter.writerow(line.strip().split(','))
+                        else:
+                            spamwriter.writerow(line.strip().split(',') + [''])
 
 
 

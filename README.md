@@ -17,6 +17,7 @@ Welcome to cell-seek! Before getting started, we highly recommend reading throug
 The **`./cell-seek`** pipeline is composed several inter-related sub commands to setup and run the pipeline across different systems. Each of the available sub commands perform different functions: 
 
  * [<code>cell-seek <b>run</b></code>](https://openomics.github.io/cell-seek/usage/run/): Run the cell-seek pipeline with your input files.
+ * [<code>cell-seek <b>genome</b></code>](https://openomics.github.io/cell-seek/usage/genome/): Create a custom genome reference file that can be used with the pipeline.
  * [<code>cell-seek <b>unlock</b></code>](https://openomics.github.io/cell-seek/usage/unlock/): Unlocks a previous runs output directory.
  * [<code>cell-seek <b>cache</b></code>](https://openomics.github.io/cell-seek/usage/cache/): Cache remote resources locally, coming soon!
 

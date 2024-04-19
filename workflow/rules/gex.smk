@@ -19,7 +19,7 @@ pipeline_output += expand(
 )
 
 #CellRanger aggregate
-if aggr != "":
+if aggr != "" and len(samples) > 1:
     # CellRanger aggregate analysis
     pipeline_output += [join(workpath, 'aggregate.complete')]
 
@@ -34,17 +34,37 @@ pipeline_output += expand(
 
 # Seurat sample QC reports
 pipeline_output += expand(
-    join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html"),
+    join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html"),
     sample=samples
 )
+
+# Seurat summary QC report
+if len(samples) > 1:
+  pipeline_output += [join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")]
 
 # Cell Filter Summary File
 pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
 
 # Function definitions
 def filterFastq(wildcards):
-    return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
+    """
+    Wrapper to get a comma separated list of the directories where the FASTQ files associated with the sample are located
+    """
+    filter_paths = []
+    for sample in sample_rename(wildcards).split(','):
+        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0]
+    return(','.join(set(filter_paths)))
+    #return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
 
+def sample_rename(wildcards):
+    """
+    Wrapper to get the FASTQ file names to use processing if the sample was requested to be renamed
+    """
+    if wildcards.sample in RENAME_DICT.values():
+        names = [i[0] for i in RENAME_DICT.items() if wildcards.sample == i[1]]
+        return(','.join(names))
+    else:
+        return(wildcards.sample)
 
 def count_intron(wildcards):
     """
@@ -62,9 +82,15 @@ def count_bam(wildcards):
     See config['options']['create_bam'] for the encoded value.
     """
     if create_bam:
-        return('')
+        if CELLRANGER in ['7.1.0', '7.2.0']:
+            return('')
+        else:
+            return('--create-bam true')
     else:
-        return('--no-bam')
+        if CELLRANGER in ['7.1.0', '7.2.0']:
+            return('--no-bam')
+        else:
+            return('--create-bam false')
 
 def aggr_norm(wildcards):
     """
@@ -89,6 +115,35 @@ def filterFile(wildcards):
     else:
         return(f"--filterfile {filter_file}")
 
+def filterFileBool(wildcards):
+    """
+    Wrapper to get if a filter file was provided
+    See config['options']['filter'] for the encoded value.
+    """
+    if filter_file == "None":
+        return("TRUE")
+    else:
+        return("FALSE")
+
+def metadataFile(wildcards):
+    """
+    Wrapper to decide whether to provide a metadata file for Seurat
+    QC analysis.
+    See config['options']['metadata'] for the encoded value.
+    """
+    if METADATA_FILE == "None":
+        return("")
+    else:
+        return(f"--metadata {METADATA_FILE}")
+
+
+def seuratQCSummarySamples(wildcards):
+    """
+    Wrapper to return the sample list into an R friendly input format
+    """
+    return("c('{}')".format("','".join(samples)))
+    #"','".join(samples)
+
 
 rule count:
     output:
@@ -99,23 +154,26 @@ rule count:
     params:
         rname = "count",
         batch = "-l nodes=1:ppn=16,mem=96gb",
-        prefix = "{sample}",
+        id = "{sample}",
+        sample = sample_rename,
         transcriptome = config["references"][genome]["gex_transcriptome"],
         excludeintrons = count_intron,
         createbam = count_bam,
         fastqs = filterFastq
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
         # prior to running cellranger
-        if [ -d '{params.prefix}' ]; then
-            rm -rf '{params.prefix}/'
+        if [ -d '{params.id}' ]; then
+	        if ! [ -f '{output.html}' ]; then
+              rm -rf '{params.id}/'
+	        fi
         fi
 
         cellranger count \\
-            --id {params.prefix} \\
-            --sample {params.prefix} \\
+            --id {params.id} \\
+            --sample {params.sample} \\
             --transcriptome {params.transcriptome} \\
             --fastqs {params.fastqs} \\
             {params.excludeintrons} \\
@@ -189,7 +247,8 @@ rule seuratQC:
         outdir = join(workpath, "seurat", "{sample}"),
         data = join(workpath, "{sample}", "outs", "filtered_feature_bc_matrix"),
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
-        filter = filterFile
+        filter = filterFile,
+        metadata = metadataFile
     shell:
         """
         module load R/4.3.0
@@ -198,6 +257,7 @@ rule seuratQC:
             --datapath {params.data} \\
             --sample {params.sample} \\
             {params.filter} \\
+            {params.metadata} \\
             > {log}
         """
 
@@ -211,6 +271,7 @@ rule seuratQCReport:
         rname = "seuratQCReport",
         sample = "{sample}",
         seuratdir = join(workpath, "seurat", "{sample}"),
+        filter = filterFileBool,
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
     shell:
@@ -218,8 +279,20 @@ rule seuratQCReport:
         module load R/4.3.0
 	cd {params.tmpdir}
 	cp {params.script} ./{params.sample}.Rmd
-        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}'), output_file='{output.report}')"
+        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{output.report}')"
         """
+
+rule copySeuratQCReport:
+  input:
+    report = rules.seuratQCReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html")
+  params:
+    rname = "copySeuratQCReport"
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
 
 rule cellFilterSummary:
     input:
@@ -236,6 +309,35 @@ rule cellFilterSummary:
         module load R/4.3.0
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
         """
+
+rule seuratQCSummaryReport:
+    input:
+        rds = expand(rules.seuratQC.output.rds, sample=samples),
+        cell_filter = rules.cellFilterSummary.output.cell_filter_summary
+    output:
+        report = join(workpath, "seurat", "Summary_QC_Report.html")
+    params:
+        rname = "seuratQCSummaryReport",
+        samples = seuratQCSummarySamples,
+        seuratdir = join(workpath, "seurat"),
+        script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
+    shell:
+        """
+        module load R/4.3.0
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
+        """
+
+rule copySeuratQCSummaryReport:
+  input:
+    report = rules.seuratQCSummaryReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")
+  params:
+    rname = "copySeuratQCSummaryReport"
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
 
 rule sampleCleanup:
     input:

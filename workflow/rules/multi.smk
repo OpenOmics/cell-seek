@@ -92,6 +92,7 @@ rule multiConfig:
         rname = "multiconfig",
         flags = conditional_flags,
         transcriptome = config["references"][genome]['gex_transcriptome'],
+        cellranger = CELLRANGER,
         multiconfig = join("workflow", "scripts", "write_multiconfig.py")
     shell:
         """
@@ -99,6 +100,7 @@ rule multiConfig:
             -o {output} \\
             --ref {params.transcriptome} \\
             -l {input} \\
+            --cellranger {params.cellranger} \\
             {params.flags}
         """
 
@@ -115,7 +117,7 @@ rule multi:
         batch = "-l nodes=1:ppn=16,mem=96gb",
         prefix = "{sample}",
         transcriptome = config["references"][genome]["gex_transcriptome"],
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory

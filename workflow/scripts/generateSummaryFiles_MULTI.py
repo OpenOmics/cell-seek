@@ -43,14 +43,24 @@ def createMetricsSummary(arg1):
         temp = csv.reader(f, delimiter = ',')
         newheaders = []
         for row in temp:
-            if row[0] == 'Cells' or (row[0] == 'Library' and (row[2] == 'Physical library ID' or row[1] == 'Multiplexing Capture')):
+            if row[0] == 'Cells' or (row[0] == 'Library' and (row[2] == 'Physical library ID' or row[1] == 'Multiplexing Capture' or row[2] == 'Fastq ID')):
                 if row[2] == 'CMO Name':
-                    newheaders.append(' '.join([row[1], row[-3], row[-2]]))
+                    header = ' '.join([row[1], row[-3], row[-2]])
+                    newheaders.append(header)
+                elif row[2] == 'Fastq ID':
+                    header = ' '.join(['Fastq', row[-2]])
+                    if header not in newheaders:
+                        newheaders.append(header)
                 else:
-                    newheaders.append(' '.join([row[0], row[1], row[-2]]))
-                samplestats = stats.get(newheaders[-1], dict())
-                samplestats[sample] = row[-1]
-                stats[newheaders[-1]] = samplestats
+                    header = ' '.join([row[0], row[1], row[-2]])
+                    newheaders.append(header)
+
+                samplestats = stats.get(header, dict())
+                if row[2] == 'Fastq ID':
+                    samplestats[row[-3]] = row[-1]
+                else:
+                    samplestats[sample] = row[-1]
+                stats[header] = samplestats
         if len(newheaders) > len(headers):
             if len(set(headers)-set(newheaders)) > 0:
                 newheaders += list(set(headers)-set(newheaders))
@@ -67,6 +77,9 @@ def createMetricsSummary(arg1):
     write_sheet(workbook, stats, samples, headers, "Library")
     if len([i for i in headers if 'Multiplexing Capture' in i]) > 0:
         write_sheet(workbook, stats, samples, headers, "Multiplexing")
+
+    #Pull out the FASTQ file names to provide as sample names
+    write_sheet(workbook, stats, sorted(list(set([x for i in stats if 'Fastq' in i for x in stats[i].keys()]))), headers, "Fastq")
 
     workbook.close()
 

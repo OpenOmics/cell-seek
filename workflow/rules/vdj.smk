@@ -18,37 +18,56 @@ pipeline_output += expand(
     sample=samples
 )
 
-def filterFastq(wildcards):
-    return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
-
 
 # Function definitions
+def filterFastq(wildcards):
+    """
+    Wrapper to get a comma separated list of the directories where the FASTQ files associated with the sample are located
+    """
+    filter_paths = []
+    for sample in sample_rename(wildcards).split(','):
+        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0]
+    return(','.join(set(filter_paths)))
+    #return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
+
+def sample_rename(wildcards):
+    """
+    Wrapper to get the FASTQ file names to use processing if the sample was requested to be renamed
+    """
+    if wildcards.sample in RENAME_DICT.values():
+        names = [i[0] for i in RENAME_DICT.items() if wildcards.sample == i[1]]
+        return(','.join(names))
+    else:
+        return(wildcards.sample)
 
 
 rule count:
     output:
-        join(workpath, "{sample}", "outs", "web_summary.html")
+        html = join(workpath, "{sample}", "outs", "web_summary.html")
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
     params:
         rname = "count",
         batch = "-l nodes=1:ppn=16,mem=96gb",
-        prefix = "{sample}",
+        id = "{sample}",
+        sample = sample_rename,
         reference = config["references"][genome]["vdj_ref"],
         fastqs = filterFastq
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
         # prior to running cellranger
-        if [ -d '{params.prefix}' ]; then
-            rm -rf '{params.prefix}/'
+        if [ -d '{params.id}' ]; then
+            if ! [ -f '{output.html}' ]; then
+                rm -rf '{params.id}/'
+            fi
         fi
 
         cellranger vdj \\
-            --id {params.prefix} \\
-            --sample {params.prefix} \\
+            --id {params.id} \\
+            --sample {params.sample} \\
             --reference {params.reference} \\
             --fastqs {params.fastqs} \\
         2>{log.err} 1>{log.log}
