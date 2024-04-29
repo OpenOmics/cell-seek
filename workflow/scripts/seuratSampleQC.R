@@ -203,15 +203,17 @@ coord <- Embeddings(seur, reduction='pca')[,1:30]
 d <- dist(coord, method="euclidean")
 for(resolution in c(seq(0.2,1.0,0.2), 1.5, 2.0)){
   seur <- FindClusters(seur, resolution = resolution)
-
+  
   #Calculate silhouette scores and generate plots
-  clusters <- Idents(seur)
-  sil<-silhouette(as.numeric(clusters), dist=d)  
-  pdf(paste0("SilhouettePlot_res.",resolution,".pdf"))
-  print(plot(sil, col=as.factor(clusters[order(clusters, decreasing=FALSE)]), main=paste("Silhouette plot of Seurat clustering - resolution ", resolution, sep=""), lty=2))
-  print(abline(v=mean(sil[,3]), col="red4", lty=2))
-  dev.off()
-  write.csv(sil, paste0('SilhouetteResult_res.', resolution, '.csv'), row.names=F, quote=F)
+  try({
+    clusters <- Idents(seur)
+    sil<-silhouette(as.numeric(clusters), dist=d)  
+    pdf(paste0("SilhouettePlot_res.",resolution,".pdf"))
+    print(plot(sil, col=as.factor(clusters[order(clusters, decreasing=FALSE)]), main=paste("Silhouette plot of Seurat clustering - resolution ", resolution, sep=""), lty=2))
+    print(abline(v=mean(sil[,3]), col="red4", lty=2))
+    dev.off()
+    write.csv(sil, paste0('SilhouetteResult_res.', resolution, '.csv'), row.names=F, quote=F)
+  })
 }
 
 ## ----Elbow Plot----
