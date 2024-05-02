@@ -165,20 +165,29 @@ rule count:
         """
         # Remove output directory
         # prior to running cellranger
+        # perform additional checks to prevent accidental clean-up of existing run
         if [ -d '{params.id}' ]; then
-	        if ! [ -f '{output.html}' ]; then
-              rm -rf '{params.id}/'
-	        fi
+	    if ! [ -f '{output.html}' ]; then
+                rm -rf '{params.id}/'
+                cellranger count \\
+                    --id {params.id} \\
+                    --sample {params.sample} \\
+                    --transcriptome {params.transcriptome} \\
+                    --fastqs {params.fastqs} \\
+                    {params.excludeintrons} \\
+                    {params.createbam} \\
+                2>{log.err} 1>{log.log}
+	    fi
+        else
+            cellranger count \\
+                --id {params.id} \\
+                --sample {params.sample} \\
+                --transcriptome {params.transcriptome} \\
+                --fastqs {params.fastqs} \\
+                {params.excludeintrons} \\
+                {params.createbam} \\
+            2>{log.err} 1>{log.log}
         fi
-
-        cellranger count \\
-            --id {params.id} \\
-            --sample {params.sample} \\
-            --transcriptome {params.transcriptome} \\
-            --fastqs {params.fastqs} \\
-            {params.excludeintrons} \\
-            {params.createbam} \\
-        2>{log.err} 1>{log.log}
         """
 
 rule summaryFiles:
@@ -252,6 +261,10 @@ rule seuratQC:
     shell:
         """
         module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
         Rscript {params.seurat} \\
             --workdir {params.outdir} \\
             --datapath {params.data} \\
@@ -277,6 +290,10 @@ rule seuratQCReport:
     shell:
         """
         module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
 	cd {params.tmpdir}
 	cp {params.script} ./{params.sample}.Rmd
         R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{output.report}')"
@@ -307,6 +324,10 @@ rule cellFilterSummary:
     shell:
         """
         module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
         """
 
@@ -324,6 +345,10 @@ rule seuratQCSummaryReport:
     shell:
         """
         module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
         """
 
