@@ -62,15 +62,21 @@ rule count:
         if [ -d '{params.id}' ]; then
             if ! [ -f '{output.html}' ]; then
                 rm -rf '{params.id}/'
+                cellranger vdj \\
+                    --id {params.id} \\
+                    --sample {params.sample} \\
+                    --reference {params.reference} \\
+                    --fastqs {params.fastqs} \\
+                2>{log.err} 1>{log.log}
             fi
+        else
+            cellranger vdj \\
+                --id {params.id} \\
+                --sample {params.sample} \\
+                --reference {params.reference} \\
+                --fastqs {params.fastqs} \\
+            2>{log.err} 1>{log.log}
         fi
-
-        cellranger vdj \\
-            --id {params.id} \\
-            --sample {params.sample} \\
-            --reference {params.reference} \\
-            --fastqs {params.fastqs} \\
-        2>{log.err} 1>{log.log}
         """
 
 rule summaryFiles:

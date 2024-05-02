@@ -83,7 +83,7 @@ rule count:
         lib = join(workpath, "{sample}_libraries.csv"),
         features = features
     output:
-        join(workpath, "{sample}", "outs", "web_summary.html")
+        html = join(workpath, "{sample}", "outs", "web_summary.html")
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
@@ -101,17 +101,27 @@ rule count:
         # Remove output directory
         # prior to running cellranger
         if [ -d '{params.prefix}' ]; then
-            rm -rf '{params.prefix}/'
+            if ! [ -f '{output.html}' ]; then
+                rm -rf '{params.prefix}/'
+                cellranger count \\
+                    --id={params.prefix} \\
+                    --transcriptome={params.transcriptome} \\
+                    --libraries={input.lib} \\
+                    --feature-ref={input.features} \\
+                    {params.introns} \\
+                    {params.createbam} \\
+                2>{log.err} 1>{log.log}
+            fi
+        else
+            cellranger count \\
+                --id={params.prefix} \\
+                --transcriptome={params.transcriptome} \\
+                --libraries={input.lib} \\
+                --feature-ref={input.features} \\
+                {params.introns} \\
+                {params.createbam} \\
+            2>{log.err} 1>{log.log}
         fi
-
-        cellranger count \\
-            --id={params.prefix} \\
-            --transcriptome={params.transcriptome} \\
-            --libraries={input.lib} \\
-            --feature-ref={input.features} \\
-            {params.introns} \\
-            {params.createbam} \\
-        2>{log.err} 1>{log.log}
         """
 
 

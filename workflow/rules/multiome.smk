@@ -80,7 +80,7 @@ rule count:
     input:
         lib = join(workpath, "{sample}_libraries.csv")
     output:
-        join(workpath, "{sample}", "outs", "web_summary.html")
+        html = join(workpath, "{sample}", "outs", "web_summary.html")
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log = "run_{sample}_10x_cellranger_count.log"
@@ -95,15 +95,23 @@ rule count:
         # Remove output directory
         # prior to running cellranger
         if [ -d '{params.prefix}' ]; then
-            rm -rf '{params.prefix}/'
+            if ! [ -f '{output.html}' ]; then
+                rm -rf '{params.prefix}/'
+                cellranger-arc count \\
+                    --id={params.prefix} \\
+                    --reference={params.reference} \\
+                    --libraries={input.lib} \\
+                    {params.introns} \\
+                2>{log.err} 1>{log.log}
+            fi
+        else
+            cellranger-arc count \\
+                --id={params.prefix} \\
+                --reference={params.reference} \\
+                --libraries={input.lib} \\
+                {params.introns} \\
+            2>{log.err} 1>{log.log}
         fi
-
-        cellranger-arc count \\
-            --id={params.prefix} \\
-            --reference={params.reference} \\
-            --libraries={input.lib} \\
-            {params.introns} \\
-        2>{log.err} 1>{log.log}
         """
 
 rule summaryFiles:

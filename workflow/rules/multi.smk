@@ -123,13 +123,19 @@ rule multi:
         # Remove output directory
         # prior to running cellranger
         if [ -d '{params.prefix}' ]; then
-            rm -rf '{params.prefix}/'
+            if ! [ -f '{output}' ]; then
+                rm -rf '{params.prefix}/'
+                cellranger multi \\
+                    --id={params.prefix} \\
+                    --csv={input} \\
+                2>{log.err} 1>{log.log}
+            fi
+        else
+            cellranger multi \\
+                --id={params.prefix} \\
+                --csv={input} \\
+            2>{log.err} 1>{log.log}
         fi
-
-        cellranger multi \\
-            --id={params.prefix} \\
-            --csv={input} \\
-        2>{log.err} 1>{log.log}
         """
 
 rule summaryFiles:
