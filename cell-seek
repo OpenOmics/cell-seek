@@ -314,7 +314,7 @@ def parsed_arguments(name, description):
                 [--aggregate {{mapped, none}}][--libraries LIBRARIES] \\
                 [--features FEATURES] [--cmo-reference CMOREFERENCE] \\
                 [--cmo-sample CMOSAMPLE] [--exclude-introns] [--filter FILTER] \\
-                [--create-bam] [--rename RENAMEFILE] \\
+                [--create-bam] [--rename RENAMEFILE] [--forcecells FORCECELLS]\\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
                 --pipeline {{gex, ...}} \\
@@ -372,9 +372,11 @@ def parsed_arguments(name, description):
                                 from higher depth samples until each library type has an
                                 equal number of reads per cell that are confidently mapped.
                                 None means to not normalize at all. If this flag is not
-                                used then aggregate will not be run. To run Cell Ranger
-                                aggregate, please select one of the following options:
-                                mapped, none.
+                                used then aggregate will not be run. Aggregate analysis
+                                is generally not needed, but it can be used to generate a
+                                Loupe Browser file for interactive exploration of the data.
+                                To run Cell Ranger aggregate, please select one of the 
+                                following options: mapped, none.
                                   Example: --aggregate mapped
           --libraries LIBRARIES
                                 Libraries file. A CSV file containing information about
@@ -556,9 +558,14 @@ def parsed_arguments(name, description):
                                   Here is an example rename.csv file:
                                     FASTQ,Name
                                     original_name1,new_name1
-                                    original_name2,new_name1
-                                    original_name3,new_name2
-                                    original_name4,new_name3
+                                    original_name2,new_name2
+                                    original_name3,new_name3
+                                    original_name3-2,new_name3
+                                    original_name4,original_name4
+                                  where:
+                                    • FASTQ: The name that is used in the FASTQ file
+                                    • Name: Unique sample ID that is the sample name used for
+                                      Cell Ranger count.
                                 In this example, new_name3 has FASTQ files with two different
                                 names. With this input, both sets of FASTQ files will be used
                                 when processing the sample as new_name3. original_name4 will not
@@ -566,6 +573,52 @@ def parsed_arguments(name, description):
                                 original_name1, original_name2, original_name3, or original_name4
                                 will not be run.
                                   Example: --rename rename.csv
+          --forcecells FORCECELLS
+                                Force cells file. A CSV file containing the name of the sample
+                                (the Cell Ranger outputted name) and the number of cells to
+                                force the sample to. This flag is applicable when using the GEX,
+                                CITE, MULTI, and ATAC pipelines. It will generally be used if
+                                the first analysis run appears to do a poor job at estimating
+                                the number of cells, and a re-run is needed to adjust the number
+                                of cells in the sample.
+
+                                This file can created in two different formats. The first one
+                                can be used for the GEX, CITE, MULTI, and ATAC pipelines. It
+                                will contain the name of the sample and the number of cells
+                                to be forced to.
+                                  Here is an example forcecells.csv file:
+                                    Sample,Cells
+                                    Sample1,3000
+                                    Sample2,5000
+                                  where:
+                                    • Sample: The sample name used as the Cell Ranger output
+                                    • Cells: The number of cells the sample should be forced to
+                                In this example, Sample1 and Sample2 will be run while being forced
+                                to have 3000 and 5000 cells respectively. Any other samples that
+                                are processed will be run without using the force cells flag and
+                                will use the default cell calling algorithm.
+
+                                The second format is only compatible with the MULTI pipeline and
+                                would be used when hashtag multiplexing is used and the number of
+                                cells needs to be forced for a specific hashtagged sample.
+                                  Here is an example forcecells.csv file:
+                                    Name,Sample,Cells
+                                    Library1,HTO_1,3000
+                                    Library1,HTO_2,5000
+                                  where:
+                                    • Library: The name of the library that is provided as to Cell
+                                      Ranger when running multi analysis. This should match the
+                                      name that is given in the libraries.csv file.
+                                    • Sample: The sample ID used for the associated hashtag. This
+                                      will have to match the value used in the CMO sample file or
+                                      the CMO reference file that is provided as input. If only a
+                                      CMO reference file is provided, the pipeline default assigns
+                                      each hashtag with the IDs of HTO_1, HTO_2, etc.
+                                    • Cells: The number of cells the sample should be forced to
+                                  In this example, the hashtags HTO_1 and HTO_2 in Library 1 will
+                                  be run while being forced to 3000 and 5000 cells respectively.
+                                  Any other libraries or samples that are processed will be run
+                                  without using the force cells flag.
 
         {3}{4}Orchestration options:{5}
           --mode {{slurm,local}}
@@ -837,6 +890,15 @@ def parsed_arguments(name, description):
         required = False,
         default = "",
         choices = ['7.1.0', '7.2.0', '8.0.0'],
+        help = argparse.SUPPRESS
+    )
+
+    # Number of cells to force samples to when running Cell Ranger analysis
+    subparser_run.add_argument(
+        '--forcecells',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
         help = argparse.SUPPRESS
     )
 

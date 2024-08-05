@@ -614,8 +614,6 @@ def check_rename_file(config, rename_file, delimeter = ','):
         Config dictionary containing metadata to run pipeline
     @params rename_file <string>:
         rename file containing information about each sample
-    @params flag <string>:
-        Config flag that was used to provide the rename file
 
     """
     def _require(fields, d, lib):
@@ -657,14 +655,73 @@ def check_rename_file(config, rename_file, delimeter = ','):
         except StopIteration:
             fatal(
                 f'Error: --rename {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            └── Please ensure the file is not empty before proceeding again.'.format(rename_file)
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
             indices[colname] = i
         _require(['fastq', 'name'], indices, rename_file)
 
+def check_forcecells_file(config, forcecells_file, delimeter = ','):
+    """Check sample information from the force cells file.
+    The force cells file is a CSV file containing information
+    about the samples that required the force cells flag to be
+    used during analysis. It contains the sample's name
+    and its associated number of cells. A third column is included
+    if the samples are part of the multiplexed library where the
+    hashtags will be called by the Cell Ranger analysis.
+    @params config <dict>:
+        Config dictionary containing metadata to run pipeline
+    @params forcecells_file <string>:
+        force cells file containing information about each sample
+    @params flag <string>:
+        Config flag that was used to provide the rename file
 
+    """
+    def _require(fields, d, lib):
+        """Private function that checks to see if all required fields
+        are provided in the reference file. If nan item in fields does
+        not  exist in d, then the user forget to add this required field.
+        """
+        missing = []
+        for f in fields:
+            try:
+                i = d[f]
+            except KeyError:
+                missing.append(f)
+                pass
+        if missing:
+            fatal(
+                f"Error: Missing required fields in --rename {{}} file!\n \
+                └── Please add information for the following field(s): {{}}".format(
+                    lib,
+                    ','.join([f.lower() for f in missing])
+                )
+            )
+        return
+
+    # Get file extension to determine
+    # the appropriate file delimeter
+    extension = os.path.splitext(forcecells_file)[-1].lower()
+    if extension in ['.tsv', '.txt', '.text', '.tab']:
+        # file is tab seperated
+        delimeter = '\t'
+    # Find index of file dynamically,
+    # makes it so the order of the
+    # columns does not matter
+    indices = {}
+    with open(forcecells_file) as fh:
+        try:
+            header = next(fh).strip().split(delimeter)
+        except StopIteration:
+            fatal(
+                f'Error: --forcecells {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.'.format(forcecells_file)
+            )
+        for i in range(len(header)):
+            colname = header[i].strip().lower()
+            indices[colname] = i
+        _require(['sample', 'cells'], indices, forcecells_file)
 
 def finalcheck(config, flag, delimeter=','):
     """Check the contents of the rename or libraries
@@ -698,7 +755,7 @@ def finalcheck(config, flag, delimeter=','):
         except StopIteration:
             fatal(
                 f'Error: --rename {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            └── Please ensure the file is not empty before proceeding again.'.format(filename)
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
@@ -862,6 +919,10 @@ def add_rawdata_information(sub_args, config, ifiles):
     if sub_args.rename != None:
         rename = sub_args.rename
         check_rename_file(rename_file = rename, config=config)
+
+    if sub_args.forcecells != None:
+        forcecells = sub_args.forcecells
+        check_forcecells_file(forcecells_file = forcecells, config=config)
 
     return config
 

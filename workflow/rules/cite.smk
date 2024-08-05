@@ -34,6 +34,16 @@ for p in input_paths:
 # Functions and rules for processing CITE-seq data
 
 # Function defintions
+
+def force_cells(wildcards):
+    """
+    Wrapper to get the number of forced cells to use for processing if force cells was requested for the sample
+    """
+    if wildcards.sample in CELLCOUNT_DICT.keys():
+        return(f"--force-cells {CELLCOUNT_DICT[wildcards.sample]}")
+    else:
+        return('')
+
 def count_intron(wildcards):
     """
     Wrapper to decide whether to include introns for counting.
@@ -94,7 +104,8 @@ rule count:
 #        numcells = lambda wildcards:s2c[wildcards.sample],
         transcriptome = config["references"][genome]["cite_transcriptome"],
         introns = count_intron,
-        createbam = count_bam
+        createbam = count_bam,
+        forcecells = force_cells
     envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
@@ -110,6 +121,7 @@ rule count:
                     --feature-ref={input.features} \\
                     {params.introns} \\
                     {params.createbam} \\
+                    {params.forcecells} \\
                 2>{log.err} 1>{log.log}
             fi
         else
@@ -120,6 +132,7 @@ rule count:
                 --feature-ref={input.features} \\
                 {params.introns} \\
                 {params.createbam} \\
+                {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """

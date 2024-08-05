@@ -58,13 +58,22 @@ def filterFastq(wildcards):
 
 def sample_rename(wildcards):
     """
-    Wrapper to get the FASTQ file names to use processing if the sample was requested to be renamed
+    Wrapper to get the FASTQ file names to use for processing if the sample was requested to be renamed
     """
     if wildcards.sample in RENAME_DICT.values():
         names = [i[0] for i in RENAME_DICT.items() if wildcards.sample == i[1]]
         return(','.join(names))
     else:
         return(wildcards.sample)
+
+def force_cells(wildcards):
+    """
+    Wrapper to get the number of forced cells to use for processing if force cells was requested for the sample
+    """
+    if wildcards.sample in CELLCOUNT_DICT.keys():
+        return(f"--force-cells {CELLCOUNT_DICT[wildcards.sample]}")
+    else:
+        return('')
 
 def count_intron(wildcards):
     """
@@ -159,7 +168,8 @@ rule count:
         transcriptome = config["references"][genome]["gex_transcriptome"],
         excludeintrons = count_intron,
         createbam = count_bam,
-        fastqs = filterFastq
+        fastqs = filterFastq,
+        forcecells = force_cells
     envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
@@ -176,6 +186,7 @@ rule count:
                     --fastqs {params.fastqs} \\
                     {params.excludeintrons} \\
                     {params.createbam} \\
+                    {params.forcecells} \\
                 2>{log.err} 1>{log.log}
 	    fi
         else
@@ -186,6 +197,7 @@ rule count:
                 --fastqs {params.fastqs} \\
                 {params.excludeintrons} \\
                 {params.createbam} \\
+                {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """

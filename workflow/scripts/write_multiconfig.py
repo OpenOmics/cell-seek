@@ -1,6 +1,17 @@
 #!/usr/bin/env /mnt/nasapps/development/python/3.7.1/bin/python
 
-import argparse, csv
+import argparse, csv, re
+
+def cellLimits(s):
+    try:
+        #print(s)
+        #print(re.split(seps, s))
+        situp = []
+        return(tuple(s.split(',')))
+        #    situp.append(si.split(','))
+        return situp
+    except:
+        raise argparse.ArgumentTypeError("Coordinates must be given divided by commas and space, dot, or semicolon e.g.: 'x,y k,l,m'")
 
 def main(raw_args=None):
     parser = argparse.ArgumentParser(description="""Help to set up and run the single cell multi pipeline""")
@@ -16,9 +27,12 @@ def main(raw_args=None):
     parser.add_argument("--cellranger", metavar="8.0.0",
         action = "store", type=str, required=True,
         help="Version of CellRanger that is being run to handle changes in flags")
-#    parser.add_argument("--cell", metavar = 3000, default=3000,
-#        nargs='?', action = "store", type=int,
-#        help="Cell count")
+    parser.add_argument("--forcecells", metavar = 3000, default=None,
+        nargs='?', action = "store", type=int,
+        help="Cell count")
+    parser.add_argument("--multiplexforcecells", metavar = "sample1,3000 sample2,5000", default=None,
+        nargs='*', action = "store", type=cellLimits,
+        help="Cell count")
     parser.add_argument("--cmoref", metavar="cmo_ref.csv",
         nargs='?', action = "store", type=str,
         help="Path to cmo reference file if applicable. If not included but cmosample provided will use default 10x CMOs")
@@ -49,8 +63,8 @@ def main(raw_args=None):
         spamwriter = csv.writer(csvfile, delimiter=',')
         spamwriter.writerow(['[gene-expression]'])
         spamwriter.writerow(['reference', args.ref])
-#        if args.force:
-#            spamwriter.writerow(['force-cells', args.cell])
+        if args.force != None:
+            spamwriter.writerow(['force-cells', args.forcecells])
 #        else:
 #            spamwriter.writerow(['expect-cells', args.cell])
         if args.cmoref != None:
@@ -92,23 +106,36 @@ def main(raw_args=None):
         if args.cmoref != None or args.cmosample != None:
             spamwriter.writerow([])
             spamwriter.writerow(['[samples]'])
-            spamwriter.writerow(['sample_id', 'cmo_ids', 'description'])
+            if args.multiplexforcecells != None:
+                spamwriter.writerow(['sample_id', 'cmo_ids', 'description','force_cells'])
+            else:
+                spamwriter.writerow(['sample_id', 'cmo_ids', 'description'])
             if args.cmosample == None:
                 with open(args.cmoref, 'r') as lib:
                     line = next(lib)
                     index = 1
                     for line in lib:
                         line = line.strip().split(',')
-                        spamwriter.writerow(['HTO_%s' % index, line[0]])
+                        row = ['HTO_%s' % index, line[0], '']
+                        if args.multiplexforcecells != None:
+                            if any([row[0] in i for i in args.multiplexforcecells]) == 1:
+                                row.append([i[1] for i in args.multiplexforcecells if row[0] in i][0])
+                            else:
+                                row.append('')
+                        spamwriter.writerow(row)
                         index += 1
             else:
                 with (open(args.cmosample, 'r')) as lib:
                     line = next(lib)
                     for line in lib:
                         if len(line.strip().split(',')) == 3:
-                            spamwriter.writerow(line.strip().split(','))
+                            row = line.strip().split(',')
                         else:
-                            spamwriter.writerow(line.strip().split(',') + [''])
+                            row = line.strip().split(',') + ['']
+                        if args.multiplexforcecells != None:
+                            if any([row[0] in i for i in args.multiplexforcecells]) == 1:
+                                row.append([i[1] for i in args.multiplexforcecells if row[0] in i][0])
+                        spamwriter.writerow(row)
 
 
 
