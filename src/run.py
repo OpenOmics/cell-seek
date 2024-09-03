@@ -75,9 +75,11 @@ def copy_safe(source, target, resources = []):
 
 
 def sym_safe(input_data, target, link):
-    """Creates re-named symlinks for each FastQ file provided
+    """Creates re-named symlinks for each FastQ file or cellranger output folder provided
     as input. If a symlink already exists, it will not try to create a new symlink.
     If relative source PATH is provided, it will be converted to an absolute PATH.
+    It is currently forcing a link to be created for cellranger output folders, even if the provided
+    link parameter is False
     @param input_data <list[<str>]>:
         List of input files to symlink to target location
     @param target <str>:
@@ -87,7 +89,12 @@ def sym_safe(input_data, target, link):
     """
     input_fastqs = [] # store renamed fastq file names
     for file in input_data:
-        filename = os.path.basename(file)
+        if os.path.isdir(file): #Checking if provided file is a directory. If so, assumes it is a cellranger outs folder
+            filename = os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))
+            file = os.path.dirname(file)
+            link = True
+        else:
+            filename = os.path.basename(file)
         try:
             renamed = rename(filename)
             renamed = os.path.join(target, renamed)
@@ -131,7 +138,8 @@ def rename(filename):
         ".R2.(?P<lane>...).f(ast)?q.gz$": ".R2.fastq.gz",
         # Matches: _[12].fastq.gz, _[12].fq.gz, _[12]_fastq_gz, etc.
         "_1.f(ast)?q.gz$": ".R1.fastq.gz",
-        "_2.f(ast)?q.gz$": ".R2.fastq.gz"
+        "_2.f(ast)?q.gz$": ".R2.fastq.gz",
+        f"{os.path.sep}outs": ""
     }
 
     if (filename.endswith('.R1.fastq.gz') or
@@ -881,7 +889,7 @@ def add_rawdata_information(sub_args, config, ifiles):
     # or single-end
     # Updates config['project']['nends'] where
     # 1 = single-end, 2 = paired-end, -1 = bams
-    convert = {1: 'single-end', 2: 'paired-end', -1: 'bam'}
+    convert = {1: 'single-end', 2: 'paired-end', -1: 'bam', -2: 'cellranger'}
     nends = get_nends(ifiles)  # Checks PE data for both mates (R1 and R2)
     config['project']['nends'] = nends
     config['project']['filetype'] = convert[nends]
@@ -976,7 +984,9 @@ def get_nends(ifiles):
     # Determine if dataset contains paired-end data
     paired_end = False
     bam_files = False
+    cellranger = False
     nends_status = 1
+
     for file in ifiles:
         if file.endswith('.bam'):
             bam_files = True
@@ -986,6 +996,9 @@ def get_nends(ifiles):
             paired_end = True
             nends_status = 2
             break # dataset is paired-end
+        elif os.path.isdir(file):
+            cellranger = True
+            nends_status = -2
 
     # Check to see if both mates (R1 and R2)
     # are present paired-end data
@@ -1018,7 +1031,7 @@ def get_nends(ifiles):
                 open an issue on Github.
                 """.format(missing_mates, sys.argv[0])
             )
-    elif not bam_files:
+    elif not bam_files and not cellranger:
         # Provided only single-end data
         # not supported or recommended
         raise TypeError("""\n\tFatal: Single-end data detected.
