@@ -24,6 +24,18 @@ pipeline_output += expand(
     sample=lib_samples
 )
 
+# Seurat inital sample QC
+pipeline_output += expand(
+    join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
+    sample=lib_samples
+)
+
+# Seurat sample QC reports
+pipeline_output += expand(
+    join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html"),
+    sample=lib_samples
+)
+
 # Get set of input paths
 input_paths = [os.path.dirname(p) for p in inputs]
 input_paths_set = []
@@ -69,6 +81,39 @@ def count_bam(wildcards):
             return('--no-bam')
         else:
             return('--create-bam false')
+
+def filterFile(wildcards):
+    """
+    Wrapper to decide whether to provide a filter file for Seurat
+    QC analysis.
+    See config['options']['filter'] for the encoded value.
+    """
+    if filter_file == "None":
+        return("")
+    else:
+        return(f"--filterfile {filter_file}")
+
+def filterFileBool(wildcards):
+    """
+    Wrapper to get if a filter file was provided
+    See config['options']['filter'] for the encoded value.
+    """
+    if filter_file == "None":
+        return("TRUE")
+    else:
+        return("FALSE")
+
+def metadataFile(wildcards):
+    """
+    Wrapper to decide whether to provide a metadata file for Seurat
+    QC analysis.
+    See config['options']['metadata'] for the encoded value.
+    """
+    if METADATA_FILE == "None":
+        return("")
+    else:
+        return(f"--metadata {METADATA_FILE}")
+
 
 # Rule definitions
 rule librariesCSV:
@@ -262,3 +307,72 @@ rule sampleCleanup:
         """
         rm -r {params.cr_temp}
         """
+
+rule seuratQC:
+    input:
+        join(workpath, "{sample}", "outs", "web_summary.html")
+    output:
+        rds = join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
+        cell_filter = join(workpath, "seurat", "{sample}", "cell_filter_info.csv")
+    log:
+        join("seurat", "{sample}", "seurat.log")
+    params:
+        rname = "seuratQC",
+        sample = "{sample}",
+        outdir = join(workpath, "seurat", "{sample}"),
+        data = join(workpath, "{sample}", "outs", "filtered_feature_bc_matrix"),
+        seurat = join("workflow", "scripts", "seuratCiteSampleQC.R"),
+        filter = filterFile,
+        metadata = metadataFile
+    shell:
+        """
+        module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
+        Rscript {params.seurat} \\
+            --workdir {params.outdir} \\
+            --datapath {params.data} \\
+            --sample {params.sample} \\
+            {params.filter} \\
+            {params.metadata} \\
+            > {log}
+        """
+
+rule seuratQCReport:
+    input:
+        rds = rules.seuratQC.output.rds,
+        cell_filter = rules.seuratQC.output.cell_filter
+    output:
+        report = join(workpath, "seurat", "{sample}", "{sample}_QC_Report.html")
+    params:
+        rname = "seuratQCReport",
+        sample = "{sample}",
+        seuratdir = join(workpath, "seurat", "{sample}"),
+        filter = filterFileBool,
+        tmpdir = tmpdir,
+        script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCReport.Rmd")
+    shell:
+        """
+        module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
+        cd {params.tmpdir}
+        cp {params.script} ./{params.sample}.Rmd
+        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{output.report}')"
+        """
+
+rule copySeuratQCReport:
+  input:
+    report = rules.seuratQCReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html")
+  params:
+    rname = "copySeuratQCReport"
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
