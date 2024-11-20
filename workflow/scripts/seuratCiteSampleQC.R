@@ -391,7 +391,7 @@ suppressWarnings(dir.create('ADT'))
 #pdf('./Ridgeplots.pdf', width=21, height=21)
 count <- 1
 sil_files <- Sys.glob("SilhouetteResult_res*.csv")
-resolutions <- sapply(files, function(x) (x %>% basename %>% tools::file_path_sans_ext() %>% strsplit(split='res.'))[[1]][2]) %>% str_sort(numeric=T)
+resolutions <- sapply(sil_files, function(x) (x %>% basename %>% tools::file_path_sans_ext() %>% strsplit(split='res.'))[[1]][2]) %>% str_sort(numeric=T)
 sil_mean <- sapply(resolutions, function(resolution) {filename <- grep(paste0('res.', resolution, '.csv'), sil_files, value=T); if(length(filename) > 0) { data <- read.csv(filename); mean(data$sil_width)} else{-Inf}})
 
 if (hashtag) {
@@ -409,13 +409,14 @@ for (i in seq(1,length(names(which(rowSums(seur[['ADT']]) > adt_thresh))), by=25
 }
 
 ## ----HTO Ridge Plot---
+if (hashtag) {
 #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['HTO']]))))/5, res=300)
 #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(1:min(1+24,length(rownames(seur[['HTO']]))))/5, res=300)
 png('HTO_Ridge_Plot.png', units='in', width=12, height=9, res=300)
 #  for (i in seq(1,length(rownames(seur[["HTO"]])), by=25)) {
 print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))-(i-1)))), group.by=hashIndex))
 dev.off()
-
+}
 
 
 saveRDS(seur, 'seur_cluster.rds')

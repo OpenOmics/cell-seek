@@ -36,6 +36,10 @@ pipeline_output += expand(
     sample=lib_samples
 )
 
+if len(lib_samples) > 1:
+  pipeline_output += [join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")]
+
+
 # Get set of input paths
 input_paths = [os.path.dirname(p) for p in inputs]
 input_paths_set = []
@@ -113,6 +117,13 @@ def metadataFile(wildcards):
         return("")
     else:
         return(f"--metadata {METADATA_FILE}")
+
+
+def seuratQCSummarySamples(wildcards):
+    """
+    Wrapper to return the sample list into an R friendly input format
+    """
+    return("c('{}')".format("','".join(lib_samples)))
 
 
 # Rule definitions
@@ -372,6 +383,58 @@ rule copySeuratQCReport:
     report = join(workpath, "finalreport", "seurat", "{sample}_QC_Report.html")
   params:
     rname = "copySeuratQCReport"
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
+
+rule cellFilterSummary:
+    input:
+        cell_filters = expand(rules.seuratQC.output.cell_filter, sample=lib_samples)
+    output:
+        cell_filter_summary = join(workpath, "Project_Cell_Filters.csv")
+    params:
+        rname = "cellFilterSummary",
+        seuratdir = join(workpath, "seurat"),
+        filename = "cell_filter_info.csv",
+        script = join("workflow", "scripts", "cellFilterSummary.R")
+    shell:
+        """
+        module load R/4.3.0
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
+        Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
+        """
+
+rule seuratQCSummaryReport:
+    input:
+        rds = expand(rules.seuratQC.output.rds, sample=lib_samples),
+        cell_filter = rules.cellFilterSummary.output.cell_filter_summary
+    output:
+        report = join(workpath, "seurat", "Summary_QC_Report.html")
+    params:
+        rname = "seuratQCSummaryReport",
+        samples = seuratQCSummarySamples,
+        seuratdir = join(workpath, "seurat"),
+        script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
+    shell:
+        """
+        module load R/4.3.0
+
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
+        """
+
+rule copySeuratQCSummaryReport:
+  input:
+    report = rules.seuratQCSummaryReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")
+  params:
+    rname = "copySeuratQCSummaryReport"
   shell:
     """
     cp {input.report} {output.report}
