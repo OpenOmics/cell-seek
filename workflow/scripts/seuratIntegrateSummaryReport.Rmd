@@ -1,0 +1,105 @@
+---
+title: "Merge Integration Comparison"
+subtitle: ""
+author: "`r params$author`"
+output:
+    rmdformats::html_clean:
+        lightbox: true
+        number_sections: false
+        gallery: true
+        code-fold: true
+        toc_depth: 3
+        fig_width: 10
+        fig_height: 8
+date: "`r Sys.Date()`"
+params:
+  seuratdir: seurat
+  project: Project
+  author: ""
+---
+<style>
+table {
+  white-space: nowrap;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(rmdformats)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+library(knitr)
+library(stringr)
+```
+
+```{r, include=FALSE}
+# Init Step to make sure that the dependencies are loaded
+data <- data.frame(ID = c(1, 2, 3, 4, 5),
+                  var1 = c('a', 'b', 'c', 'd', 'e'),
+                  var2 = c(1, 1, 0, 0, 1))
+htmltools::tagList(DT::datatable(data, extensions='Buttons', options=list(dom='lBfrtip', buttons = c('copy', 'csv', 'excel'), lengthMenu = list(c(10,25,50,-1), c(10,25,50,"All")))))
+```
+
+# {.tabset .tabset-pills}
+
+```{r DataLoad, include=FALSE}
+methods <- (Sys.glob(file.path(params$seuratdir, 'UMAP_Norm_*_Sample.png')) %>% basename %>% str_split_fixed(pattern='_', n=Inf))[,3] %>% gsub(pattern='umap.', replacement='')
+
+if ('merged' %in% methods) {
+  methods <- unique(c('merged', methods))
+}
+
+buildTable <- function(data, filename, colname, caption, sample_list) {
+  data <- cbind(data, sapply(sample_list, function(x) paste0(Sys.glob(file.path(maindir, sprintf(filename, x)))))) %>% as.data.frame()
+  colnames(data)[length(data)] <- c(colname)
+
+  data[[colname]] <- sprintf(caption, sample_list, data[[colname]])
+  return(data)
+}
+
+maindir <- params$seuratdir
+```
+
+## Normalize {.tabset .tabset-pills}
+
+```{r, results='asis'}
+data <- methods
+plots <- c(paste0('UMAP_Norm_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
+
+for (plot in plots) {
+  name <- (plot %>% tools::file_path_sans_ext() %>% str_split_fixed(pattern='_', n=Inf))[4] %>% gsub(pattern='-', replacement = ' - ')
+  data <- buildTable(data=data, filename=plot, colname=name, caption=paste0("![", name, " UMAP plot for %s](%s)"), sample_list=methods)
+}
+
+colnames(data)[1] <- 'Method'
+rownames(data) <- NULL
+
+print(kable(data))
+```
+
+## SCTransform {.tabset .tabset-pills}
+
+```{r, results='asis'}
+data <- methods
+plots <- c(paste0('UMAP_', process, '_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
+
+for (plot in plots) {
+  name <- (plot %>% tools::file_path_sans_ext() %>% str_split_fixed(pattern='_', n=Inf))[4] %>% gsub(pattern='-', replacement = ' - ')
+  data <- buildTable(data=data, filename=plot, colname=name, caption=paste0("![", name, " UMAP plot for %s](%s)"), sample_list=methods)
+}
+
+colnames(data)[1] <- 'Method'
+rownames(data) <- NULL
+
+print(kable(data))
+```
+
+## Session Info
+
+``` {r Session Info, comment='', results='markup', attr.output='style="max-height: 500px;"'}
+cat(readLines(file.path(params$seuratdir, 'seuratIntegrate_sessionInfo.txt')), sep="\n")
+```
+
+<div class="tocify-extend-page" data-unique="tocify-extend-page" style="height: 0;"></div>
+

@@ -41,9 +41,17 @@ pipeline_output += expand(
     sample=samples
 )
 
+
+# Rules to run when more than one sample is present
 # Seurat summary QC report
 if len(samples) > 1:
+  # Seurat summary QC report
   pipeline_output += [join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")]
+  # Seurat Integration
+  pipeline_output += [join(workpath, "seurat", "integrate", "integrate.rds")]
+  # Seurat Integration Report
+  pipeline_output += [join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")]
+
 
 # Cell Filter Summary File
 pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
@@ -420,4 +428,22 @@ rule seuratIntegrate:
         export R_LIBS_USER='/data/OpenOmics/references/cell-seek/R/{params.rversion}/library'
 
         Rscript {params.script} --workdir {params.workdir} --rdsfiles {params.rds}
+        """
+
+rule seuratIntegrateSummaryReport:
+    input:
+        rds = join(workpath, "seurat", "integrate", "integrate.rds")
+    output:
+        report = join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")
+    params:
+        rname = "seurateIntegrateReport",
+        script = join(workpath, "workflow", "scripts", "seuratIntegrateSummaryReport.Rmd"),
+        workdir = join(workpath, "seurat", "integrate")
+    envmodules: config["tools"]["rversion"]
+    shell:
+        """
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.workdir}'), output_file='{output.report}')"
         """
