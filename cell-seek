@@ -359,11 +359,11 @@ def parsed_arguments(name, description):
                                 options: hg38, mm10, hg2024, mm2024.
                                   Example: --genome hg38
         {3}{4}Analysis options:{5}
-          --cellranger {{7.1.0, 7.2.0, 8.0.0}}
+          --cellranger {{7.1.0, 7.2.0, 8.0.0, 9.0.0}}
                                 The version of CellRanger to run. This option specifies
                                 which version of CellRanger to use when running GEX,
                                 CITE, or MULTI. Please select one of the following
-                                options: 7.1.0, 7.2.0, 8.0.0
+                                options: 7.1.0, 7.2.0, 8.0.0, 9.0.0
                                   Example: --cellranger 7.1.0
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
@@ -889,7 +889,7 @@ def parsed_arguments(name, description):
         type = str.lower,
         required = False,
         default = "",
-        choices = ['7.1.0', '7.2.0', '8.0.0'],
+        choices = ['7.1.0', '7.2.0', '8.0.0', '9.0.0'],
         help = argparse.SUPPRESS
     )
 

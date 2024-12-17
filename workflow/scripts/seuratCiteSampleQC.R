@@ -258,24 +258,22 @@ figures$PostFilter_VlnPlot_RNA <- VlnPlot(seur, features = c("nFeature_RNA", "nC
 
 
 ## ----Post-Filter ADT Violin Plot
-plots <- sapply(c("nFeature_ADT", "nCount_ADT"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
 
 png("PostFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
-do.call("grid.arrange", c(plots, nrow=1))
+VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
 dev.off()
 
-figures$PreFilter_VlnPlot_ADT <- do.call("grid.arrange", c(plots, nrow=1))
+figures$PreFilter_VlnPlot_ADT <- VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
 
 
 ## ----Post-Filter HTO Violin Plot
 if (hashtag) {
-  plots <- sapply(c("nFeature_HTO", "nCount_HTO"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
   
   png("PostFilter_VlnPlot_HTO.png", height=7, width=5, units='in', res=300)
-  do.call("grid.arrange", c(plots, nrow=1))
+  VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2)
   dev.off()
   
-  figures$PreFilter_VlnPlot_HTO
+  figures$PreFilter_VlnPlot_HTO <- VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2)
 }
 
 ## ----Normalize HTO Data----

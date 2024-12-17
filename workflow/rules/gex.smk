@@ -26,6 +26,9 @@ if aggr != "" and len(samples) > 1:
     # CellRanger aggregate intermediate cleanup
     pipeline_output += [join(workpath, "cleanup", "aggregate.aggregatecleanup")]
 
+if len(samples) > 1:
+    pipeline_output += [join(workpath, "seurat", "integrate", "integrate.rds")]
+
 # Seurat inital sample QC
 pipeline_output += expand(
     join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
@@ -244,7 +247,7 @@ rule aggregate:
         rname = "aggregate",
         id = "AggregateDatasets",
         norm = aggr_norm
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         cellranger aggr \\
@@ -270,10 +273,9 @@ rule seuratQC:
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -299,10 +301,9 @@ rule seuratQCReport:
         filter = filterFileBool,
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -333,10 +334,9 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -354,10 +354,9 @@ rule seuratQCSummaryReport:
         samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -400,4 +399,25 @@ rule aggregateCleanup:
     shell:
         """
         rm -r {params.cr_temp}
+        """
+
+rule seuratIntegrate:
+    input:
+        rds = expand(rules.seuratQC.output.rds, sample=samples)
+    output:
+        rds = join(workpath, "seurat", "integrate", "integrate.rds")
+    params:
+        rname = "seurateIntegrate",
+        script = join(workpath, "workflow", "scripts", "seuratIntegrate.R"),
+        workdir = join(workpath, "seurat", "integrate"),
+        rds = ','.join(expand(rules.seuratQC.output.rds, sample=samples)),
+        rversion = config["tools"]["rversion"].split('/')[1]
+    envmodules: config["tools"]["rversion"]
+    shell:
+        """
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+        export R_LIBS_USER='/data/OpenOmics/references/cell-seek/R/{params.rversion}/library'
+
+        Rscript {params.script} --workdir {params.workdir} --rdsfiles {params.rds}
         """

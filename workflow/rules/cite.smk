@@ -335,10 +335,9 @@ rule seuratQC:
         seurat = join("workflow", "scripts", "seuratCiteSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -364,10 +363,9 @@ rule seuratQCReport:
         filter = filterFileBool,
         tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCReport.Rmd")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -398,9 +396,9 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -418,10 +416,9 @@ rule seuratQCSummaryReport:
         samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
