@@ -27,7 +27,7 @@ if aggr != "" and len(samples) > 1:
     pipeline_output += [join(workpath, "cleanup", "aggregate.aggregatecleanup")]
 
 if len(samples) > 1:
-    pipeline_output += [join(workpath, "seurat", "integrate", "integrate.rds")]
+    pipeline_output += [join(workpath, "seurat", "integrate", "integrated_sct.rds")]
 
 # Seurat inital sample QC
 pipeline_output += expand(
@@ -48,7 +48,7 @@ if len(samples) > 1:
   # Seurat summary QC report
   pipeline_output += [join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")]
   # Seurat Integration
-  pipeline_output += [join(workpath, "seurat", "integrate", "integrate.rds")]
+  pipeline_output += [join(workpath, "seurat", "integrate", "integrated_sct.rds")]
   # Seurat Integration Report
   pipeline_output += [join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")]
 
@@ -413,7 +413,7 @@ rule seuratIntegrate:
     input:
         rds = expand(rules.seuratQC.output.rds, sample=samples)
     output:
-        rds = join(workpath, "seurat", "integrate", "integrate.rds")
+        rds = join(workpath, "seurat", "integrate", "integrated_sct.rds")
     params:
         rname = "seurateIntegrate",
         script = join(workpath, "workflow", "scripts", "seuratIntegrate.R"),
@@ -432,7 +432,7 @@ rule seuratIntegrate:
 
 rule seuratIntegrateSummaryReport:
     input:
-        rds = join(workpath, "seurat", "integrate", "integrate.rds")
+        rds = rules.seuratIntegrate.output.rds
     output:
         report = join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")
     params:

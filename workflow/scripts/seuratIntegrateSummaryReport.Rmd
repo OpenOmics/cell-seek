@@ -65,7 +65,8 @@ maindir <- params$seuratdir
 
 ```{r, results='asis'}
 data <- methods
-plots <- c(paste0('UMAP_Norm_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
+process <- 'Norm'
+plots <- c(paste0('UMAP_', process, '_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
 
 for (plot in plots) {
   name <- (plot %>% tools::file_path_sans_ext() %>% str_split_fixed(pattern='_', n=Inf))[4] %>% gsub(pattern='-', replacement = ' - ')
@@ -82,6 +83,7 @@ print(kable(data))
 
 ```{r, results='asis'}
 data <- methods
+process <- 'SCT'
 plots <- c(paste0('UMAP_', process, '_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
 
 for (plot in plots) {
