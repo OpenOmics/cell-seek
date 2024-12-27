@@ -1,6 +1,6 @@
 ---
-title: "Merge Integration Comparison"
-subtitle: ""
+title: "Seurat Merge and Integration Comparison"
+subtitle: "`r params$project`"
 author: "`r params$author`"
 output:
     rmdformats::html_clean:
@@ -14,7 +14,7 @@ output:
 date: "`r Sys.Date()`"
 params:
   seuratdir: seurat
-  project: Project
+  project: ""
   author: ""
 ---
 <style>

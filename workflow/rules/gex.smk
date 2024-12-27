@@ -50,7 +50,7 @@ if len(samples) > 1:
   # Seurat Integration
   pipeline_output += [join(workpath, "seurat", "integrate", "integrated_sct.rds")]
   # Seurat Integration Report
-  pipeline_output += [join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")]
+  pipeline_output += [join(workpath, "finalreport", "seurat", "Integrate_Overview_Report.html")]
 
 
 # Cell Filter Summary File
@@ -447,3 +447,15 @@ rule seuratIntegrateSummaryReport:
 
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.workdir}'), output_file='{output.report}')"
         """
+
+rule copySeuratIntegrateSummaryReport:
+  input:
+    report = rules.seuratIntegrateSummaryReport.output.report
+  output:
+    report = join(workpath, "finalreport", "seurat", "Integrate_Overview_Report.html")
+  params:
+    rname = "copySeuratIntegrateSummaryReport"
+  shell:
+    """
+    cp {input.report} {output.report}
+    """
