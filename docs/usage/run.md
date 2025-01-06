@@ -15,7 +15,7 @@ $ cell-seek run [--help] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
       [--cellranger {8.0.0, ...} \
       [--aggregate {{mapped, none}}] [--exclude-introns] \
-      [--library LIBRARIES] [--features FEATURES] \
+      [--libraries LIBRARIES] [--features FEATURES] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] \
       --input INPUT [INPUT ...] \
