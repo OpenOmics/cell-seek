@@ -28,7 +28,8 @@
     },
     "seuratIntegrate": {
         "threads": "8",
-        "mem": "300g",
+        "mem": "350g",
+	"partition": "largemem",
         "time": "1-00:00:00"
     }
 }
