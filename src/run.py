@@ -79,7 +79,7 @@ def sym_safe(input_data, target, link):
     as input. If a symlink already exists, it will not try to create a new symlink.
     If relative source PATH is provided, it will be converted to an absolute PATH.
     It is currently forcing a link to be created for cellranger output folders, even if the provided
-    link parameter is False
+    link parameter is Fals
     @param input_data <list[<str>]>:
         List of input files to symlink to target location
     @param target <str>:
@@ -90,14 +90,26 @@ def sym_safe(input_data, target, link):
     input_fastqs = [] # store renamed fastq file names
     for file in input_data:
         if os.path.isdir(file): #Checking if provided file is a directory. If so, assumes it is a cellranger outs folder
-            filename = os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))
-            file = os.path.dirname(file)
-            link = True
+            if os.path.exists(os.path.join(file, 'outs')):
+                #filename = os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))
+                filename = os.path.basename(file)
+                link = True
+            else:
+                raise NameError("""\n\tFatal: Provided input '{}' does not match expected format!
+                Cannot determine if existing folder is a cellranger output folder. 
+                Please check the folder name and structure before trying again.
+                Here is example of expected cellranger output folder structure:
+                  input: sampleName     structure: sampleName/outs
+                """.format(file, sys.argv[0])
+                ) 
         else:
             filename = os.path.basename(file)
         try:
-            renamed = rename(filename)
-            renamed = os.path.join(target, renamed)
+            if not link:
+                renamed = rename(filename)
+                renamed = os.path.join(target, renamed)
+            else:
+                renamed = os.path.join(target, filename)
         except NameError as e:
             if not link:
                 # Don't care about creating the symlinks
@@ -107,11 +119,12 @@ def sym_safe(input_data, target, link):
                 raise e
 
         input_fastqs.append(renamed)
+        print(filename, file, renamed)
 
         if not exists(renamed) and link:
             # Create a symlink if it does not already exist
             # Follow source symlinks to resolve any binding issues
-            os.symlink(os.path.abspath(os.path.realpath(file)), renamed)
+            os.symlink(os.path.abspath(os.path.realpath(file)), renamed, target_is_directory=True)
 
     return input_fastqs
 
@@ -187,6 +200,9 @@ def setup(sub_args, ifiles, repo_path, output_path):
     # inputs which are a mixture
     # of FastQ and BAM files
     mixed_inputs(ifiles)
+
+    # Check if inputs are folders
+    folder_inputs(ifiles)
 
     # Resolves PATH to reference file
     # template or a user generated
@@ -411,6 +427,39 @@ def mixed_inputs(ifiles):
             should exist, feel free to open an issue on Github.
             """.format(" ".join(fq_files), " ".join(bam_files), sys.argv[0])
         )
+
+def folder_inputs(ifiles):
+    """Check if a user has provided directories as input. 
+    @params ifiles list[<str>]:
+        List containing pipeline input files (renamed symlinks)
+    """
+    folder_files, file_files = [], []
+    folders = False
+    files = False
+    for file in ifiles:
+        if os.path.isdir(file):
+            folders = True
+            folder_files.append(file)
+        else:
+            files = True
+            file_files.append(file)
+
+    if folders and files:
+        # User provided a mix of folders and files
+        raise TypeError("""\n\tFatal: Detected a mixture of --input data types.
+            A mixture of folders and files were provided; however, the pipeline
+            does NOT support processing a mixture of input FastQ files and 
+            cellranger outputs.
+            Input Folders:
+                {}
+            Input Files:
+                {}
+            Please do not run the pipeline with a mixture of files and folders.
+            This feature is currently not supported within '{}'. If you feel like 
+            this functionality should exist, feel free to open an issue on Github.
+            """.format(" ".join(folder_files), " ".join(file_files), sys.argv[0])
+        )
+    return(folders)
 
 def add_user_information(config):
     """Adds username and user's home directory to config.
@@ -823,18 +872,19 @@ def check_conditional_parameters(config):
         Config dictionary containing metadata to run pipeline
     """
     errorMessage = []
+    input_folders = folder_inputs(config['options']['input'])
     #Check if cellranger version is provided when required
     if config['options']['pipeline'] in ['gex', 'cite', 'multi'] and config['options']['cellranger'] == '':
         errorMessage += [
             "Error: Version of cellranger to use is required for {} pipeline\n \
             └── Please use the --cellranger flag to select one of the available versions: {}".format(
                 config['options']['pipeline'],
-                ', '.join(['7.1.0', '7.2.0', '8.0.0'])
+                ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0'])
             )
         ]
 
     #Check if libraries file is provided when required
-    if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options']['libraries'] == 'None':
+    if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options']['libraries'] == 'None' and not input_folders:
         errorMessage += [
             "Error: Libraries file is required for {} pipeline\n \
             └── Please use the --libraries flag to provide the CSV file with the columns: {}".format(
@@ -844,7 +894,7 @@ def check_conditional_parameters(config):
         ]
 
     #Check if features file is provided when required
-    if config['options']['pipeline'] in ['cite'] and config['options']['features'] == 'None':
+    if config['options']['pipeline'] in ['cite'] and config['options']['features'] == 'None' and not input_folders:
         errorMessage += [
             "Error: Features file is required for {} pipeline\n \
             └── Please use the --features flag to provide the CSV file with the columns: {}".format(

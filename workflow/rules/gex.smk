@@ -194,10 +194,7 @@ rule count:
                     --id {params.id} \\
                     --sample {params.sample} \\
                     --transcriptome {params.transcriptome} \\
-                    --fastqs {params.fastqs} \\
-                    {params.excludeintrons} \\
-                    {params.createbam} \\
-                    {params.forcecells} \\
+                    --fastqs {params.fastqs} {params.excludeintrons} {params.createbam} {params.forcecells} \\
                 2>{log.err} 1>{log.log}
 	    fi
         else
@@ -205,10 +202,7 @@ rule count:
                 --id {params.id} \\
                 --sample {params.sample} \\
                 --transcriptome {params.transcriptome} \\
-                --fastqs {params.fastqs} \\
-                {params.excludeintrons} \\
-                {params.createbam} \\
-                {params.forcecells} \\
+                --fastqs {params.fastqs} {params.excludeintrons} {params.createbam} {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """
@@ -393,7 +387,9 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_RNA_COUNTER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """
 
 rule aggregateCleanup:
@@ -432,7 +428,7 @@ rule seuratIntegrate:
 
 rule seuratIntegrateSummaryReport:
     input:
-        rds = rules.seuratIntegrate.output.rds
+        rds = join(workpath, "seurat", "integrate", "integrated_sct.rds")
     output:
         report = join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")
     params:
@@ -450,7 +446,7 @@ rule seuratIntegrateSummaryReport:
 
 rule copySeuratIntegrateSummaryReport:
   input:
-    report = rules.seuratIntegrateSummaryReport.output.report
+    report = join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")
   output:
     report = join(workpath, "finalreport", "seurat", "Integrate_Overview_Report.html")
   params:

@@ -1,11 +1,5 @@
 # Pipeline output definition
 
-# Single sample libraries files for cellranger multi
-pipeline_output += expand(
-    join(workpath, "{sample}.csv"),
-    sample=lib_samples
-)
-
 # Cell Ranger multi output
 pipeline_output += expand(
     join(workpath, "{sample}", "outs", "config.csv"),
@@ -61,11 +55,12 @@ def conditional_flags(wildcards):
         if wildcards.sample in CELLCOUNT_DICT.keys():
             flags.append(f"--forcecells {CELLCOUNT_DICT[wildcards.sample]}")
 
-    f = open(libraries, 'r')
-    for line in f:
-        if all([i in line for i in [wildcards.sample, 'VDJ']]):
-            flags.append(f'--vdjref {config["references"][genome]["vdj_ref"]}')
-            break
+    if libraries != 'None':
+      f = open(libraries, 'r')
+      for line in f:
+          if all([i in line for i in [wildcards.sample, 'VDJ']]):
+              flags.append(f'--vdjref {config["references"][genome]["vdj_ref"]}')
+              break
 
     return(' '.join(flags))
 
@@ -167,5 +162,7 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_MULTI_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+           rm -r {params.cr_temp}
+        fi
         """

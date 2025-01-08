@@ -74,8 +74,7 @@ rule count:
                   --id {params.id} \\
                   --sample {params.sample} \\
                   --reference {params.reference} \\
-                  --fastqs {params.fastqs} \\
-                  {params.forcecells} \\
+                  --fastqs {params.fastqs} {params.forcecells} \\
               2>{log.err} 1>{log.log}
             fi
         else
@@ -83,8 +82,7 @@ rule count:
                 --id {params.id} \\
                 --sample {params.sample} \\
                 --reference {params.reference} \\
-                --fastqs {params.fastqs} \\
-                {params.forcecells} \\
+                --fastqs {params.fastqs} {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """
@@ -115,5 +113,7 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_ATAC_COUNTER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """

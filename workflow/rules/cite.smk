@@ -1,11 +1,5 @@
 # Pipeline output definition
 
-# Single sample libraries files for cellranger count
-pipeline_output += expand(
-            join(workpath, "{sample}_libraries.csv"),
-            sample=lib_samples
-        )
-
 # CellRanger counts, summary report
 pipeline_output += expand(
             join(workpath, "{sample}", "outs", "web_summary.html"),
@@ -174,10 +168,7 @@ rule count:
                     --id={params.prefix} \\
                     --transcriptome={params.transcriptome} \\
                     --libraries={input.lib} \\
-                    --feature-ref={input.features} \\
-                    {params.introns} \\
-                    {params.createbam} \\
-                    {params.forcecells} \\
+                    --feature-ref={input.features} {params.introns} {params.createbam} {params.forcecells} \\
                 2>{log.err} 1>{log.log}
             fi
         else
@@ -185,10 +176,7 @@ rule count:
                 --id={params.prefix} \\
                 --transcriptome={params.transcriptome} \\
                 --libraries={input.lib} \\
-                --feature-ref={input.features} \\
-                {params.introns} \\
-                {params.createbam} \\
-                {params.forcecells} \\
+                --feature-ref={input.features} {params.introns} {params.createbam} {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """
@@ -316,7 +304,9 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_RNA_COUNTER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """
 
 rule seuratQC:

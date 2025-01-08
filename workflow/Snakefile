@@ -42,6 +42,8 @@ filter_file = config['options']['filter']	# Filter threshold file for QC analysi
 METADATA_FILE = config['options']['metadata']	# Metadata file for QC analysis (not used in all pipelines)
 if 'libraries' in config:
     lib_samples = list(config['libraries'].keys()) # Libraries file samples
+else:
+    lib_samples = samples # Handling the situation where cellranger outputs is used as input and no libraries file is provided
 pipeline_output = []
 
 

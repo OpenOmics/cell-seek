@@ -105,5 +105,7 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_VDJ_ASSEMBLER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """

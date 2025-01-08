@@ -1,11 +1,5 @@
 # Pipeline output definition
 
-# Single sample libraries files for cellranger count
-pipeline_output += expand(
-            join(workpath, "{sample}_libraries.csv"),
-            sample=lib_samples
-        )
-
 # CellRanger counts, summary report
 pipeline_output += expand(
             join(workpath, "{sample}", "outs", "web_summary.html"),
@@ -100,16 +94,14 @@ rule count:
                 cellranger-arc count \\
                     --id={params.prefix} \\
                     --reference={params.reference} \\
-                    --libraries={input.lib} \\
-                    {params.introns} \\
+                    --libraries={input.lib} {params.introns} \\
                 2>{log.err} 1>{log.log}
             fi
         else
             cellranger-arc count \\
                 --id={params.prefix} \\
                 --reference={params.reference} \\
-                --libraries={input.lib} \\
-                {params.introns} \\
+                --libraries={input.lib} {params.introns} \\
             2>{log.err} 1>{log.log}
         fi
         """
@@ -140,5 +132,7 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_ATAC_GEX_COUNTER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """

@@ -324,17 +324,25 @@ def parsed_arguments(name, description):
 
         {3}{4}Description:{5}
           To run the cell-seek pipeline with your data raw data, please
-        provide a space seperated list of FastQ (globbing is supported) and an output
+        provide a space separated list of FastQ (globbing is supported) and an output
         directory to store results.
 
         {3}{4}Required arguments:{5}
           --input INPUT [INPUT ...]
-                                Input FastQ file(s) to process. The pipeline does NOT
-                                support single-end data. FastQ files for one or more
-                                samples can be provided. Multiple input FastQ files
-                                should be seperated by a space. Globbing for multiple
-                                file is also supported.
+                                Input FastQ file(s) or Cell Ranger output folders to
+                                process. The pipeline does NOT support single-end data. 
+                                FastQ files for one or more samples can be provided. 
+                                Multiple input FastQ files per sample can be provided. 
+                                Multiple input FastQ files should be separated by a 
+                                space.
+                                Cell Ranger output folders can be provided. It is 
+                                expected that the outs folder is contained within the 
+                                Cell Ranger output folders.
+                                Globbing for multiple files/folders is also supported.
+                                FastQ Input:
                                   Example: --input .tests/*.R?.fastq.gz
+                                Cell Ranger Input:
+                                  Example: --input .tests/*/
           --output OUTPUT
                                 Path to an output directory. This location is where
                                 the pipeline will create all of its output files, also

@@ -39,12 +39,18 @@ The following is a breakdown of the required and optional arguments for each of 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
+
 
 ---  
   `--output OUTPUT`
@@ -219,12 +225,17 @@ Each of the following arguments are optional, and do not need to be provided.
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -300,12 +311,17 @@ Each of the following arguments are required. Failure to provide a required argu
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -347,7 +363,11 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--cellranger 7.1.0`
 
----
+
+#### 2.3.2 Conditionally Required Arguments
+
+The following arguments are only required when FastQ files are used as input. They are not required when Cell Ranger output file is used as input.
+
 `--libraries LIBRARIES`
 > **Libraries file.**   
 > *type: file*
@@ -407,7 +427,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--features features.csv`
 
-#### 2.3.2 Analysis Options
+#### 2.3.3 Analysis Options
 
 `--exclude-introns`
 > **Exclude introns from the count alignment.**   
@@ -458,13 +478,18 @@ There are multiple different combinations of library types that may result in th
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
-  `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+`--input INPUT [INPUT ...]`  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -506,7 +531,10 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--cellranger 7.1.0`
 
----
+#### 2.4.2 Conditionally Required Arguments
+
+The following arguments are only required when FastQ files are used as input. They are not required when Cell Ranger output file is used as input.
+
 `--libraries LIBRARIES`
 > **Libraries file.**   
 > *type: file*
@@ -535,7 +563,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--libraries libraries.csv`
 
-#### 2.4.2 Analysis Options
+#### 2.4.3 Analysis Options
 
 Each of the following arguments are optional, and do not need to be provided.
 
@@ -682,12 +710,17 @@ Each of the following arguments are optional, and do not need to be provided.
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -776,13 +809,18 @@ Each of the following arguments are required. Failure to provide a required argu
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
-  `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+`--input INPUT [INPUT ...]`  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -816,7 +854,10 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 
----
+#### 2.6.2 Conditionally Required Arguments
+
+The following arguments are only required when FastQ files are used as input. They are not required when Cell Ranger output file is used as input.
+
 `--libraries LIBRARIES`
 > **Libraries file.**   
 > *type: file*
@@ -842,7 +883,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--libraries libraries.csv`
 
 
-#### 2.6.2 Analysis Options
+#### 2.6.3 Analysis Options
 
 The multiome pipeline currently does not have any applicable analysis flags.
 
