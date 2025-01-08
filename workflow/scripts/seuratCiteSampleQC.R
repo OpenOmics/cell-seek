@@ -263,17 +263,17 @@ png("PostFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
 VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
 dev.off()
 
-figures$PreFilter_VlnPlot_ADT <- VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
+figures$PostFilter_VlnPlot_ADT <- VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
 
 
 ## ----Post-Filter HTO Violin Plot
 if (hashtag) {
   
   png("PostFilter_VlnPlot_HTO.png", height=7, width=5, units='in', res=300)
-  VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2)
+  print(VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2))
   dev.off()
   
-  figures$PreFilter_VlnPlot_HTO <- VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2)
+  figures$PostFilter_VlnPlot_HTO <- VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2)
 }
 
 ## ----Normalize HTO Data----
@@ -412,7 +412,7 @@ if (hashtag) {
 #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(1:min(1+24,length(rownames(seur[['HTO']]))))/5, res=300)
 png('HTO_Ridge_Plot.png', units='in', width=12, height=9, res=300)
 #  for (i in seq(1,length(rownames(seur[["HTO"]])), by=25)) {
-print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))-(i-1)))), group.by=hashIndex))
+print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))))), group.by=hashIndex))
 dev.off()
 }
 
