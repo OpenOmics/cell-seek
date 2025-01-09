@@ -32,7 +32,7 @@ jobs:
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
         echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'
-Dry_Run_and_Lint_cellranger:
+  Dry_Run_and_Lint_cellranger:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
