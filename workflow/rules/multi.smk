@@ -1,11 +1,5 @@
 # Pipeline output definition
 
-# Single sample libraries files for cellranger multi
-pipeline_output += expand(
-    join(workpath, "{sample}.csv"),
-    sample=lib_samples
-)
-
 # Cell Ranger multi output
 pipeline_output += expand(
     join(workpath, "{sample}", "outs", "config.csv"),
@@ -45,9 +39,6 @@ def conditional_flags(wildcards):
     if create_bam:
         flags.append('--create_bam')
 
-#    if forcecells:
-#        flags.append('--force')
-
     if features != "None":
         flags.append(f"--feature {features}")
 
@@ -57,11 +48,19 @@ def conditional_flags(wildcards):
     if cmo_sample != "None":
         flags.append(f"--cmosample {cmo_sample}")
 
-    f = open(libraries, 'r')
-    for line in f:
-        if all([i in line for i in [wildcards.sample, 'VDJ']]):
-            flags.append(f'--vdjref {config["references"][genome]["vdj_ref"]}')
-            break
+    if CELLCOUNT_LIBRARIES:
+        if wildcards.sample in CELLCOUNT_DICT.keys():
+            flags.append(f"--multiplexforcecells {' '.join([','.join(i) for i in CELLCOUNT_DICT[wildcards.sample]])}")
+    else:
+        if wildcards.sample in CELLCOUNT_DICT.keys():
+            flags.append(f"--forcecells {CELLCOUNT_DICT[wildcards.sample]}")
+
+    if libraries != 'None':
+      f = open(libraries, 'r')
+      for line in f:
+          if all([i in line for i in [wildcards.sample, 'VDJ']]):
+              flags.append(f'--vdjref {config["references"][genome]["vdj_ref"]}')
+              break
 
     return(' '.join(flags))
 
@@ -163,5 +162,7 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_MULTI_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+           rm -r {params.cr_temp}
+        fi
         """

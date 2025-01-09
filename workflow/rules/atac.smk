@@ -39,6 +39,14 @@ def sample_rename(wildcards):
     else:
         return(wildcards.sample)
 
+def force_cells(wildcards):
+    """
+    Wrapper to get the number of forced cells to use for processing if force cells was requested for the sample
+    """
+    if wildcards.sample in CELLCOUNT_DICT.keys():
+        return(f"--force-cells {CELLCOUNT_DICT[wildcards.sample]}")
+    else:
+        return('')
 
 rule count:
     output:
@@ -52,7 +60,8 @@ rule count:
         id = "{sample}",
         sample = sample_rename,
         reference = config["references"][genome]["atac_ref"],
-        fastqs = filterFastq
+        fastqs = filterFastq,
+        forcecells = force_cells
     envmodules: config["tools"]["cellranger-atac"]
     shell:
         """
@@ -65,7 +74,7 @@ rule count:
                   --id {params.id} \\
                   --sample {params.sample} \\
                   --reference {params.reference} \\
-                  --fastqs {params.fastqs} \\
+                  --fastqs {params.fastqs} {params.forcecells} \\
               2>{log.err} 1>{log.log}
             fi
         else
@@ -73,7 +82,7 @@ rule count:
                 --id {params.id} \\
                 --sample {params.sample} \\
                 --reference {params.reference} \\
-                --fastqs {params.fastqs} \\
+                --fastqs {params.fastqs} {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """
@@ -104,5 +113,7 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_ATAC_COUNTER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """

@@ -26,6 +26,9 @@ if aggr != "" and len(samples) > 1:
     # CellRanger aggregate intermediate cleanup
     pipeline_output += [join(workpath, "cleanup", "aggregate.aggregatecleanup")]
 
+if len(samples) > 1:
+    pipeline_output += [join(workpath, "seurat", "integrate", "integrated_sct.rds")]
+
 # Seurat inital sample QC
 pipeline_output += expand(
     join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
@@ -38,9 +41,17 @@ pipeline_output += expand(
     sample=samples
 )
 
+
+# Rules to run when more than one sample is present
 # Seurat summary QC report
 if len(samples) > 1:
+  # Seurat summary QC report
   pipeline_output += [join(workpath, "finalreport", "seurat", "Summary_QC_Report.html")]
+  # Seurat Integration
+  pipeline_output += [join(workpath, "seurat", "integrate", "integrated_sct.rds")]
+  # Seurat Integration Report
+  pipeline_output += [join(workpath, "finalreport", "seurat", "Integrate_Overview_Report.html")]
+
 
 # Cell Filter Summary File
 pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
@@ -58,13 +69,22 @@ def filterFastq(wildcards):
 
 def sample_rename(wildcards):
     """
-    Wrapper to get the FASTQ file names to use processing if the sample was requested to be renamed
+    Wrapper to get the FASTQ file names to use for processing if the sample was requested to be renamed
     """
     if wildcards.sample in RENAME_DICT.values():
         names = [i[0] for i in RENAME_DICT.items() if wildcards.sample == i[1]]
         return(','.join(names))
     else:
         return(wildcards.sample)
+
+def force_cells(wildcards):
+    """
+    Wrapper to get the number of forced cells to use for processing if force cells was requested for the sample
+    """
+    if wildcards.sample in CELLCOUNT_DICT.keys():
+        return(f"--force-cells {CELLCOUNT_DICT[wildcards.sample]}")
+    else:
+        return('')
 
 def count_intron(wildcards):
     """
@@ -159,7 +179,8 @@ rule count:
         transcriptome = config["references"][genome]["gex_transcriptome"],
         excludeintrons = count_intron,
         createbam = count_bam,
-        fastqs = filterFastq
+        fastqs = filterFastq,
+        forcecells = force_cells
     envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
@@ -173,9 +194,7 @@ rule count:
                     --id {params.id} \\
                     --sample {params.sample} \\
                     --transcriptome {params.transcriptome} \\
-                    --fastqs {params.fastqs} \\
-                    {params.excludeintrons} \\
-                    {params.createbam} \\
+                    --fastqs {params.fastqs} {params.excludeintrons} {params.createbam} {params.forcecells} \\
                 2>{log.err} 1>{log.log}
 	    fi
         else
@@ -183,9 +202,7 @@ rule count:
                 --id {params.id} \\
                 --sample {params.sample} \\
                 --transcriptome {params.transcriptome} \\
-                --fastqs {params.fastqs} \\
-                {params.excludeintrons} \\
-                {params.createbam} \\
+                --fastqs {params.fastqs} {params.excludeintrons} {params.createbam} {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
         """
@@ -232,7 +249,7 @@ rule aggregate:
         rname = "aggregate",
         id = "AggregateDatasets",
         norm = aggr_norm
-    envmodules: config["tools"]["cellranger"]
+    envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
         cellranger aggr \\
@@ -258,10 +275,9 @@ rule seuratQC:
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -287,10 +303,9 @@ rule seuratQCReport:
         filter = filterFileBool,
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -321,10 +336,9 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -342,10 +356,9 @@ rule seuratQCSummaryReport:
         samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
+    envmodules: config["tools"]["rversion"]
     shell:
         """
-        module load R/4.3.0
-
         unset __RLIBSUSER
         unset R_LIBS_USER
 
@@ -374,7 +387,9 @@ rule sampleCleanup:
         cr_temp = join(workpath, "{sample}", "SC_RNA_COUNTER_CS")
     shell:
         """
-        rm -r {params.cr_temp}
+        if [ -d '{params.cr_temp}' ]; then
+            rm -r {params.cr_temp}
+        fi
         """
 
 rule aggregateCleanup:
@@ -389,3 +404,54 @@ rule aggregateCleanup:
         """
         rm -r {params.cr_temp}
         """
+
+rule seuratIntegrate:
+    input:
+        rds = expand(rules.seuratQC.output.rds, sample=samples)
+    output:
+        rds = join(workpath, "seurat", "integrate", "integrated_sct.rds")
+    params:
+        rname = "seurateIntegrate",
+        script = join(workpath, "workflow", "scripts", "seuratIntegrate.R"),
+        workdir = join(workpath, "seurat", "integrate"),
+        rds = ','.join(expand(rules.seuratQC.output.rds, sample=samples)),
+        rversion = config["tools"]["rversion"].split('/')[1]
+    envmodules: config["tools"]["rversion"]
+    shell:
+        """
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+        export R_LIBS_USER='/data/OpenOmics/references/cell-seek/R/{params.rversion}/library'
+
+        Rscript {params.script} --workdir {params.workdir} --rdsfiles {params.rds}
+        """
+
+rule seuratIntegrateSummaryReport:
+    input:
+        rds = join(workpath, "seurat", "integrate", "integrated_sct.rds")
+    output:
+        report = join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")
+    params:
+        rname = "seurateIntegrateReport",
+        script = join(workpath, "workflow", "scripts", "seuratIntegrateSummaryReport.Rmd"),
+        workdir = join(workpath, "seurat", "integrate")
+    envmodules: config["tools"]["rversion"]
+    shell:
+        """
+        unset __RLIBSUSER
+        unset R_LIBS_USER
+
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.workdir}'), output_file='{output.report}')"
+        """
+
+rule copySeuratIntegrateSummaryReport:
+  input:
+    report = join(workpath, "seurat", "integrate", "IntegrateOverviewReport.html")
+  output:
+    report = join(workpath, "finalreport", "seurat", "Integrate_Overview_Report.html")
+  params:
+    rname = "copySeuratIntegrateSummaryReport"
+  shell:
+    """
+    cp {input.report} {output.report}
+    """

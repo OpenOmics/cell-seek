@@ -75,9 +75,11 @@ def copy_safe(source, target, resources = []):
 
 
 def sym_safe(input_data, target, link):
-    """Creates re-named symlinks for each FastQ file provided
+    """Creates re-named symlinks for each FastQ file or cellranger output folder provided
     as input. If a symlink already exists, it will not try to create a new symlink.
     If relative source PATH is provided, it will be converted to an absolute PATH.
+    It is currently forcing a link to be created for cellranger output folders, even if the provided
+    link parameter is Fals
     @param input_data <list[<str>]>:
         List of input files to symlink to target location
     @param target <str>:
@@ -87,10 +89,27 @@ def sym_safe(input_data, target, link):
     """
     input_fastqs = [] # store renamed fastq file names
     for file in input_data:
-        filename = os.path.basename(file)
+        if os.path.isdir(file): #Checking if provided file is a directory. If so, assumes it is a cellranger outs folder
+            if os.path.exists(os.path.join(file, 'outs')):
+                #filename = os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))
+                filename = os.path.basename(file)
+                link = True
+            else:
+                raise NameError("""\n\tFatal: Provided input '{}' does not match expected format!
+                Cannot determine if existing folder is a cellranger output folder. 
+                Please check the folder name and structure before trying again.
+                Here is example of expected cellranger output folder structure:
+                  input: sampleName     structure: sampleName/outs
+                """.format(file, sys.argv[0])
+                ) 
+        else:
+            filename = os.path.basename(file)
         try:
-            renamed = rename(filename)
-            renamed = os.path.join(target, renamed)
+            if not link:
+                renamed = rename(filename)
+                renamed = os.path.join(target, renamed)
+            else:
+                renamed = os.path.join(target, filename)
         except NameError as e:
             if not link:
                 # Don't care about creating the symlinks
@@ -100,11 +119,12 @@ def sym_safe(input_data, target, link):
                 raise e
 
         input_fastqs.append(renamed)
+        print(filename, file, renamed)
 
         if not exists(renamed) and link:
             # Create a symlink if it does not already exist
             # Follow source symlinks to resolve any binding issues
-            os.symlink(os.path.abspath(os.path.realpath(file)), renamed)
+            os.symlink(os.path.abspath(os.path.realpath(file)), renamed, target_is_directory=True)
 
     return input_fastqs
 
@@ -131,7 +151,8 @@ def rename(filename):
         ".R2.(?P<lane>...).f(ast)?q.gz$": ".R2.fastq.gz",
         # Matches: _[12].fastq.gz, _[12].fq.gz, _[12]_fastq_gz, etc.
         "_1.f(ast)?q.gz$": ".R1.fastq.gz",
-        "_2.f(ast)?q.gz$": ".R2.fastq.gz"
+        "_2.f(ast)?q.gz$": ".R2.fastq.gz",
+        f"{os.path.sep}outs": ""
     }
 
     if (filename.endswith('.R1.fastq.gz') or
@@ -179,6 +200,9 @@ def setup(sub_args, ifiles, repo_path, output_path):
     # inputs which are a mixture
     # of FastQ and BAM files
     mixed_inputs(ifiles)
+
+    # Check if inputs are folders
+    folder_inputs(ifiles)
 
     # Resolves PATH to reference file
     # template or a user generated
@@ -404,6 +428,39 @@ def mixed_inputs(ifiles):
             """.format(" ".join(fq_files), " ".join(bam_files), sys.argv[0])
         )
 
+def folder_inputs(ifiles):
+    """Check if a user has provided directories as input. 
+    @params ifiles list[<str>]:
+        List containing pipeline input files (renamed symlinks)
+    """
+    folder_files, file_files = [], []
+    folders = False
+    files = False
+    for file in ifiles:
+        if os.path.isdir(file):
+            folders = True
+            folder_files.append(file)
+        else:
+            files = True
+            file_files.append(file)
+
+    if folders and files:
+        # User provided a mix of folders and files
+        raise TypeError("""\n\tFatal: Detected a mixture of --input data types.
+            A mixture of folders and files were provided; however, the pipeline
+            does NOT support processing a mixture of input FastQ files and 
+            cellranger outputs.
+            Input Folders:
+                {}
+            Input Files:
+                {}
+            Please do not run the pipeline with a mixture of files and folders.
+            This feature is currently not supported within '{}'. If you feel like 
+            this functionality should exist, feel free to open an issue on Github.
+            """.format(" ".join(folder_files), " ".join(file_files), sys.argv[0])
+        )
+    return(folders)
+
 def add_user_information(config):
     """Adds username and user's home directory to config.
     @params config <dict>:
@@ -614,8 +671,6 @@ def check_rename_file(config, rename_file, delimeter = ','):
         Config dictionary containing metadata to run pipeline
     @params rename_file <string>:
         rename file containing information about each sample
-    @params flag <string>:
-        Config flag that was used to provide the rename file
 
     """
     def _require(fields, d, lib):
@@ -657,14 +712,73 @@ def check_rename_file(config, rename_file, delimeter = ','):
         except StopIteration:
             fatal(
                 f'Error: --rename {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            └── Please ensure the file is not empty before proceeding again.'.format(rename_file)
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
             indices[colname] = i
         _require(['fastq', 'name'], indices, rename_file)
 
+def check_forcecells_file(config, forcecells_file, delimeter = ','):
+    """Check sample information from the force cells file.
+    The force cells file is a CSV file containing information
+    about the samples that required the force cells flag to be
+    used during analysis. It contains the sample's name
+    and its associated number of cells. A third column is included
+    if the samples are part of the multiplexed library where the
+    hashtags will be called by the Cell Ranger analysis.
+    @params config <dict>:
+        Config dictionary containing metadata to run pipeline
+    @params forcecells_file <string>:
+        force cells file containing information about each sample
+    @params flag <string>:
+        Config flag that was used to provide the rename file
 
+    """
+    def _require(fields, d, lib):
+        """Private function that checks to see if all required fields
+        are provided in the reference file. If nan item in fields does
+        not  exist in d, then the user forget to add this required field.
+        """
+        missing = []
+        for f in fields:
+            try:
+                i = d[f]
+            except KeyError:
+                missing.append(f)
+                pass
+        if missing:
+            fatal(
+                f"Error: Missing required fields in --rename {{}} file!\n \
+                └── Please add information for the following field(s): {{}}".format(
+                    lib,
+                    ','.join([f.lower() for f in missing])
+                )
+            )
+        return
+
+    # Get file extension to determine
+    # the appropriate file delimeter
+    extension = os.path.splitext(forcecells_file)[-1].lower()
+    if extension in ['.tsv', '.txt', '.text', '.tab']:
+        # file is tab seperated
+        delimeter = '\t'
+    # Find index of file dynamically,
+    # makes it so the order of the
+    # columns does not matter
+    indices = {}
+    with open(forcecells_file) as fh:
+        try:
+            header = next(fh).strip().split(delimeter)
+        except StopIteration:
+            fatal(
+                f'Error: --forcecells {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.'.format(forcecells_file)
+            )
+        for i in range(len(header)):
+            colname = header[i].strip().lower()
+            indices[colname] = i
+        _require(['sample', 'cells'], indices, forcecells_file)
 
 def finalcheck(config, flag, delimeter=','):
     """Check the contents of the rename or libraries
@@ -698,7 +812,7 @@ def finalcheck(config, flag, delimeter=','):
         except StopIteration:
             fatal(
                 f'Error: --rename {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+            └── Please ensure the file is not empty before proceeding again.'.format(filename)
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
@@ -758,18 +872,19 @@ def check_conditional_parameters(config):
         Config dictionary containing metadata to run pipeline
     """
     errorMessage = []
+    input_folders = folder_inputs(config['options']['input'])
     #Check if cellranger version is provided when required
     if config['options']['pipeline'] in ['gex', 'cite', 'multi'] and config['options']['cellranger'] == '':
         errorMessage += [
             "Error: Version of cellranger to use is required for {} pipeline\n \
             └── Please use the --cellranger flag to select one of the available versions: {}".format(
                 config['options']['pipeline'],
-                ', '.join(['7.1.0', '7.2.0', '8.0.0'])
+                ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0'])
             )
         ]
 
     #Check if libraries file is provided when required
-    if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options']['libraries'] == 'None':
+    if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options']['libraries'] == 'None' and not input_folders:
         errorMessage += [
             "Error: Libraries file is required for {} pipeline\n \
             └── Please use the --libraries flag to provide the CSV file with the columns: {}".format(
@@ -779,7 +894,7 @@ def check_conditional_parameters(config):
         ]
 
     #Check if features file is provided when required
-    if config['options']['pipeline'] in ['cite'] and config['options']['features'] == 'None':
+    if config['options']['pipeline'] in ['cite'] and config['options']['features'] == 'None' and not input_folders:
         errorMessage += [
             "Error: Features file is required for {} pipeline\n \
             └── Please use the --features flag to provide the CSV file with the columns: {}".format(
@@ -824,7 +939,7 @@ def add_rawdata_information(sub_args, config, ifiles):
     # or single-end
     # Updates config['project']['nends'] where
     # 1 = single-end, 2 = paired-end, -1 = bams
-    convert = {1: 'single-end', 2: 'paired-end', -1: 'bam'}
+    convert = {1: 'single-end', 2: 'paired-end', -1: 'bam', -2: 'cellranger'}
     nends = get_nends(ifiles)  # Checks PE data for both mates (R1 and R2)
     config['project']['nends'] = nends
     config['project']['filetype'] = convert[nends]
@@ -862,6 +977,10 @@ def add_rawdata_information(sub_args, config, ifiles):
     if sub_args.rename != None:
         rename = sub_args.rename
         check_rename_file(rename_file = rename, config=config)
+
+    if sub_args.forcecells != None:
+        forcecells = sub_args.forcecells
+        check_forcecells_file(forcecells_file = forcecells, config=config)
 
     return config
 
@@ -915,7 +1034,9 @@ def get_nends(ifiles):
     # Determine if dataset contains paired-end data
     paired_end = False
     bam_files = False
+    cellranger = False
     nends_status = 1
+
     for file in ifiles:
         if file.endswith('.bam'):
             bam_files = True
@@ -925,6 +1046,9 @@ def get_nends(ifiles):
             paired_end = True
             nends_status = 2
             break # dataset is paired-end
+        elif os.path.isdir(file):
+            cellranger = True
+            nends_status = -2
 
     # Check to see if both mates (R1 and R2)
     # are present paired-end data
@@ -957,7 +1081,7 @@ def get_nends(ifiles):
                 open an issue on Github.
                 """.format(missing_mates, sys.argv[0])
             )
-    elif not bam_files:
+    elif not bam_files and not cellranger:
         # Provided only single-end data
         # not supported or recommended
         raise TypeError("""\n\tFatal: Single-end data detected.

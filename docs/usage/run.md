@@ -15,7 +15,7 @@ $ cell-seek run [--help] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
       [--cellranger {8.0.0, ...} \
       [--aggregate {{mapped, none}}] [--exclude-introns] \
-      [--library LIBRARIES] [--features FEATURES] \
+      [--libraries LIBRARIES] [--features FEATURES] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] \
       --input INPUT [INPUT ...] \
@@ -39,12 +39,18 @@ The following is a breakdown of the required and optional arguments for each of 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
+
 
 ---  
   `--output OUTPUT`
@@ -78,11 +84,11 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg2024`
 
 ---  
-  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+  `--cellranger {7.1.0, 7.2.0, 8.0.0, 9.0.0}`
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0, 9.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -94,7 +100,7 @@ Each of the following arguments are optional, and do not need to be provided.
 > **Cell Ranger aggregate normalization.**   
 > *type: string*
 >  
-> This option defines the normalization mode that should be used. Mapped is what Cell Ranger would run by default, which subsamples reads from higher depth samples until each library type has an equal number of reads per cell that are confidently mapped.  None means to not normalize at all. If this flag is not used then aggregate will not be run. To run Cell Ranger aggregate, please select one of the following options: mapped, none.
+> This option defines the normalization mode that should be used. Mapped is what Cell Ranger would run by default, which subsamples reads from higher depth samples until each library type has an equal number of reads per cell that are confidently mapped.  None means to not normalize at all. If this flag is not used then aggregate will not be run. Aggregate analysis is generally not needed, but it can be used to generate a Loupe Browser file for interactive exploration of the data. To run Cell Ranger aggregate, please select one of the following options: mapped, none.
 >
 > ***Example:*** `--aggregate mapped`
 
@@ -164,7 +170,7 @@ Each of the following arguments are optional, and do not need to be provided.
 
 ---
   `--rename RENAME`
-> **Rename sample file.**
+> **Rename sample file.**   
 > *type: file*
 >
 > Rename sample file. A CSV file containing the name of the FASTQ file and the new name of the sample. Only the samples listed in the CSV files will be run.
@@ -183,10 +189,34 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > - *FASTQ:* The name that is used in the FASTQ file
 > - *Name:* Unique sample ID that is the sample name used for Cell Ranger count.
-> 
+>
 > In this example, new_name3 has FASTQ files with two different names. With this input, both sets of FASTQ files will be used when processing the sample as new_name3. original_name4 will not be renamed. Any FASTQ file that does not have the name original_name1, original_name2, original_name3, or original_name4 will not be run.
 >
 > ***Example:*** `--rename rename.csv`
+
+---
+  `--forcecells FORCECELLS`
+> **Force cells file.**  
+> *type: file*
+>
+> Force cells file. A CSV file containing the name of the sample (the Cell Ranger outputted name) and the number of cells to force the sample to. It will generally be used if the first analysis run appears to do a poor job at estimating the number of cells, and a re-run is needed to adjust the number of cells in the sample.
+>
+> *Here is an example forcecells.csv file:*
+> ```
+> Sample,Cells
+> Sample1,3000
+> Sample2,5000
+> ```
+>
+> *Where:*
+>
+> - *Sample:* The sample name used as the Cell Ranger output
+> - *Cells:* The number of cells the sample should be forced to
+>
+> In this example, Sample1 and Sample2 will be run while being forced to have 3000 and 5000 cells respectively. Any other samples that are processed will be run without using the force cells flag and will use the default cell calling algorithm.
+>
+> ***Example:*** `--forcecells forcecells.csv`
+
 
 ### 2.2 VDJ
 
@@ -195,12 +225,17 @@ Each of the following arguments are optional, and do not need to be provided.
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -234,18 +269,18 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+  `--cellranger {7.1.0, 7.2.0, 8.0.0, 9.0.0}`
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0, 9.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
 #### 2.2.2 Analysis Options
 
   `--rename RENAME`
-> **Rename sample file.**
+> **Rename sample file.**  
 > *type: file*
 >
 > Rename sample file. A CSV file containing the name of the FASTQ file and the new name of the sample. Only the samples listed in the CSV files will be run.
@@ -276,12 +311,17 @@ Each of the following arguments are required. Failure to provide a required argu
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -315,15 +355,19 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+  `--cellranger {7.1.0, 7.2.0, 8.0.0, 9.0.0}`
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0, 9.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
----
+
+#### 2.3.2 Conditionally Required Arguments
+
+The following arguments are only required when FastQ files are used as input. They are not required when Cell Ranger output file is used as input.
+
 `--libraries LIBRARIES`
 > **Libraries file.**   
 > *type: file*
@@ -383,7 +427,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--features features.csv`
 
-#### 2.3.2 Analysis Options
+#### 2.3.3 Analysis Options
 
 `--exclude-introns`
 > **Exclude introns from the count alignment.**   
@@ -403,6 +447,29 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--create-bam`
 
+---
+`--forcecells FORCECELLS`
+> **Force cells file.**  
+> *type: file*
+>
+> Force cells file. A CSV file containing the name of the sample (the Cell Ranger outputted name) and the number of cells to force the sample to. It will generally be used if the first analysis run appears to do a poor job at estimating the number of cells, and a re-run is needed to adjust the number of cells in the sample.
+>
+> *Here is an example forcecells.csv file:*
+> ```
+> Sample,Cells
+> Sample1,3000
+> Sample2,5000
+> ```
+>
+> *Where:*
+>
+> - *Sample:* The sample name used as the Cell Ranger output
+> - *Cells:* The number of cells the sample should be forced to
+>
+> In this example, Sample1 and Sample2 will be run while being forced to have 3000 and 5000 cells respectively. Any other samples that are processed will be run without using the force cells flag and will use the default cell calling algorithm.
+>
+> ***Example:*** `--forcecells forcecells.csv`
+
 ### 2.4 MULTI
 
 There are multiple different combinations of library types that may result in the use of Cell Ranger `multi` analysis. Any combination that combines GEX and VDJ data for cell calls, or the use of HTO with the Cell Ranger hashtag caller would need `multi` analysis.
@@ -411,13 +478,18 @@ There are multiple different combinations of library types that may result in th
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
-  `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+`--input INPUT [INPUT ...]`  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -451,15 +523,18 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {7.1.0, 7.2.0, 8.0.0}`
+  `--cellranger {7.1.0, 7.2.0, 8.0.0, 9.0.0}`
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0, 9.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
----
+#### 2.4.2 Conditionally Required Arguments
+
+The following arguments are only required when FastQ files are used as input. They are not required when Cell Ranger output file is used as input.
+
 `--libraries LIBRARIES`
 > **Libraries file.**   
 > *type: file*
@@ -488,7 +563,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--libraries libraries.csv`
 
-#### 2.4.2 Analysis Options
+#### 2.4.3 Analysis Options
 
 Each of the following arguments are optional, and do not need to be provided.
 
@@ -540,7 +615,7 @@ Each of the following arguments are optional, and do not need to be provided.
 > - *id:* Unique ID for this feature. Must not contain whitespace, quote or comma characters. Each ID must be unique and must not collide with a gene identifier from the transcriptome.
 > - *name:* Human-readable name for this feature. Must not contain whitespace.
 > - *sequence:* Nucleotide barcode sequence associated with this hashtag
-> - *feature_type: Type of the feature. This should always be multiplexing capture.
+> - *feature_type:* Type of the feature. This should always be multiplexing capture.
 > - *read:* Specifies which RNA sequencing read contains the Feature Barcode sequence. Must be R1 or R2, but in most cases R2 is the correct read.
 > - *pattern:* Specifies how to extract the sequence of the feature barcode from the read.
 >
@@ -586,6 +661,47 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > ***Example:*** `--create-bam`
 
+---
+`--forcecells FORCECELLS`
+> **Force cells file.**  
+> *type: file*
+>
+> Force cells file. A CSV file containing the name of the sample (the Cell Ranger outputted name) and the number of cells to force the sample to. It will generally be used if the first analysis run appears to do a poor job at estimating the number of cells, and a re-run is needed to adjust the number of cells in the sample.
+>
+> This file can created in two different formats. The first one will contain the name of the sample and the number of cells to be forced to.
+>
+> *Here is an example forcecells.csv file:*
+> ```
+> Sample,Cells
+> Sample1,3000
+> Sample2,5000
+> ```
+>
+> *Where:*
+>
+> - *Sample:* The sample name used as the Cell Ranger output
+> - *Cells:* The number of cells the sample should be forced to
+>
+> In this example, Sample1 and Sample2 will be run while being forced to have 3000 and 5000 cells respectively. Any other samples that are processed will be run without using the force cells flag and will use the default cell calling algorithm.
+>
+> The second format is only compatible when hashtag multiplexing is used and the number of cells needs to be forced for a specific hashtagged sample.
+>
+> *Here is an example forcecells.csv file:*
+> ```
+> Name,Sample,Cells
+> Library1,Sample1,3000
+> Library1,Sample2,5000
+> ```
+>
+> *Where:*
+>
+> - *Library:* The name of the library that is provided as to Cell Ranger when running multi analysis. This should match the name that is given in the libraries.csv file.
+> - *Sample:* The sample ID used for the associated hashtag. This will have to match the value used in the CMO sample file or the CMO reference file that is provided as input. If only a CMO reference file is provided, the pipeline default assigns each hashtag with the IDs of HTO_1, HTO_2, etc.
+> - *Cells:* The number of cells the sample should be forced to
+>
+> In this example, the hashtags HTO_1 and HTO_2 in Library 1 will be run while being forced to 3000 and 5000 cells respectively. Any other libraries or samples that are processed will be run without using the force cells flag.
+>
+> ***Example:*** `--forcecells forcecells.csv`
 
 ### 2.5 ATAC
 
@@ -594,12 +710,17 @@ Each of the following arguments are optional, and do not need to be provided.
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
   `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -634,7 +755,7 @@ Each of the following arguments are required. Failure to provide a required argu
 
 
 #### 2.5.2 Analysis Options
-
+`--rename RENAME`
 > **Rename sample file.**
 > *type: file*
 >
@@ -659,19 +780,47 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--rename rename.csv`
 
+---
+  `--forcecells FORCECELLS`
+> **Force cells file.**  
+> *type: file*
+>
+> Force cells file. A CSV file containing the name of the sample (the Cell Ranger outputted name) and the number of cells to force the sample to. It will generally be used if the first analysis run appears to do a poor job at estimating the number of cells, and a re-run is needed to adjust the number of cells in the sample.
+>
+> *Here is an example forcecells.csv file:*
+> ```
+> Sample,Cells
+> Sample1,3000
+> Sample2,5000
+> ```
+>
+> *Where:*
+>
+> - *Sample:* The sample name used as the Cell Ranger output
+> - *Cells:* The number of cells the sample should be forced to
+>
+> In this example, Sample1 and Sample2 will be run while being forced to have 3000 and 5000 cells respectively. Any other samples that are processed will be run without using the force cells flag and will use the default cell calling algorithm.
+>
+> ***Example:*** `--forcecells forcecells.csv`
+
 ### 2.6 Multiome
 
 #### 2.6.1 Required Arguments
 
 Each of the following arguments are required. Failure to provide a required argument will result in a non-zero exit-code.
 
-  `--input INPUT [INPUT ...]`  
-> **Input FastQ file(s).**  
-> *type: file(s)*  
+`--input INPUT [INPUT ...]`  
+> **Input FastQ file(s) or Cell Ranger folder(s).**  
+> *type: file(s) or folder(s)*  
 >
-> One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should seperated by a space. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
+> FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
 > ***Example:*** `--input .tests/*.R?.fastq.gz`
+>
+>
+> Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
+>
+> ***Example:*** `--input .tests/*/
 
 ---  
   `--output OUTPUT`
@@ -705,7 +854,10 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 
----
+#### 2.6.2 Conditionally Required Arguments
+
+The following arguments are only required when FastQ files are used as input. They are not required when Cell Ranger output file is used as input.
+
 `--libraries LIBRARIES`
 > **Libraries file.**   
 > *type: file*
@@ -731,7 +883,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--libraries libraries.csv`
 
 
-#### 2.6.2 Analysis Options
+#### 2.6.3 Analysis Options
 
 The multiome pipeline currently does not have any applicable analysis flags.
 
