@@ -32,3 +32,23 @@ jobs:
       run: |
         docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
         echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'
+Dry_Run_and_Lint_cellranger:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: docker://snakemake/snakemake:v5.24.2
+    - name: Dry Run with test data
+      run: |
+        docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
+        /opt2/cell-seek run --input \
+        /opt2/.tests/WT/ \
+        --output /opt2/output --genome hg38 --pipeline gex --cellranger 8.0.0 --mode local --dry-run
+    - name: View the pipeline config file
+      run: |
+        echo "Generated config file for pipeline...." && cat $PWD/output/config.json
+    - name: Lint Workflow
+      continue-on-error: true
+      run: |
+        docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
+        echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'
+
