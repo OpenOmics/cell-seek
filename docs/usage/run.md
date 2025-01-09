@@ -49,7 +49,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
 >
-> ***Example:*** `--input .tests/*/
+> ***Example:*** `--input .tests/*/`
 
 
 ---  
@@ -235,7 +235,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
 >
-> ***Example:*** `--input .tests/*/
+> ***Example:*** `--input .tests/*/`
 
 ---  
   `--output OUTPUT`
@@ -321,7 +321,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
 >
-> ***Example:*** `--input .tests/*/
+> ***Example:*** `--input .tests/*/`
 
 ---  
   `--output OUTPUT`
@@ -489,7 +489,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
 >
-> ***Example:*** `--input .tests/*/
+> ***Example:*** `--input .tests/*/`
 
 ---  
   `--output OUTPUT`
@@ -720,7 +720,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
 >
-> ***Example:*** `--input .tests/*/
+> ***Example:*** `--input .tests/*/`
 
 ---  
   `--output OUTPUT`
@@ -820,7 +820,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
 >
-> ***Example:*** `--input .tests/*/
+> ***Example:*** `--input .tests/*/`
 
 ---  
   `--output OUTPUT`
