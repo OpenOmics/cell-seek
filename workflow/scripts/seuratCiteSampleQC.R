@@ -341,7 +341,7 @@ seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
 
 coord <- Embeddings(seur, reduction='pca')[,1:30]
 d <- dist(coord, method="euclidean")
-for(resolution in c(seq(0.2,1.0,0.2), 1.5, 2.0)){
+for(resolution in c(0.1, seq(0.2,1.0,0.2), 1.5, 2.0)){
   seur <- FindClusters(seur, resolution = resolution)
   
   #Calculate silhouette scores and generate plots
