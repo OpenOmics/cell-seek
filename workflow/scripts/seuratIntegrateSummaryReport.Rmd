@@ -44,12 +44,6 @@ htmltools::tagList(DT::datatable(data, extensions='Buttons', options=list(dom='l
 # {.tabset .tabset-pills}
 
 ```{r DataLoad, include=FALSE}
-methods <- (Sys.glob(file.path(params$seuratdir, 'UMAP_Norm_*_Sample.png')) %>% basename %>% str_split_fixed(pattern='_', n=Inf))[,3] %>% gsub(pattern='umap.', replacement='')
-
-if ('merged' %in% methods) {
-  methods <- unique(c('merged', methods))
-}
-
 buildTable <- function(data, filename, colname, caption, sample_list) {
   data <- cbind(data, sapply(sample_list, function(x) paste0(Sys.glob(file.path(maindir, sprintf(filename, x)))))) %>% as.data.frame()
   colnames(data)[length(data)] <- c(colname)
@@ -64,6 +58,12 @@ maindir <- params$seuratdir
 ## Normalize {.tabset .tabset-pills}
 
 ```{r, results='asis'}
+methods <- (Sys.glob(file.path(params$seuratdir, 'UMAP_Norm_*_Sample.png')) %>% basename %>% str_split_fixed(pattern='_', n=Inf))[,3] %>% gsub(pattern='umap.', replacement='')
+
+if ('merged' %in% methods) {
+  methods <- unique(c('merged', methods))
+}
+
 data <- methods
 process <- 'Norm'
 plots <- c(paste0('UMAP_', process, '_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
@@ -82,6 +82,13 @@ print(kable(data))
 ## SCTransform {.tabset .tabset-pills}
 
 ```{r, results='asis'}
+methods <- (Sys.glob(file.path(params$seuratdir, 'UMAP_SCT_*_Sample.png')) %>% basename %>% str_split_fixed(pattern='_', n=Inf))[,3] %>% gsub(pattern='umap.', replacement='')
+
+if ('merged' %in% methods) {
+  methods <- unique(c('merged', methods))
+}
+
+
 data <- methods
 process <- 'SCT'
 plots <- c(paste0('UMAP_', process, '_umap.%s_Cluster.png'), paste0('UMAP_', process, '_umap.%s_Sample.png'), paste0('UMAP_', process, '_umap.%s_Sample-Split.png'))
