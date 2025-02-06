@@ -32,10 +32,7 @@ EXAMPLE:
 
 # Python standard library
 from __future__ import print_function
-import sys, os, subprocess, re, json, textwrap
-
-# 3rd party imports from pypi
-import argparse  # potential python3 3rd party package, added in python/3.5
+import sys, os, subprocess, re, json, textwrap, argparse, json
 
 # Local imports
 from src import version
@@ -253,6 +250,12 @@ def genome_options(parser, user_option, prebuilt):
     """
     # Checks for custom built genomes using rna-seek build
     if user_option.endswith('.json'):
+        with open(user_option, 'r') as _f:
+            ref = json.load(_f)
+        genomes_files = list(ref.values()) # first key "references"
+        if len(genomes_files) > 1:
+            genomes = ','.join(list(ref.keys()))
+            raise argparse.ArgumentTypeError(f"User provided Genome JSON contains multiple genome(s): {genomes}") 
         # Check file is readable or accessible
         permissions(parser, user_option, os.R_OK)
     # Checks against vaild pre-built options
