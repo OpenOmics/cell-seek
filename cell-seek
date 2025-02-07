@@ -252,9 +252,13 @@ def genome_options(parser, user_option, prebuilt):
     if user_option.endswith('.json'):
         with open(user_option, 'r') as _f:
             ref = json.load(_f)
-        genomes_files = list(ref.values()) # first key "references"
-        if len(genomes_files) > 1:
-            genomes = ','.join(list(ref.keys()))
+        # Basic check to see if user provided
+        # JSON file is formatted properly
+        if "references" not in ref.keys():
+            raise argparse.ArgumentTypeError(f"User provided Genome JSON does not appear to be valid, missing section containing 'references'!") 
+        genome_names = list(ref['references'].keys())  # resolves to reference genome name, should only be one
+        if len(genome_names) > 1:
+            genomes = ','.join(genome_names)
             raise argparse.ArgumentTypeError(f"User provided Genome JSON contains multiple genome(s): {genomes}") 
         # Check file is readable or accessible
         permissions(parser, user_option, os.R_OK)
