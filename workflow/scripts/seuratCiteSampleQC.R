@@ -49,7 +49,7 @@ seur[['ADT']] <- CreateAssayObject(counts=GetAssayData(adt_assay, slot='counts')
 # Add in HTO assay if features with HTO was found
 hashtag = FALSE
 if (length(as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE), grep('^HTO[-_]', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE)))) > 0) {
-  hto_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE), grep('^HTO[-_]', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE))),])
+  hto_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[unique(as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE), grep('^HTO[-_]', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE)))),])
   filtered_cite[['HTO']] <- names(which(apply(GetAssayData(hto_assay, slot='counts'), 1, max) <= adt_thresh))
   hto_names <- names(which(apply(GetAssayData(hto_assay, slot='counts'), 1, max) > adt_thresh))
   seur[['HTO']] <- CreateAssayObject(counts=GetAssayData(hto_assay, slot='counts')[hto_names,])
