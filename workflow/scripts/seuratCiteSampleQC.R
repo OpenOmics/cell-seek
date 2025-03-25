@@ -423,8 +423,8 @@ saveRDS(seur, 'seur_cluster.rds')
 hto_mat <- GetAssayData(object = seur, assay = "HTO", slot = "data")
 adt_mat <- GetAssayData(object = seur, assay = "ADT", slot = "data")
 dir.create(file.path(opt$workdir, "cite-seq-matrix"), showWarnings = FALSE)
-write.csv(adt_mat, file = paste0(opts$project, "_ADT_matrix.csv"))
-write.csv(hto_mat, file = paste0(opts$project, "_HTO_matrix.csv"))
+write.csv(adt_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opts$project, "_ADT_matrix.csv")))
+write.csv(hto_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opts$project, "_HTO_matrix.csv")))
 
 writeLines(capture.output(devtools::session_info()), 'sessionInfo.txt')
 
