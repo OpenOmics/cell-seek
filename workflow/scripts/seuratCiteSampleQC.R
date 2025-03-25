@@ -338,7 +338,6 @@ seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
 
-
 coord <- Embeddings(seur, reduction='pca')[,1:30]
 d <- dist(coord, method="euclidean")
 for(resolution in c(0.1, seq(0.2,1.0,0.2), 1.5, 2.0)){
@@ -419,6 +418,13 @@ dev.off()
 
 saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
+                      
+## ----Matrix export----
+hto_mat <- GetAssayData(object = seur, assay = "HTO", slot = "data")
+adt_mat <- GetAssayData(object = seur, assay = "ADT", slot = "data")
+dir.create(file.path(opt$workdir, "cite-seq-matrix"), showWarnings = FALSE)
+write.csv(adt_mat, file = paste0(opts$project, "_ADT_matrix.csv"))
+write.csv(hto_mat, file = paste0(opts$project, "_HTO_matrix.csv"))
 
 writeLines(capture.output(devtools::session_info()), 'sessionInfo.txt')
 
