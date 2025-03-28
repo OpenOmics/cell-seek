@@ -420,11 +420,16 @@ saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
                       
 ## ----Matrix export----
-hto_mat <- GetAssayData(object = seur, assay = "HTO", slot = "data")
-adt_mat <- GetAssayData(object = seur, assay = "ADT", slot = "data")
-dir.create(file.path(opt$workdir, "cite-seq-matrix"), showWarnings = FALSE)
-write.csv(adt_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opts$project, "_ADT_matrix.csv")))
-write.csv(hto_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opts$project, "_HTO_matrix.csv")))
+if ("HTO" %in% Assays(seur)) {
+    ifelse(!dir.exists(file.path(opt$workdir, "cite-seq-matrix")), dir.create(opt$workdir, "cite-seq-matrix")), FALSE)
+    hto_mat <- GetAssayData(object = seur, assay = "HTO", slot = "data")
+    write.csv(hto_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opts$project, "_HTO_matrix.csv")))
+}
+if ("ADT" %in% Assays(seur)) {
+    ifelse(!dir.exists(file.path(opt$workdir, "cite-seq-matrix")), dir.create(opt$workdir, "cite-seq-matrix")), FALSE)
+    adt_mat <- GetAssayData(object = seur, assay = "ADT", slot = "data")
+    write.csv(adt_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opts$project, "_ADT_matrix.csv")))
+}
 
 writeLines(capture.output(devtools::session_info()), 'sessionInfo.txt')
 
