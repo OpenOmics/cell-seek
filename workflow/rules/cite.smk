@@ -151,7 +151,7 @@ rule count:
         rname = "count",
         batch = "-l nodes=1:ppn=16,mem=96gb",
         prefix = "{sample}",
-#        numcells = lambda wildcards:s2c[wildcards.sample],
+        #        numcells = lambda wildcards:s2c[wildcards.sample],
         transcriptome = config["references"][genome]["cite_transcriptome"],
         introns = count_intron,
         createbam = count_bam,
@@ -314,7 +314,11 @@ rule seuratQC:
         join(workpath, "{sample}", "outs", "web_summary.html")
     output:
         rds = join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
-        cell_filter = join(workpath, "seurat", "{sample}", "cell_filter_info.csv")
+        cell_filter = join(workpath, "seurat", "{sample}", "cell_filter_info.csv"),
+        matrix = [
+            join(workpath, "seurat", "{sample}", "cite-seq-matrix", "export_HTO_matrix.csv"),
+            join(workpath, "seurat", "{sample}", "cite-seq-matrix", "export_ADT_matrix.csv")
+        ]
     log:
         join("seurat", "{sample}", "seurat.log")
     params:
@@ -331,10 +335,11 @@ rule seuratQC:
         unset __RLIBSUSER
         unset R_LIBS_USER
 
-        Rscript {params.seurat} \\
+        Rscript --vanilla {params.seurat} \\
             --workdir {params.outdir} \\
             --datapath {params.data} \\
             --sample {params.sample} \\
+            --project export \\
             {params.filter} \\
             {params.metadata} \\
             > {log}

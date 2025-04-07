@@ -338,7 +338,6 @@ seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
 
-
 coord <- Embeddings(seur, reduction='pca')[,1:30]
 d <- dist(coord, method="euclidean")
 for(resolution in c(0.1, seq(0.2,1.0,0.2), 1.5, 2.0)){
@@ -408,17 +407,35 @@ for (i in seq(1,length(names(which(rowSums(seur[['ADT']]) > adt_thresh))), by=25
 
 ## ----HTO Ridge Plot---
 if (hashtag) {
-#png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['HTO']]))))/5, res=300)
-#png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(1:min(1+24,length(rownames(seur[['HTO']]))))/5, res=300)
-png('HTO_Ridge_Plot.png', units='in', width=12, height=9, res=300)
-#  for (i in seq(1,length(rownames(seur[["HTO"]])), by=25)) {
-print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))))), group.by=hashIndex))
-dev.off()
+  #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['HTO']]))))/5, res=300)
+  #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(1:min(1+24,length(rownames(seur[['HTO']]))))/5, res=300)
+  png('HTO_Ridge_Plot.png', units='in', width=12, height=9, res=300)
+  #  for (i in seq(1,length(rownames(seur[["HTO"]])), by=25)) {
+  print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))))), group.by=hashIndex))
+  dev.off()
 }
-
 
 saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
+                      
+# ----Matrix export----
+if ( !dir.exists(file.path(opt$workdir, "cite-seq-matrix")) ) {
+  dir.create(opt$workdir, "cite-hto-adt-matrix", showWarnings = F, recursive = T, mode = "1755")
+} 
+if ( is.element("HTO", names(seur@assays)) ) {
+  hto_mat <- GetAssayData(object = seur, assay = "HTO", layer = "data")
+  write.csv(hto_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opt$project, "_HTO_matrix.csv")))
+} else {
+  x <- data.frame()
+  write.table(x, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opt$project, "_HTO_matrix.csv")), col.names=FALSE)
+}
+if ( is.element("ADT", names(seur@assays)) ) {
+  adt_mat <- GetAssayData(object = seur, assay = "ADT", layer = "data")
+  write.csv(adt_mat, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opt$project, "_ADT_matrix.csv")))
+} else {
+  x <- data.frame()
+  write.table(x, file = file.path(opt$workdir, "cite-seq-matrix", paste0(opt$project, "_ADT_matrix.csv")), col.names=FALSE)
+}
 
 writeLines(capture.output(devtools::session_info()), 'sessionInfo.txt')
 
