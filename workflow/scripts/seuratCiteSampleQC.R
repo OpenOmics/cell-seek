@@ -415,9 +415,6 @@ if (hashtag) {
   dev.off()
 }
 
-sI <- sessionInfo()
-print(sI)
-
 saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
                       
