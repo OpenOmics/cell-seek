@@ -154,7 +154,7 @@ rule summaryFiles:
 
 rule sampleCleanup:
     input:
-        html = rules.multi.output
+       join(workpath, "{sample}", "outs", "config.csv") 
     output:
         cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
     params:

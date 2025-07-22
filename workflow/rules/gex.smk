@@ -379,7 +379,7 @@ rule copySeuratQCSummaryReport:
 
 rule sampleCleanup:
     input:
-        html = rules.count.output.html
+        html = join(workpath, "{sample}", "outs", "web_summary.html")
     output:
         cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
     params:

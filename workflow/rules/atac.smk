@@ -105,7 +105,7 @@ rule summaryFiles:
 
 rule sampleCleanup:
     input:
-        rules.count.output
+        html = join(workpath, "{sample}", "outs", "web_summary.html")
     output:
         cleanup = touch(join(workpath, "cleanup", "{sample}.samplecleanup"))
     params:
