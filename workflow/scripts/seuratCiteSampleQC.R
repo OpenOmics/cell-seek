@@ -41,10 +41,14 @@ seur <- CreateSeuratObject(counts=rdata$`Gene Expression`, project = opt$project
 filtered_cite <- list()
 adt_thresh <- opt$adtthresh
 
-adt_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE, invert=TRUE), value=TRUE, ignore.case=TRUE, invert=TRUE),])
-filtered_cite[['ADT']] <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) <= adt_thresh))
-adt_names <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) > adt_thresh))
-seur[['ADT']] <- CreateAssayObject(counts=GetAssayData(adt_assay, slot='counts')[adt_names,])
+adt = FALSE
+if (length(grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE, invert=TRUE), value=TRUE, ignore.case=TRUE, invert=TRUE)) > 0) {
+  adt_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE, invert=TRUE), value=TRUE, ignore.case=TRUE, invert=TRUE),])
+  filtered_cite[['ADT']] <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) <= adt_thresh))
+  adt_names <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) > adt_thresh))
+  seur[['ADT']] <- CreateAssayObject(counts=GetAssayData(adt_assay, slot='counts')[adt_names,])
+  adt = TRUE
+}
 
 # Add in HTO assay if features with HTO was found
 hashtag = FALSE
@@ -102,9 +106,10 @@ defaultThreshold <- function(seur) {
   
 #  thresh['nFeature_ADT_low'] <- expm1(median(log1p(seur$nFeature_ADT)) - 3*mad(log1p(seur$nFeature_ADT))) %>% round
 #  thresh['nFeature_ADT_high'] <- expm1(median(log1p(seur$nFeature_ADT)) + 3*mad(log1p(seur$nFeature_ADT))) %>% round
-  thresh['nCount_ADT_low'] <- expm1(median(log1p(seur$nCount_ADT)) - 3*mad(log1p(seur$nCount_ADT))) %>% round
-  thresh['nCount_ADT_high'] <- expm1(median(log1p(seur$nCount_ADT)) + 3*mad(log1p(seur$nCount_ADT))) %>% round
-  
+  if (adt) {
+    thresh['nCount_ADT_low'] <- expm1(median(log1p(seur$nCount_ADT)) - 3*mad(log1p(seur$nCount_ADT))) %>% round
+    thresh['nCount_ADT_high'] <- expm1(median(log1p(seur$nCount_ADT)) + 3*mad(log1p(seur$nCount_ADT))) %>% round
+  }
   if (hashtag) {
     thresh['nCount_HTO_high'] <- expm1(median(log1p(seur$nCount_HTO)) + 3*mad(log1p(seur$nCount_HTO))) %>% round
   } 
@@ -114,8 +119,10 @@ defaultThreshold <- function(seur) {
   cellsToRemove <- union(cellsToRemove,  colnames(seur)[which(seur$percent.mito > thresh['percent.mito_high'])])
   
 #  cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nFeature_ADT < thresh['nFeature_ADT_low'] | seur$nFeature_ADT > thresh['nFeature_ADT_high'])])
-  cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nCount_ADT < thresh['nCount_ADT_low'] | seur$nCount_ADT > thresh['nCount_ADT_high'])])
-  
+  if (adt) {
+    cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nCount_ADT < thresh['nCount_ADT_low'] | seur$nCount_ADT > thresh['nCount_ADT_high'])])
+  }
+
   if (hashtag) {
     cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nCount_HTO > thresh['nCount_HTO_high'])])
   }
@@ -192,15 +199,16 @@ dev.off()
 figures$PreFilter_VlnPlot_RNA <- do.call("grid.arrange", c(plots, nrow=1))
 
 
+if (adt) {
 ## ----Pre-Filter ADT Violin Plot
-plots <- sapply(c("nFeature_ADT", "nCount_ADT"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+  plots <- sapply(c("nFeature_ADT", "nCount_ADT"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
 
-png("PreFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
-do.call("grid.arrange", c(plots, nrow=1))
-dev.off()
+  png("PreFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
+  do.call("grid.arrange", c(plots, nrow=1))
+  dev.off()
 
-figures$PreFilter_VlnPlot_ADT <- do.call("grid.arrange", c(plots, nrow=1))
-
+  figures$PreFilter_VlnPlot_ADT <- do.call("grid.arrange", c(plots, nrow=1))
+}
 
 ## ----Pre-Filter HTO Violin Plot
 if (hashtag) {
@@ -258,13 +266,13 @@ figures$PostFilter_VlnPlot_RNA <- VlnPlot(seur, features = c("nFeature_RNA", "nC
 
 
 ## ----Post-Filter ADT Violin Plot
+if (adt) {
+  png("PostFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
+  print(VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2))
+  dev.off()
 
-png("PostFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
-VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
-dev.off()
-
-figures$PostFilter_VlnPlot_ADT <- VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
-
+  figures$PostFilter_VlnPlot_ADT <- VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
+}
 
 ## ----Post-Filter HTO Violin Plot
 if (hashtag) {
@@ -313,19 +321,21 @@ if (hashtag) {
 
 
 ## ----ADT Normalizing----
-DefaultAssay(seur) <- 'ADT'
-VariableFeatures(seur) <- rownames(seur[["ADT"]])
-seur <- NormalizeData(seur, assay = "ADT", normalization.method = "CLR")
-seur <- ScaleData(seur, assay = "ADT", model.use = "linear")
-seur <- RunPCA(seur, assay="ADT", reduction.name = 'apca')
-seur <- FindNeighbors(seur, dims = 1:min(length(rownames(seur[['ADT']]))-1, 20), reduction = "apca")
-seur <- FindClusters(seur, graph.name = "ADT_snn", algorithm = 3, verbose = FALSE)
-seur <- RunUMAP(seur, reduction = 'apca', dims = 1:min(length(rownames(seur[['ADT']]))-1, 20), assay = 'ADT', 
+if (adt) {
+  DefaultAssay(seur) <- 'ADT'
+  VariableFeatures(seur) <- rownames(seur[["ADT"]])
+  seur <- NormalizeData(seur, assay = "ADT", normalization.method = "CLR")
+  seur <- ScaleData(seur, assay = "ADT", model.use = "linear")
+  seur <- RunPCA(seur, assay="ADT", reduction.name = 'apca')
+  seur <- FindNeighbors(seur, dims = 1:min(length(rownames(seur[['ADT']]))-1, 20), reduction = "apca")
+  seur <- FindClusters(seur, graph.name = "ADT_snn", algorithm = 3, verbose = FALSE)
+  seur <- RunUMAP(seur, reduction = 'apca', dims = 1:min(length(rownames(seur[['ADT']]))-1, 20), assay = 'ADT', 
                 reduction.name = 'adt.umap', reduction.key = 'adtUMAP_')
 
-png("UMAP_ADT.png", width=1800, height=1600, res = 300)
-DimPlot(seur, reduction='adt.umap', label = TRUE) + ggtitle("ADT")
-dev.off()
+  png("UMAP_ADT.png", width=1800, height=1600, res = 300)
+  print(DimPlot(seur, reduction='adt.umap', label = TRUE) + ggtitle("ADT"))
+  dev.off()
+}
 
 
 ## ----RNA Normalizing and Clustering----
@@ -337,6 +347,7 @@ seur <- ScaleData(seur, features = all.genes)
 seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
+
 
 coord <- Embeddings(seur, reduction='pca')[,1:30]
 d <- dist(coord, method="euclidean")
@@ -383,8 +394,6 @@ if (hashtag) {
 }
 
 ## ----ADT Ridge Plots----
-
-suppressWarnings(dir.create('ADT'))
 #pdf('./Ridgeplots.pdf', width=21, height=21)
 count <- 1
 sil_files <- Sys.glob("SilhouetteResult_res*.csv")
@@ -398,26 +407,31 @@ if (hashtag) {
 }else {
   group <- "RNA_snn_res.0.8"
 }
-for (i in seq(1,length(names(which(rowSums(seur[['ADT']]) > adt_thresh))), by=25)) {
-  png(paste0("ADT/ADT_Ridgeplots_", count, ".png"), width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['ADT']]))))/5, res=300, units='in')
-  print(RidgePlot(seur, sort(names(which(rowSums(seur[['ADT']]) > adt_thresh)))[i:min(i+24,length(rownames(seur[['ADT']])))], assay="ADT", ncol=5, group.by=group))
-  dev.off()
-  count <- count + 1
+
+if (adt) {
+  suppressWarnings(dir.create('ADT'))
+  for (i in seq(1,length(names(which(rowSums(seur[['ADT']]) > adt_thresh))), by=25)) {
+    png(paste0("ADT/ADT_Ridgeplots_", count, ".png"), width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['ADT']]))))/5, res=300, units='in')
+    print(RidgePlot(seur, sort(names(which(rowSums(seur[['ADT']]) > adt_thresh)))[i:min(i+24,length(rownames(seur[['ADT']])))], assay="ADT", ncol=5, group.by=group))
+    dev.off()
+    count <- count + 1
+  }
 }
 
 ## ----HTO Ridge Plot---
 if (hashtag) {
-  #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['HTO']]))))/5, res=300)
-  #png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(1:min(1+24,length(rownames(seur[['HTO']]))))/5, res=300)
-  png('HTO_Ridge_Plot.png', units='in', width=12, height=9, res=300)
-  #  for (i in seq(1,length(rownames(seur[["HTO"]])), by=25)) {
-  print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))))), group.by=hashIndex))
-  dev.off()
+#png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(i:min(i+24,length(rownames(seur[['HTO']]))))/5, res=300)
+#png('HTO_Ridge_Plot.png', units='in', width=21, height=4.2*length(1:min(1+24,length(rownames(seur[['HTO']]))))/5, res=300)
+png('HTO_Ridge_Plot.png', units='in', width=12, height=9, res=300)
+#  for (i in seq(1,length(rownames(seur[["HTO"]])), by=25)) {
+print(RidgePlot(seur, sort(rownames(seur[['HTO']]))[1:min(1+24,length(rownames(seur[['HTO']])))], assay="HTO", ncol=min(5, ceiling(sqrt(length(rownames(seur[['HTO']]))))), group.by=hashIndex))
+dev.off()
 }
+
 
 saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
-                      
+
 # ----Matrix export----
 if ( !dir.exists(file.path(opt$workdir, "cite-seq-matrix")) ) {
   dir.create(opt$workdir, "cite-hto-adt-matrix", showWarnings = F, recursive = T, mode = "1755")

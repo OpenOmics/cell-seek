@@ -117,15 +117,26 @@ printed <- c(apply(expand.grid(c("nFeature_RNA", "nCount_RNA", "nCount_ADT", "nC
 get_value <- function(thresh, value) {
   if (is.null(thresh[[value]])) {NA} else{sprintf("%.0f", thresh[[value]])}
 }
+
+if (length(grep(colnames(thresh), pattern='nFeature_RNA') > 0)) {
 cat("GEX Gene Count Thresholds:", paste0("(", get_value(thresh, "nFeature_RNA_low"), ", ", get_value(thresh, "nFeature_RNA_high"), ")"), "\n\n")
+}
 
+if (length(grep(colnames(thresh), pattern='nCount_RNA') > 0)) {
 cat("GEX Read Count Thresholds:", paste0("(", get_value(thresh, "nCount_RNA_low"), ", ", get_value(thresh, "nCount_RNA_high"), ")"), "\n\n")
+}
 
+if (length(grep(colnames(thresh), pattern='nCount_ADT') > 0)) {
 cat("ADT Read Count Thresholds:", paste0("(", get_value(thresh, "nCount_ADT_low"), ", ", get_value(thresh, "nCount_ADT_high"), ")"), "\n\n")
+}
 
+if (length(grep(colnames(thresh), pattern='nCount_HTO') > 0)) {
 cat("HTO Read Count Thresholds:", paste0("(", get_value(thresh, "nCount_HTO_low"), ", ", get_value(thresh, "nCount_HTO_high"), ")"), "\n\n")
+}
 
+if (length(grep(colnames(thresh), pattern='percent.mito') > 0)) {
 cat("Mitochondrial Percentage Thresholds:", paste0("(", get_value(thresh, "percent.mito_low"), ", ", get_value(thresh, "percent.mito_high"), ")"), "\n\n")
+}
 
 cat("Total cells filtered:", get_value(thresh, "numCellsRemove"), "\n\n")
 
@@ -251,11 +262,10 @@ for (resolution in resolutions) {
 
 ```
 
-## ADT Expression {.tabset .tabset-pills}
-Ridge plots have been generated for each of the ADT included in the data. 
 
-```{r, results='asis'}
-
+```{r, results='asis', eval=length(Sys.glob(file.path(seuratdir, "ADT", "*.png"))) > 0}
+cat("## ADT Expression {.tabset .tabset-pills}\n\n")
+cat("Ridge plots have been generated for each of the ADT included in the data.\n\n")
 myimages<-list.files(file.path(seuratdir, "ADT/"), pattern = ".png", full.names = TRUE)
 for (filename in myimages) {
   if (length(myimages) > 1) {
