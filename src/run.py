@@ -806,6 +806,7 @@ def finalcheck(config, flag, delimeter=','):
 
     # Dictionary holding unique contents from files to use for comparisons
     contents = {}
+    name_type = {}
     with open(filename) as fh:
         try:
             header = next(fh).strip().split(delimeter)
@@ -823,6 +824,9 @@ def finalcheck(config, flag, delimeter=','):
                 values = contents.get(i, set())
                 values.add(linelist[indices[i]])
                 contents[i] = values
+            value = name_type.get(linelist[indices['name']], set())
+            value.add(linelist[indices['type']])
+            name_type[linelist[indices['name']]] = value
 
     # Compiles the sample names and fastq paths from the input (config)
     samples  = set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']])
@@ -861,6 +865,12 @@ def finalcheck(config, flag, delimeter=','):
                     f'\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
             └── Please note that the followed listed FASTQ names are not found in the input files: {{}} '.format(flag, filename, ','.join(missing_file))
                 )
+
+    names = [name for name in name_type if (len(name_type[name]) <= 1)]
+    if len(names) > 0:
+        print(f"\nWarning: Some samples only have one feature type associated with them! \nWarning: --{{}} {{}} only contains one feature type for some of the samples.\n \
+            └── Please note that only one feature type was provided for the following sample(s): {{}} \n \
+            If this is correct, these samples do not need to be run using cellranger multi.".format(flag, filename, ','.join(names)))
 
 
 def check_conditional_parameters(config):
@@ -905,7 +915,7 @@ def check_conditional_parameters(config):
 
     #Check reference
     if config['options']['genome'] in ['hg2024', 'mm2024']:
-        if config['options']['pipeline'] in ['atac', 'multiome']:
+        if config['options']['pipeline'] in []:
             errorMessage += [
                 "Error: The {} reference is not available for the {} pipeline\n \
                 └── Please use the --genome flag to select one of the available references: {}".format(

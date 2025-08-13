@@ -368,7 +368,7 @@ def parsed_arguments(name, description):
                                 genome of the samples. {2} does comes bundled with
                                 prebuilt reference files for human and mouse samples.
                                 The newest 10X reference (2024-A) is available for
-                                GEX, CITE, and Multi analysis (hg2024, mm2024).
+                                GEX, CITE, ATAC, Multi, and Multiome analysis (hg2024, mm2024).
                                 A custom reference genome can also be provided. For
                                 prebuilt references, please select one of the following
                                 options: hg38, mm10, hg2024, mm2024.
