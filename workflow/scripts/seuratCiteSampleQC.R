@@ -82,6 +82,8 @@ figures <- list()
 
 ## ----Pre-Filter Gene Plot----
 seur[["percent.mito"]] <- PercentageFeatureSet(seur, pattern="^[Mm][Tt]-")
+seur[["percent.rps"]] <- PercentageFeatureSet(seur, pattern="^R[Pp][Ss]")
+seur[["percent.rpl"]] <- PercentageFeatureSet(seur, pattern="^R[Pp][Ll]")
 
 plot1 <- FeatureScatter(seur, feature1 = "nCount_RNA", feature2 = "percent.mito") + NoLegend()
 plot2 <- FeatureScatter(seur, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend()
@@ -92,6 +94,7 @@ plot3 <- FeatureScatter(seur, group.by='Sample', feature1 = "nFeature_RNA", feat
 png("PreFilter_Gene_Plot.png", height=5, width=10, units='in', res=300)
 plot1+plot3+plot2
 dev.off()
+
 
 ## ----Cell Quality Thresholds - Default----
 thresh <- list()
@@ -199,6 +202,13 @@ dev.off()
 figures$PreFilter_VlnPlot_RNA <- do.call("grid.arrange", c(plots, nrow=1))
 
 
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+
+png("PreFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
+do.call("grid.arrange", c(plots, nrow=1))
+dev.off()
+
+
 if (adt) {
 ## ----Pre-Filter ADT Violin Plot
   plots <- sapply(c("nFeature_ADT", "nCount_ADT"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
@@ -263,6 +273,13 @@ VlnPlot(seur, group.by='Sample', features = c("nFeature_RNA", "nCount_RNA", "per
 dev.off()
 
 figures$PostFilter_VlnPlot_RNA <- VlnPlot(seur, features = c("nFeature_RNA", "nCount_RNA", "percent.mito"), ncol = 3)
+
+
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+
+png("PostFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
+do.call("grid.arrange", c(plots, nrow=1))
+dev.off()
 
 
 ## ----Post-Filter ADT Violin Plot

@@ -173,7 +173,6 @@ rule count:
         log ="run_{sample}_10x_cellranger_count.log"
     params:
         rname = "count",
-        batch = "-l nodes=1:ppn=16,mem=96gb",
         id = "{sample}",
         sample = sample_rename,
         transcriptome = config["references"][genome]["gex_transcriptome"],
