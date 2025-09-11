@@ -152,6 +152,8 @@ def rename(filename):
         # Matches: _[12].fastq.gz, _[12].fq.gz, _[12]_fastq_gz, etc.
         "_1.f(ast)?q.gz$": ".R1.fastq.gz",
         "_2.f(ast)?q.gz$": ".R2.fastq.gz",
+	"_R1(_[0-9]{3})?.f(ast)?q.gz$": ".R1.fastq.gz",
+	"_R2(_[0-9]{3})?.f(ast)?q.gz$": ".R2.fastq.gz",
         f"{os.path.sep}outs": ""
     }
 
