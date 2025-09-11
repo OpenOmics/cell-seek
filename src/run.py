@@ -146,14 +146,14 @@ def rename(filename):
         ".R1.f(ast)?q.gz$": ".R1.fastq.gz",
         ".R2.f(ast)?q.gz$": ".R2.fastq.gz",
         # Matches: _R[12]_001_fastq_gz, _R[12].001.fastq.gz, _R[12]_001.fq.gz, etc.
+	"_R1(_[0-9]{3})?.f(ast)?q.gz$": ".R1.fastq.gz",
+	"_R2(_[0-9]{3})?.f(ast)?q.gz$": ".R2.fastq.gz",
         # Capture lane information as named group
         ".R1.(?P<lane>...).f(ast)?q.gz$": ".R1.fastq.gz",
         ".R2.(?P<lane>...).f(ast)?q.gz$": ".R2.fastq.gz",
         # Matches: _[12].fastq.gz, _[12].fq.gz, _[12]_fastq_gz, etc.
         "_1.f(ast)?q.gz$": ".R1.fastq.gz",
         "_2.f(ast)?q.gz$": ".R2.fastq.gz",
-	"_R1(_[0-9]{3})?.f(ast)?q.gz$": ".R1.fastq.gz",
-	"_R2(_[0-9]{3})?.f(ast)?q.gz$": ".R2.fastq.gz",
         f"{os.path.sep}outs": ""
     }
 
