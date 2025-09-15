@@ -505,7 +505,7 @@ def add_sample_metadata(input_files, config, group=None):
     config['samples'] = []
     for file in input_files:
         # Split sample name on file extension
-        sample = re.split(r"(_[[A-Za-z0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file))[0]
+        sample = re.split(r"(_[A-Za-z0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file))[0]
         if sample not in added:
             # Only add PE sample information once
             added.append(sample)
