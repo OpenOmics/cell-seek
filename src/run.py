@@ -510,7 +510,6 @@ def add_sample_metadata(input_files, config, group=None):
             # Only add PE sample information once
             added.append(sample)
             config['samples'].append(sample)
-    import ipdb; ipdb.set_trace()
     return config
 
 
