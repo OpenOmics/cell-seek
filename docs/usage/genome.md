@@ -7,6 +7,10 @@ This part of the documentation describes options and concepts for <code>cell-see
 
 If a reference genome that does not come with the pipeline, then a custom json file needs to be provided to run.
 
+This command does not help with creating the 10x compatible reference itself, that would need to be done separately. 10x documentation about the process can be found for [GEX](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/inputs/cr-3p-references), [VDJ](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/inputs/cr-5p-references), [ATAC](https://www.10xgenomics.com/support/software/cell-ranger-atac/latest/analysis/inputs/creating-a-reference-package-mkref), and [Multiome](https://www.10xgenomics.com/support/software/cell-ranger-arc/latest/analysis/inputs/mkref)
+[Singularity<sup>1</sup>](https://singularity.lbl.gov/)
+
+
 Creating a custom reference genome file is fast and easy! In its most basic form, <code>cell-seek <b>genome</b></code> only has *one required input* with the optional arguments supplying the reference paths.
 
 ## 2. Synopsis
