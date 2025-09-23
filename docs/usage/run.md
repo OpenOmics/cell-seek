@@ -741,7 +741,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--pipeline atac`
 
 ---  
-  `--genome {hg38, mm10, custom.json}`
+  `--genome {hg38, mm10, hg2024, mm2024, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
@@ -841,7 +841,7 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--pipeline multiome`
 
 ---  
-  `--genome {hg38, mm10, custom.json}`
+  `--genome {hg38, mm10, hg2024, mm2024, custom.json}`
 > **Reference genome.**   
 > *type: string*
 >   
