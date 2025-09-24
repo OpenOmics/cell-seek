@@ -49,6 +49,9 @@ figures <- list()
 
 ## ----Pre-Filter Gene Plot----
 seur[["percent.mito"]] <- PercentageFeatureSet(seur, pattern="^[Mm][Tt]-")
+seur[["percent.mito"]] <- PercentageFeatureSet(seur, pattern="^[Mm][Tt]-")
+seur[["percent.rps"]] <- PercentageFeatureSet(seur, pattern="^R[Pp][Ss]")
+seur[["percent.rpl"]] <- PercentageFeatureSet(seur, pattern="^R[Pp][Ll]")
 
 plot1 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "percent.mito") + NoLegend()
 plot2 <- FeatureScatter(seur, group.by='Sample', feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend()
@@ -71,12 +74,12 @@ defaultThreshold <- function(seur) {
   thresh['nCount_RNA_low'] <- expm1(median(log1p(seur$nCount_RNA)) - 3*mad(log1p(seur$nCount_RNA))) %>% round
   thresh['nCount_RNA_high'] <- expm1(median(log1p(seur$nCount_RNA)) + 3*mad(log1p(seur$nCount_RNA))) %>% round
   thresh['percent.mito_high'] = min(expm1(median(log1p(seur$percent.mito)) + 3*mad(log1p(seur$percent.mito))) %>% round, 100)
-  
+
   cellsToRemove <- colnames(seur)[which(seur$nFeature_RNA < thresh['nFeature_RNA_low'] | seur$nFeature_RNA > thresh['nFeature_RNA_high'])]
   cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nCount_RNA < thresh['nCount_RNA_low'] | seur$nCount_RNA > thresh['nCount_RNA_high'])])
   cellsToRemove <- union(cellsToRemove,  colnames(seur)[which(seur$percent.mito > thresh['percent.mito_high'])])
-  
-  
+
+
   thresh['numCellsRemove'] <- length(cellsToRemove)
   thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
   return(list(threshold=thresh, filter=cellsToRemove))
@@ -88,7 +91,7 @@ if (!is.na(opt$filterfile)){
   if (sum(thresholds[,index] == opt$sample) == 1) {
     thresh_orig <- thresholds[which(thresholds[,index] == opt$sample),]
     thresh_orig[index] <- NULL
-    
+
     thresh <- list()
     cellsToRemove <- character()
     for (i in colnames(thresh_orig)) {
@@ -146,6 +149,14 @@ dev.off()
 
 figures$PreFilter_VlnPlot_RNA <- do.call("grid.arrange", c(plots, nrow=1))
 
+
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+
+png("PreFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
+do.call("grid.arrange", c(plots, nrow=1))
+dev.off()
+
+
 ## ----Pre-Filter UMAP Plot-------
 seur <- NormalizeData(seur, normalization.method = "LogNormalize", scale.factor = 10000)
 seur <- FindVariableFeatures(seur, selection.method = "vst", nfeatures = 2000)
@@ -189,6 +200,13 @@ dev.off()
 
 figures$PostFilter_VlnPlot_RNA <- VlnPlot(seur, features = c("nFeature_RNA", "nCount_RNA", "percent.mito"), ncol = 3)
 
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+
+png("PostFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
+do.call("grid.arrange", c(plots, nrow=1))
+dev.off()
+
+
 ## ----RNA Normalizing and Clustering----
 seur <- NormalizeData(seur, normalization.method = "LogNormalize", scale.factor = 10000)
 seur <- FindVariableFeatures(seur, selection.method = "vst", nfeatures = 2000)
@@ -203,11 +221,11 @@ coord <- Embeddings(seur, reduction='pca')[,1:30]
 d <- dist(coord, method="euclidean")
 for(resolution in c(0.1, seq(0.2,1.0,0.2), 1.5, 2.0)){
   seur <- FindClusters(seur, resolution = resolution)
-  
+
   #Calculate silhouette scores and generate plots
   try({
     clusters <- Idents(seur)
-    sil<-silhouette(as.numeric(clusters), dist=d)  
+    sil<-silhouette(as.numeric(clusters), dist=d)
     pdf(paste0("SilhouettePlot_res.",resolution,".pdf"))
     print(plot(sil, col=as.factor(clusters[order(clusters, decreasing=FALSE)]), main=paste("Silhouette plot of Seurat clustering - resolution ", resolution, sep=""), lty=2))
     print(abline(v=mean(sil[,3]), col="red4", lty=2))
@@ -236,4 +254,3 @@ saveRDS(seur, 'seur_cluster.rds')
 #saveRDS(figures, 'seur_figures.rds')
 
 writeLines(capture.output(devtools::session_info()), 'sessionInfo.txt')
-

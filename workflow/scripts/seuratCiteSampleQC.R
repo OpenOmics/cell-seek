@@ -46,8 +46,10 @@ if (length(grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), 
   adt_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE, invert=TRUE), value=TRUE, ignore.case=TRUE, invert=TRUE),])
   filtered_cite[['ADT']] <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) <= adt_thresh))
   adt_names <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) > adt_thresh))
-  seur[['ADT']] <- CreateAssayObject(counts=GetAssayData(adt_assay, slot='counts')[adt_names,])
-  adt = TRUE
+  if (length(adt_names) > 0) {
+    seur[['ADT']] <- CreateAssayObject(counts=GetAssayData(adt_assay, slot='counts')[adt_names,])
+    adt = TRUE
+  }
 }
 
 # Add in HTO assay if features with HTO was found
@@ -56,8 +58,10 @@ if (length(as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), va
   hto_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[unique(as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE), grep('^HTO[-_]', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE)))),])
   filtered_cite[['HTO']] <- names(which(apply(GetAssayData(hto_assay, slot='counts'), 1, max) <= adt_thresh))
   hto_names <- names(which(apply(GetAssayData(hto_assay, slot='counts'), 1, max) > adt_thresh))
-  seur[['HTO']] <- CreateAssayObject(counts=GetAssayData(hto_assay, slot='counts')[hto_names,])
-  hashtag = TRUE
+  if (length(hto_names) > 0) {
+    seur[['HTO']] <- CreateAssayObject(counts=GetAssayData(hto_assay, slot='counts')[hto_names,])
+    hashtag = TRUE
+  }
 }
 
 write.table(adt_thresh, 'CITE_threshold.txt', col.names = FALSE, row.names=FALSE)
@@ -82,6 +86,8 @@ figures <- list()
 
 ## ----Pre-Filter Gene Plot----
 seur[["percent.mito"]] <- PercentageFeatureSet(seur, pattern="^[Mm][Tt]-")
+seur[["percent.rps"]] <- PercentageFeatureSet(seur, pattern="^R[Pp][Ss]")
+seur[["percent.rpl"]] <- PercentageFeatureSet(seur, pattern="^R[Pp][Ll]")
 
 plot1 <- FeatureScatter(seur, feature1 = "nCount_RNA", feature2 = "percent.mito") + NoLegend()
 plot2 <- FeatureScatter(seur, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") + NoLegend()
@@ -92,6 +98,7 @@ plot3 <- FeatureScatter(seur, group.by='Sample', feature1 = "nFeature_RNA", feat
 png("PreFilter_Gene_Plot.png", height=5, width=10, units='in', res=300)
 plot1+plot3+plot2
 dev.off()
+
 
 ## ----Cell Quality Thresholds - Default----
 thresh <- list()
@@ -199,6 +206,13 @@ dev.off()
 figures$PreFilter_VlnPlot_RNA <- do.call("grid.arrange", c(plots, nrow=1))
 
 
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+
+png("PreFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
+do.call("grid.arrange", c(plots, nrow=1))
+dev.off()
+
+
 if (adt) {
 ## ----Pre-Filter ADT Violin Plot
   plots <- sapply(c("nFeature_ADT", "nCount_ADT"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
@@ -263,6 +277,13 @@ VlnPlot(seur, group.by='Sample', features = c("nFeature_RNA", "nCount_RNA", "per
 dev.off()
 
 figures$PostFilter_VlnPlot_RNA <- VlnPlot(seur, features = c("nFeature_RNA", "nCount_RNA", "percent.mito"), ncol = 3)
+
+
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+
+png("PostFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
+do.call("grid.arrange", c(plots, nrow=1))
+dev.off()
 
 
 ## ----Post-Filter ADT Violin Plot
@@ -434,7 +455,7 @@ saveRDS(seur, 'seur_cluster.rds')
 
 # ----Matrix export----
 if ( !dir.exists(file.path(opt$workdir, "cite-seq-matrix")) ) {
-  dir.create(opt$workdir, "cite-hto-adt-matrix", showWarnings = F, recursive = T, mode = "1755")
+  dir.create(file.path(opt$workdir, "cite-seq-matrix"), showWarnings = F, recursive = T, mode = "1755")
 } 
 if ( is.element("HTO", names(seur@assays)) ) {
   hto_mat <- GetAssayData(object = seur, assay = "HTO", layer = "data")
