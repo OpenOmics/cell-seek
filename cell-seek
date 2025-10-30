@@ -1292,6 +1292,15 @@ def parsed_arguments(name, description):
         help=argparse.SUPPRESS
     )
 
+    subparser_shinycell = subparsers.add_parser('shinycell',
+        help = 'Run the ShinyCell2 application creation pipeline.',
+        usage = argparse.SUPPRESS,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description = required_run_options,
+        epilog  = run_epilog,
+        add_help=False
+    )
+
     # Define handlers for each sub-parser
     subparser_run.set_defaults(func = run)
     subparser_unlock.set_defaults(func = unlock)
