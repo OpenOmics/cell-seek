@@ -39,7 +39,7 @@ rule shinycodes:
         mv shinyApp/* {output}
         """
 
-rule shinycodes:
+rule shinyfiles:
     input: seurat_object
     output: temp(directory(join(run_dir, "files")))
     container: "docker://rroutsong/shinycell2_builder:latest"
@@ -75,10 +75,12 @@ rule shinytar:
     output: join(run_dir, "shinyapp.tar.gz")
     params:
         tmpdir = tmpdir
+        rundir = run_dir
     threads: 30
     shell:
         """
         cp -r {input.files}/* {params.tmpdir}
         cp -r {input.codes}/* {params.tmpdir}
-        pigz -9 -p {threads} -c -f {params.tmpdir}/* > {output}
+        cd {params.run_dir}
+        tar -cf - {params.tmpdir}/* | pigz -9 -p {threads} > shinyapp.tar.gz
         """
