@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-prompt_for_install <- function (pkg) {
+prompt_for_install <- function(pkg) {
   cat(paste0(pkg, " is not installed. Would you like to install it? (y/n) "))
   response <- tolower(readLines("stdin", n = 1))
   if (response == "y") {
@@ -35,7 +35,7 @@ parser$add_argument(
   required = TRUE
 )
 parser$add_argument(
-  "-o", 
+  "-o",
   "--outdir",
   dest = "outdir",
   help = "Output directory for shiny app",
@@ -82,14 +82,14 @@ parser$add_argument(
 parser$add_argument(
   "--filesonly",
   dest = "files.only",
-  action="store_true",
+  action = "store_true",
   help = "Toggle for only running makeShinyFiles() without makeShinyCodes().",
   default = FALSE
 )
 parser$add_argument(
   "--codesonly",
   dest = "codes.only",
-  action="store_true",
+  action = "store_true",
   help = "Toggle for only running makeShinyCodes() without makeShinyFiles().",
   default = FALSE
 )
@@ -107,7 +107,7 @@ args <- parser$parse_args()
 # setup opt parse variables for downstream usage into shinycell2
 rds_file <- args$object
 project_name <- args$project
-shiny_app_dir <- normalizePath(file.path(args$outdir))
+shiny_app_dir <- normalizePath(args$outdir, mustWork = FALSE)
 
 seurat_obj <- readRDS(rds_file)
 
@@ -172,7 +172,12 @@ if (is.null(args$defaultreduction) || is.na(args$defaultreduction) || args$defau
     fatal(paste0("`", args$defaultreduction, "` reduction not found in seurat object!"))
   }
 }
-if (!is.null(args$max.levels) || !is.na(args$max.levels) || args$max.level == "" || args$max.level == "NA") {
+
+valid_max_levels <- !is.null(args$max.levels) &&
+  length(args$max.levels) == 1 &&
+  !is.na(args$max.levels)
+
+if (valid_max_levels) {
   max.levels <- args$max.levels
 } else {
   max.levels <- NULL
@@ -253,6 +258,11 @@ files_params <- list(
 if (!is.null(defaultreduction)) {
   files_params$dimred.to.use <- args$defaultreduction
   files_params$default.dimred <- defaultreduction
+}
+
+if (!is.null(args$markers) && !is.null(args$cluster_labels)) {
+  files_params$precomputed.deg <- args$markers
+  files_params$clusters <- args$cluster_labels
 }
 
 if (!args$codes.only) {

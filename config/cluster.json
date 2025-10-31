@@ -17,9 +17,9 @@
         "time": "2-00:00:00"
     },
     "seuratQC": {
-	"threads": "8",
-	"mem": "150g",
-	"time": "1-00:00:00"
+        "threads": "8",
+        "mem": "150g",
+        "time": "1-00:00:00"
     },
     "aggregate": {
         "threads": "16",
@@ -29,7 +29,28 @@
     "seuratIntegrate": {
         "threads": "8",
         "mem": "350g",
-	"partition": "largemem",
+        "partition": "largemem",
         "time": "1-00:00:00"
+    },
+    "shinycodes": {
+        "threads": "16",
+        "mem": "32g",
+        "partition": "norm",
+        "time": "0-08:00:00",
+        "gres": "lscratch:32"
+    },
+    "shinyfiles": {
+        "threads": "16",
+        "mem": "32g",
+        "partition": "norm",
+        "time": "0-08:00:00",
+        "gres": "lscratch:32"
+    },
+    "shinytar": {
+        "threads": "32",
+        "mem": "64g",
+        "partition": "norm",
+        "time": "0-08:00:00",
+        "gres": "lscratch:32"
     }
 }

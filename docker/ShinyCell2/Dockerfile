@@ -34,6 +34,7 @@ RUN apt-get update \
         wget \
         zlib1g-dev \
         pigz \
+        vim \
     && apt-get clean && apt-get purge \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8
