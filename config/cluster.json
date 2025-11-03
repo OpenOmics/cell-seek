@@ -37,20 +37,20 @@
         "mem": "32g",
         "partition": "norm",
         "time": "0-08:00:00",
-        "gres": "lscratch:32"
+        "gres": "lscratch:100"
     },
     "shinyfiles": {
         "threads": "16",
         "mem": "32g",
         "partition": "norm",
         "time": "0-08:00:00",
-        "gres": "lscratch:32"
+        "gres": "lscratch:100"
     },
     "shinytar": {
         "threads": "32",
         "mem": "64g",
         "partition": "norm",
         "time": "0-08:00:00",
-        "gres": "lscratch:32"
+        "gres": "lscratch:100"
     }
 }

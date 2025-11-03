@@ -12,6 +12,11 @@ assaytouse          = config['assaytouse']
 tmpdir              = config['tmpdir']
 
 
+rule all:
+    input:
+        join(run_dir, "shinyapp.tar.gz")
+
+
 rule shinycodes:
     input: seurat_object
     output: directory(temp(join(run_dir, "codes")))

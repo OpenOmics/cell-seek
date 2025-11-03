@@ -144,7 +144,7 @@ if (!is.null(args$cluster_labels)) {
     fatal(paste0("cluster_labels '", args$cluster_labels, "' not found in seurat_obj@meta.data"))
   }
 }
-if (is.null(args$meta.to.rm) || is.na(args$max.levels) || args$meta.to.rm == "" || args$meta.to.rm == "NA") {
+if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" || args$meta.to.rm == "NA") {
   rmmeta <- NULL
 } else {
   if ("," %in% args$meta.to.rm) {
