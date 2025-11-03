@@ -868,9 +868,11 @@ def finalcheck(config, flag, delimeter=','):
 
     names = [name for name in name_type if (len(name_type[name]) <= 1)]
     if len(names) > 0:
+        print(config['options'].keys())
         print(f"\nWarning: Some samples only have one feature type associated with them! \nWarning: --{{}} {{}} only contains one feature type for some of the samples.\n \
             └── Please note that only one feature type was provided for the following sample(s): {{}} \n \
-            If this is correct, these samples do not need to be run using cellranger multi.".format(flag, filename, ','.join(names)))
+            Flex and OCM captures may contain only one feature type. \n \
+            If these samples are not those captures, they may not need to be run using cellranger multi.".format(flag, filename, ','.join(names)))
 
 
 def check_conditional_parameters(config):
@@ -893,6 +895,42 @@ def check_conditional_parameters(config):
             )
         ]
 
+    #Check if Cell Ranger version 9 or newer is used when running OCM or HTO, and Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)
+    if any([config['options'][i] != 'None' for i in ['hto_sample', 'ocm_sample']]):
+        if config['options']['cellranger'] != '':
+            if int(config['options']['cellranger'].split('.')[0]) < 9:
+                errorMessage += [
+                    "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
+                    └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
+                        [i for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None'][0].replace('_', '-'),
+                        ', '.join(['9.0.0'])
+                    )
+                ]
+        else:
+            errorMessage += [
+                "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
+                └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
+                    [i for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None'][0].replace('_', '-'),
+                    ', '.join(['9.0.0'])
+                )
+            ]
+    if any([config['options'][i] != 'None' for i in ['probe_sample', 'probe_set']]):
+        if config['options']['cellranger'] != '':
+            if int(config['options']['cellranger'].split('.')[0]) < 8:
+                errorMessage += [
+                    "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
+                    └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
+                        ', '.join(['8.0.0', '9.0.0'])
+                    )
+                ]
+        else:
+            errorMessage += [
+                "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
+                └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
+                    ', '.join(['8.0.0', '9.0.0'])
+                )
+            ]
+        
     #Check if libraries file is provided when required
     if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options']['libraries'] == 'None' and not input_folders:
         errorMessage += [
@@ -924,6 +962,23 @@ def check_conditional_parameters(config):
                 )
             ]
 
+    #Check to make sure both probe-set and probe-sample flags are set when one is used
+    if config['options']['probe_sample'] != 'None' and config['options']['probe_set'] == 'None':
+        errorMessage += [
+            "Error: Probe set reference has to be provided to process Flex (Fixed RNA) samples \n \
+            └── Please use the --probe-set flag to provide the probe set reference"
+        ]
+
+    #Check to make sure only one multiplexing flag is used
+    if sum([config['options'][i] != 'None' for i in ['cmo_sample', 'hto_sample', 'ocm_sample', 'probe_sample']]) > 1:
+        errorMessage += [
+            "Error: Only one cell demultiplexing flag can be provided in one run of the pipeline, and more than one has been provided\n \
+                    └── Please use the limit the flag selection to only one of the following: {}". format(
+                ','.join([i.replace('_', '-') for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None'])
+            )
+        ]
+
+        [i.replace('_', '-') for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None']
 
     if len(errorMessage) > 0:
         errorMessage += ["\nAdditional information about flags can be found via cell-seek run --help or at https://openomics.github.io/cell-seek/usage/run/"]

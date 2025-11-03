@@ -852,6 +852,41 @@ def parsed_arguments(name, description):
         help = argparse.SUPPRESS
     )
 
+    # Input HTO Sample files
+    subparser_run.add_argument(
+        '--hto-sample',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Input OCM Sample files
+    subparser_run.add_argument(
+        '--ocm-sample',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Input Probe Sample files
+    subparser_run.add_argument(
+        '--probe-sample',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
+
+    # Input Probe Set file
+    subparser_run.add_argument(
+        '--probe-set',
+        # Check if the file exists and if it is readable
+        type = lambda file: permissions(parser, file, os.R_OK),
+        required = False,
+        help = argparse.SUPPRESS
+    )
     # Exclude introns from count
     subparser_run.add_argument(
         '--exclude-introns',

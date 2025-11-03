@@ -42,11 +42,23 @@ def conditional_flags(wildcards):
     if features != "None":
         flags.append(f"--feature {features}")
 
-    if cmo_ref != "None":
-        flags.append(f"--cmoref {cmo_ref}")
+    if CMO_REF != "None":
+        flags.append(f"--cmoref {CMO_REF}")
 
-    if cmo_sample != "None":
-        flags.append(f"--cmosample {cmo_sample}")
+    if CMO_SAMPLE != "None":
+        flags.append(f"--cmosample {CMO_SAMPLE}")
+
+    if HTO_SAMPLE != "None":
+        flags.append(f"--htosample {HTO_SAMPLE}")
+
+    if OCM_SAMPLE != "None":
+        flags.append(f"--ocmsample {OCM_SAMPLE}")
+
+    if PROBE_SAMPLE != "None":
+        flags.append(f"--probesample {PROBE_SAMPLE}")
+
+    if PROBE_SET != "None":
+        flags.append(f"--probeset {PROBE_SET}")
 
     if CELLCOUNT_LIBRARIES:
         if wildcards.sample in CELLCOUNT_DICT.keys():
