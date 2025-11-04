@@ -66,6 +66,13 @@ parser$add_argument(
   default = NULL,
   metavar = "META.VAR.TO.RM, META.VAR.TO.RM, META.VAR.TO.RM, ..."
 )
+parser$add_argument(
+  "--silent",
+  dest = "silent",
+  action = "store_true",
+  help = "Toggle to suppress verbose output.",
+  default = FALSE
+)
 parser$add_argument("--defred",
   dest = "defaultreduction",
   help = paste0("The default reduction to use with ShinyCell2, this value must exist in Seurat::DefaultDimReduc(obj).\n
@@ -103,6 +110,11 @@ parser$add_argument(
   default = NULL
 )
 args <- parser$parse_args()
+
+if (args$silent) {
+  options(error = traceback(1))
+  options(warn = -1)
+}
 
 # setup opt parse variables for downstream usage into shinycell2
 rds_file <- args$object
