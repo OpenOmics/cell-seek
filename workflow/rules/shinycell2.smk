@@ -45,6 +45,7 @@ rule shinycodes:
             -l {params.max_levels} \\
             -a {params.assaytouse} \\
             -o {params.outdir} \\
+            --silent \\
             --codesonly
         """
 
@@ -77,6 +78,7 @@ rule shinyfiles:
             -l {params.max_levels} \\
             -a {assaytouse} \\
             -o {params.wd} \\
+            --silent \\
             --filesonly
         """
 
