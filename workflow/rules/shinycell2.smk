@@ -1,9 +1,9 @@
-from os.path import join
+from os.path import join, exists
 
 seurat_object       = config['seurat_object']
 run_dir             = config['run_dir']
 project_title       = config['project_title']
-marker_file         = config['marker_file']
+marker_file         = config['marker_file'] if exists(config['marker_file']) else []
 cluster_labels      = config['cluster_labels']
 rmmeta              = config['rmmeta']
 defaultreduction    = config['defaultreduction']
@@ -18,74 +18,81 @@ rule all:
 
 
 rule shinycodes:
-    input: seurat_object
-    output: directory(temp(join(run_dir, "codes")))
+    input: 
+        seurat_object       = seurat_object,
+        marker_list         = marker_file,
+        files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
+    output: join(run_dir, "wd", "server.R")
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
+        rname = "shinycodes",
         project_title = project_title,
-        marker_file = marker_file,
         cluster_labels = cluster_labels,
         rmmeta = rmmeta,
         defaultreduction = defaultreduction,
         max_levels = max_levels,
-        assaytouse = assaytouse
+        assaytouse = assaytouse,
+        outdir = join(run_dir, "wd"),
+        marker_flag = lambda w, input: f"--markers {input.marker_list} " if exists(input.marker_list) else "",
     shell:
         """
         build_shinycell.R \\
-            -j {input} \\
+            -j {input.seurat_object} {params.marker_flag}\\
             --proj {params.project_title} \\
-            --markers {params.marker_file} \\
             --cluster_labels {params.cluster_labels} \\
             --rmmeta {params.rmmeta} \\
             --defred {params.defaultreduction} \\
             -l {params.max_levels} \\
-            -a {assaytouse} \\
+            -a {params.assaytouse} \\
+            -o {params.outdir} \\
             --codesonly
-        mv shinyApp/* {output}
         """
 
 rule shinyfiles:
-    input: seurat_object
-    output: temp(directory(join(run_dir, "files")))
+    input:
+        seurat_object       = seurat_object,
+        marker_list         = marker_file
+    output:
+        out_crumb           = join(run_dir, "wd", "sc1meta.rds"),
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
+        rname = "shinyfiles",
         project_title = project_title,
-        marker_file = marker_file,
         cluster_labels = cluster_labels,
         rmmeta = rmmeta,
         defaultreduction = defaultreduction,
         max_levels = max_levels,
-        assaytouse = assaytouse,    
+        assaytouse = assaytouse,
+        wd = join(run_dir, "wd"),
+        marker_flag = lambda w, input: f"--markers {input.marker_list} " if exists(input.marker_list) else "",
         tmpdir = tmpdir
     shell:
         """
         build_shinycell.R \\
-            -j {input} \\
+            -j {input.seurat_object} {params.marker_flag}\\
             --proj {params.project_title} \\
-            --markers {params.marker_file} \\
             --cluster_labels {params.cluster_labels} \\
             --rmmeta {params.rmmeta} \\
             --defred {params.defaultreduction} \\
             -l {params.max_levels} \\
             -a {assaytouse} \\
+            -o {params.wd} \\
             --filesonly
-        mv shinyApp/* {output}
         """
 
 
 rule shinytar:
     input: 
-        files = join(run_dir, "files")
-        codes = join(run_dir, "codes")
+        files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
+        codes_crumb         = join(run_dir, "wd", "server.R")
     output: join(run_dir, "shinyapp.tar.gz")
     params:
-        tmpdir = tmpdir
-        rundir = run_dir
+        rname = "shinytar",
+        tmpdir = tmpdir,
+        wd_dir = join(run_dir, "wd"),
     threads: 30
     shell:
         """
-        cp -r {input.files}/* {params.tmpdir}
-        cp -r {input.codes}/* {params.tmpdir}
-        cd {params.run_dir}
-        tar -cf - {params.tmpdir}/* | pigz -9 -p {threads} > shinyapp.tar.gz
+        cd {params.wd_dir}
+        tar -cf - . | pigz -9 -p {threads} > {output}
         """

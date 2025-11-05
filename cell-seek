@@ -329,34 +329,87 @@ def shinycell(args):
         fatal(f"Seurat object not found or not readable: {args.object}")
 
     cfg = {}
-    cfg['seurat_object'] = args.object
-    cfg['run_dir'] = args.outdir
-    cfg['project_title'] = args.project
-    cfg['marker_file'] = args.markers
-    cfg['cluster_labels'] = args.cluster_labels
-    cfg['rmmeta'] = args.meta_to_rm
-    cfg['defaultreduction'] = args.defaultreduction
-    cfg['max_levels'] = args.max_levels
-    cfg['assaytouse'] = args.assaytouse
-    cfg['tmpdir'] = args.tmpdir
+    cfg["seurat_object"] = args.object
+    cfg["run_dir"] = args.outdir
+    cfg["project_title"] = args.project
+    cfg["marker_file"] = args.markers
+    cfg["cluster_labels"] = args.cluster_labels
+    cfg["rmmeta"] = args.meta_to_rm
+    cfg["defaultreduction"] = args.defaultreduction
+    cfg["max_levels"] = args.max_levels
+    cfg["assaytouse"] = args.assaytouse
+    cfg["tmpdir"] = args.tmpdir
+    cfg['project'] = {}
+    cfg['project']['datapath'] = os.path.abspath(
+        os.path.dirname(args.object)
+    )
+    cfg['project']['workpath'] = os.path.abspath(args.outdir)
 
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir, mode=0o755)
     json.dump(cfg, open(os.path.join(args.outdir, "config.json"), "w"), indent=4)
 
-    scrules = os.path.join(os.path.dirname(__file__), "workflow", "rules", "shinycell2.smk")
-    cluster_resources = os.path.join(os.path.dirname(__file__), "config", "cluster.json")
+    scrules = os.path.join(
+        os.path.dirname(__file__), "workflow", "rules", "shinycell2.smk"
+    )
+    cluster_resources = os.path.join(
+        os.path.dirname(__file__), "config", "cluster.json"
+    )
     to_copy = {
-        scrules: os.path.join(args.outdir, "Snakefile"),
-        cluster_resources: os.path.join(args.outdir, "cluster.json")
+        scrules: os.path.join(args.outdir, "workflow", "Snakefile"),
+        cluster_resources: os.path.join(args.outdir, "config", "cluster.json"),
     }
-
     for src, dest in to_copy.items():
+        if not os.path.exists(os.path.dirname(dest)):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
         shutil.copy(src, dest)
 
-    # shinycell_proc = subprocess.check_output(
-    #     ["snakemake", "--configfile=config.json"],
-    #     cwd=args.outdir,
-    #     stderr=subprocess.STDOUT,
-    # )
+    if not exists(os.path.join(args.outdir, "logfiles")):
+        os.makedirs(os.path.join(args.outdir, "logfiles"))
+    if args.mode == "local":
+        log = os.path.join(args.outdir, "logfiles", "snakemake.log")
+    else:
+        log = os.path.join(args.outdir, "logfiles", "master.log")
+    logfh = open(log, "w")
+
+    bindpaths = bind(args, config=cfg)
+
+    mjob = runner(
+        mode=args.mode,
+        outdir=args.outdir,
+        alt_cache=None,
+        threads=int(args.threads),
+        jobname=args.job_name,
+        submission_script=os.path.join(__home__, "src", "run.sh"),
+        logger=logfh,
+        additional_bind_paths=",".join(bindpaths),
+        tmp_dir=args.tmpdir,
+    )
+
+    if not args.silent:
+        print("\nRunning {} pipeline in '{}' mode...".format(_name, args.mode))
+    mjob.wait()
+    logfh.close()
+
+    if args.mode == "local":
+        if int(mjob.returncode) == 0:
+            print("{} pipeline has successfully completed".format(_name))
+        else:
+            fatal(
+                "{} pipeline failed. Please see {} for more information.".format(
+                    _name, os.path.join(args.outdir, "logfiles", "snakemake.log")
+                )
+            )
+    elif args.mode == "slurm":
+        jobid = (
+            open(os.path.join(args.outdir, "logfiles", "mjobid.log")).read().strip()
+        )
+        if not args.silent:
+            if int(mjob.returncode) == 0:
+                print("Successfully submitted master job: ", end="")
+            else:
+                fatal("Error occurred when submitting the master job.")
+        print(jobid)
 
     return
 
@@ -1427,30 +1480,36 @@ def parsed_arguments(name, description):
                                 one gene per line. When provided, requires
                                 --cluster_labels to be set as well. Used to
                                 generate marker-based DEG pages or panels.
+                                Default: None (No DEG pages/panels will be created)
                                 Example: --markers markers.txt
         --cluster_labels NAME
                                 Metadata column name in seurat_obj@meta.data that
                                 contains cluster identities corresponding to the
                                 markers file. Required when --markers is provided.
+                                Default: None (No DEG pages/panels will be created)
                                 Example: --cluster_labels seurat_clusters
         --rmmeta META1,META2  Comma-delimited list of metadata column names to
                                 drop from the Seurat object before deploying.
                                 Useful to remove large or sensitive columns.
+                                Default: None (No metadata columns are removed)
                                 Example: --rmmeta barcode,unwanted_col
         --defred DEFAULTRED   Default dimensionality reduction to use for the
                                 app (must exist in Seurat object reductions).
                                 The code expects the reduction to expose a key
                                 so UMAP1/UMAP2 (or <KEY>1/<KEY>2) coordinate names
                                 can be derived.
+                                Default: None (Uses all active reduction)
                                 Example: --defred UMAP
         -l, --maxlevels INT   Maximum allowed number of factor levels for
                                 categorical metadata fields. Fields exceeding this
                                 will be treated as continuous / filtered out.
+                                Default: 50
                                 Example: -l 50
         -a, --assay ASSAYS    Comma-delimited list of assays to include in the
                                 Shiny app (e.g. RNA,spatial,ATAC). If omitted,
                                 default assays present in the Seurat object are
                                 used when compatible.
+                                Default: None (Uses all assays in Seurat object)
                                 Example: -a RNA,spatial
 
         {3}{4}Misc Options:{5}
@@ -1498,40 +1557,40 @@ def parsed_arguments(name, description):
         "-j",
         "--obj",
         dest="object",
-        help="RDS file created with saveRDS containing a seurat object",
+        help=argparse.SUPPRESS,
         required=True,
     )
     subparser_shinycell.add_argument(
         "-o",
         "--outdir",
         dest="outdir",
-        help="Output directory for shiny app",
+        help=argparse.SUPPRESS,
         required=True,
     )
     subparser_shinycell.add_argument(
         "--proj",
         dest="project",
-        help="Project name, becomes title of the app, example: NCBR-34",
+        help = argparse.SUPPRESS,
         required=True,
     )
     subparser_shinycell.add_argument(
         "--markers",
         dest="markers",
-        help="Path to a plain text file with marker genes (one per line).",
+        help=argparse.SUPPRESS,
         default=None,
     )
     subparser_shinycell.add_argument(
         "--cluster_labels",
         dest="cluster_labels",
-        help="Name of metadata column in seurat_obj@meta.data used as cluster labels",
+        help=argparse.SUPPRESS,
         default=None,
     )
     subparser_shinycell.add_argument(
         "--rmmeta",
         dest="meta_to_rm",
-        help="Comma delimited list of names in seurat_object@meta.data that will be dropped prior to deploying to ShinyCell2",
+        help=argparse.SUPPRESS,
         default=None,
-        metavar="META.VAR.TO.RM, META.VAR.TO.RM, META.VAR.TO.RM, ...",
+        metavar="<META.VAR.TO.RM>, [<META.VAR.TO.RM>,] [<META.VAR.TO.RM>,] [...]",
     )
     subparser_shinycell.add_argument(
         "--defred",
@@ -1549,7 +1608,7 @@ def parsed_arguments(name, description):
         dest="max_levels",
         type=int,
         help="The maximum allowable amount levels/factors of categorical values (int).",
-        default=None,
+        default=50,
     )
     subparser_shinycell.add_argument(
         "-a",
@@ -1562,14 +1621,46 @@ def parsed_arguments(name, description):
         ),
         default=None,
     )
-    subparser_run.add_argument(
+    subparser_shinycell.add_argument(
         "--tmp-dir",
+        dest="tmpdir",
         type=str,
         required=False,
         default="/lscratch/$SLURM_JOBID/",
         help=argparse.SUPPRESS,
     )
-    subparser_shinycell.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
+    subparser_shinycell.add_argument(
+        "--mode",
+        type=str,
+        required=False,
+        default="slurm",
+        choices=["slurm", "local"],
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "--threads", 
+        type=int,
+        required=False,
+        default=2,
+        help=argparse.SUPPRESS
+    )
+    subparser_shinycell.add_argument(
+        "--job-name",
+        type=str,
+        required=False,
+        default="pl:{}:shinycell".format(name),
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "--silent",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "-h", "--help", action="help", help=argparse.SUPPRESS
+    )
 
     # Define handlers for each sub-parser
     subparser_run.set_defaults(func=run)
