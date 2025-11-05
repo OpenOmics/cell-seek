@@ -7,12 +7,14 @@ This part of the documentation describes options and concepts for <code>cell-see
 
 The ShinyCell2 application creates an interactive web application for exploring single-cell data. The command validates inputs, creates configuration files, and writes the files and/or Shiny code required to deploy an interactive single-cell web app.
 
-You can find more information about ShinyCell2 at its [GitHub repository](https://github.com/the-ouyang-lab/ShinyCell2) and the OpenOmics fork of ShinyCell2 [here](https://github.com/OpenOmics/ShinyCell2)
-Setting up the ShinyCell2 pipeline is fast and easy! In its most basic form, <code>cell-seek <b>shinycell</b></code> only has *2 required artifacts*:
+You can find more information about ShinyCell2 at its [GitHub repository](https://github.com/the-ouyang-lab/ShinyCell2) and the OpenOmics fork of ShinyCell2 [here](https://github.com/OpenOmics/ShinyCell2).
+Setting up the ShinyCell2 pipeline is fast and easy! In its most basic form, <code>cell-seek <b>shinycell</b></code> only has *3 required inputs*:
 
 - Seurat RDS object file. (with a set of valid cluster identities labels) 
-- TSV file with marker genes (optional, but necessary to get DEG page).
+- A project title.
+- An output directory to write the shiny application files.
 
+A user can optionally provide a TSV file with marker genes to add a DEG page to the application.
 
 ## 2. Synopsis
 ```text
