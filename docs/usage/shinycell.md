@@ -17,8 +17,11 @@ Setting up the ShinyCell2 pipeline is fast and easy! In its most basic form, <co
 A user can optionally provide a TSV file with marker genes to add a DEG page to the application.
 
 !!! important "Supported Assays"
-    ShinyCell2 does not support all Seurat object assays. Mileage may vary with the Seurat Object you use.
-    HTO assays and Azimuth cell.annotation assays will be removed from your object when using the ShinyCell2 pipeline, these assay types are unsupported currently.
+    `ShinyCell2` does not support all `Seurat` object assays. **Mileage may vary with the Seurat Object you use.**
+    **_HTO assays_** and **_Azimuth cell.annotation_** `(prediction.score.celltype.l*)` assays will be removed from your object when using the ShinyCell2 pipeline.
+    
+    These assay types are unsupported currently by the original ShinyCell2.
+
     For more information about support for assays and extended format support please consult the original ShinyCell2 repository: https://github.com/the-ouyang-lab/ShinyCell2
 
 ## 2. Synopsis
