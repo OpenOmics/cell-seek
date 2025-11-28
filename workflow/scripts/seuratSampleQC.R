@@ -178,6 +178,11 @@ dev.off()
 figures$PreFilter_UMAP_RNA <- DimPlot(seur, reduction='umap', label = TRUE) + ggtitle("Pre-Filter UMAP") + theme(plot.title = element_text(hjust=0.5))
 figures$PreFilter_UMAP_RNA_Filter <- DimPlot(seur, reduction='umap', label = TRUE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5))
 
+ggsave("PreFilter_UMAP_percent.mito.png", FeaturePlot(seur, features='percent.mito') + ggtitle("Pre-Filter UMAP - percent.mito") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PreFilter_UMAP_percent.rpl.png", FeaturePlot(seur, features='percent.rpl') + ggtitle("Pre-Filter UMAP - percent.rpl") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PreFilter_UMAP_percent.rps.png", FeaturePlot(seur, features='percent.rps') + ggtitle("Pre-Filter UMAP - percent.rps") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+
+
 
 seur <- subset(seur, cells = cellsToRemove, invert=T)
 
@@ -215,6 +220,11 @@ seur <- ScaleData(seur, features = all.genes)
 seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
+
+
+ggsave("PostFilter_UMAP_percent.mito.png", FeaturePlot(seur, features='percent.mito') + ggtitle("Post-Filter UMAP - percent.mito") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PostFilter_UMAP_percent.rpl.png", FeaturePlot(seur, features='percent.rpl') + ggtitle("Post-Filter UMAP - percent.rpl") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PostFilter_UMAP_percent.rps.png", FeaturePlot(seur, features='percent.rps') + ggtitle("Post-Filter UMAP - percent.rps") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
 
 
 coord <- Embeddings(seur, reduction='pca')[,1:30]
