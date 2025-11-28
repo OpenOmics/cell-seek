@@ -73,6 +73,13 @@ cat(paste0("![](", file.path(seuratdir, "PreFilter_VlnPlot_HTO.png)")), "\n")
 cat("\n")
 ```
 
+```{r, results='asis', fig.width=5, fig.height=7, out.width="70%", eval=file.exists(file.path(seuratdir, "PreFilter_VlnPlot_Ribo.png"))}
+
+cat("### Ribosomal Protein Genes {-}\n\n")
+cat(paste0("![](", file.path(seuratdir, "PreFilter_VlnPlot_Ribo.png)")), "\n")
+cat("\n")
+```
+
 ## Pre-Filter Gene Plots
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
@@ -92,6 +99,21 @@ if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA.png'))) {
   cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA.png)")), "\n")
 }
 cat("\n\n")
+if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_percent.mito.png'))) {
+  cat("### Mitochondrial Genes{-}\n\n")
+  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_percent.mito.png)")), "\n")
+  cat("\n\n")
+}
+if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_percent.rpl.png'))) {
+  cat("### Ribosomal Protein (Large) Genes{-}\n\n")
+  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_percent.rpl.png)")), "\n")
+  cat("\n\n")
+}
+if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_percent.rps.png'))) {
+  cat("### Ribosomal Protein (Small) Genes{-}\n\n")
+  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_percent.rps.png)")), "\n")
+  cat("\n\n")
+}
 if(file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA_Filter.png'))) {
   cat("### Filtered Cells{-}\n\n")
   cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA_Filter.png)")), "\n")
@@ -176,6 +198,13 @@ cat(paste0("![](", file.path(seuratdir, "PostFilter_VlnPlot_HTO.png)")), "\n")
 cat("\n")
 ```
 
+```{r, results='asis', fig.width=5, fig.height=7, out.width="70%", eval=file.exists(file.path(seuratdir, "PostFilter_VlnPlot_Ribo.png"))}
+
+cat("### Ribosomal Proteins {-}\n\n")
+cat(paste0("![](", file.path(seuratdir, "PostFilter_VlnPlot_Ribo.png)")), "\n")
+cat("\n")
+```
+
 ## Post-Filter Gene Plots
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
@@ -196,7 +225,7 @@ cat("\n")
 
 ```{r, results='asis', eval=length(Sys.glob(file.path(seuratdir, 'HTO_*_count.csv'))) > 0}
 cat("## Hashtag Demultiplexing\n\n")
-
+cat("HTO data was normalized using CLR normalized across features (margin = 1). This is more fitting when the data has a higher sequencing saturation, which is generally reached for smaller panels.\n\n")
 filename <- Sys.glob(file.path(seuratdir, 'HTO_*_count.csv'))[1] 
 
    if (grep('hash.ID', filename) %>% length > 0) {
@@ -223,6 +252,18 @@ for (filename in Sys.glob(file.path(seuratdir, "UMAP_HTO_*-split.png"))) {
 
 }
 ```
+
+### Mitochondrial Genes
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_percent.mito.png")`)
+
+### Ribosomal Protein (Large) Genes
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_percent.rpl.png")`)
+
+### Ribosomal Protein (Small) Genes
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_percent.rps.png")`)
 
 ### Clusters {.tabset}
 
@@ -265,6 +306,7 @@ for (resolution in resolutions) {
 
 ```{r, results='asis', eval=length(Sys.glob(file.path(seuratdir, "ADT", "*.png"))) > 0}
 cat("## ADT Expression {.tabset .tabset-pills}\n\n")
+cat("ADT data was normalized using CLR normalized across cells (margin = 2). This is more fitting when the data has a lower sequencing saturation, which is generally true for larger panels.\n\n")
 cat("Ridge plots have been generated for each of the ADT included in the data.\n\n")
 myimages<-list.files(file.path(seuratdir, "ADT/"), pattern = ".png", full.names = TRUE)
 for (filename in myimages) {
