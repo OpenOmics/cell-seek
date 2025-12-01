@@ -38,9 +38,9 @@ rule shinycodes:
     shell:
         dedent("""
         build_shinycell.R \\
-            -j {input.seurat_object} {params.marker_flag}\\
-            --proj {params.project_title} {params.cluster_flag}\\
-            --rmmeta {params.rmmeta} {params.defred_flag}\\
+            -j {input.seurat_object} {params.marker_flag} \\
+            --proj {params.project_title} {params.cluster_flag} \\
+            --rmmeta {params.rmmeta} {params.defred_flag} \\
             -l {params.max_levels} \\
             -a {params.assaytouse} \\
             -o {params.outdir} \\
@@ -68,9 +68,9 @@ rule shinyfiles:
     shell:
         dedent("""
         build_shinycell.R \\
-            -j {input.seurat_object} {params.marker_flag}\\
-            --proj {params.project_title} {params.cluster_flag}\\
-            --rmmeta {params.rmmeta} {params.defred_flag}\\
+            -j {input.seurat_object} {params.marker_flag} \\
+            --proj {params.project_title} {params.cluster_flag} \\
+            --rmmeta {params.rmmeta} {params.defred_flag} \\
             -l {params.max_levels} \\
             -a {assaytouse} \\
             -o {params.wd} \\
