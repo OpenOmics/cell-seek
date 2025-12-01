@@ -1,4 +1,5 @@
 from os.path import join, exists
+from textwrap import dedent
 
 seurat_object       = config['seurat_object']
 run_dir             = config['run_dir']
@@ -28,25 +29,24 @@ rule shinycodes:
         rname = "shinycodes",
         project_title = project_title,
         rmmeta = rmmeta,
-        defaultreduction = defaultreduction,
         max_levels = max_levels,
         assaytouse = assaytouse,
         outdir = join(run_dir, "wd"),
-        cluster_flag = lambda w, input: f"--cluster_labels {cluster_labels} " if cluster_labels else "",
+        defred_flag = f"--defred {defaultreduction} " if defaultreduction else "",
+        cluster_flag = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
         marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
     shell:
-        """
+        dedent("""
         build_shinycell.R \\
             -j {input.seurat_object} {params.marker_flag}\\
             --proj {params.project_title} {params.cluster_flag}\\
-            --rmmeta {params.rmmeta} \\
-            --defred {params.defaultreduction} \\
+            --rmmeta {params.rmmeta} {params.defred_flag}\\
             -l {params.max_levels} \\
             -a {params.assaytouse} \\
             -o {params.outdir} \\
             --silent \\
             --codesonly
-        """
+        """)
 
 rule shinyfiles:
     input:
@@ -58,27 +58,25 @@ rule shinyfiles:
     params:
         rname = "shinyfiles",
         project_title = project_title,
-        cluster_flag = lambda w, input: f"--cluster_labels {cluster_labels} " if cluster_labels else "",
         rmmeta = rmmeta,
-        defaultreduction = defaultreduction,
         max_levels = max_levels,
         assaytouse = assaytouse,
         wd = join(run_dir, "wd"),
+        defred_flag = f"--defred {defaultreduction} " if defaultreduction else "",
+        cluster_flag = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
         marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
-        tmpdir = tmpdir
     shell:
-        """
+        dedent("""
         build_shinycell.R \\
             -j {input.seurat_object} {params.marker_flag}\\
             --proj {params.project_title} {params.cluster_flag}\\
-            --rmmeta {params.rmmeta} \\
-            --defred {params.defaultreduction} \\
+            --rmmeta {params.rmmeta} {params.defred_flag}\\
             -l {params.max_levels} \\
             -a {assaytouse} \\
             -o {params.wd} \\
             --silent \\
             --filesonly
-        """
+        """)
 
 
 rule shinytar:
@@ -92,7 +90,7 @@ rule shinytar:
         wd_dir = join(run_dir, "wd"),
     threads: 30
     shell:
-        """
+        dedent("""
         cd {params.wd_dir}
         tar -cf - . | pigz -9 -p {threads} > {output}
-        """
+        """)

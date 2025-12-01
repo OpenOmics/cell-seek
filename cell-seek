@@ -332,7 +332,7 @@ def shinycell(args):
     cfg["seurat_object"] = args.object
     cfg["run_dir"] = os.path.abspath(args.outdir)
     cfg["project_title"] = args.project
-    cfg["marker_file"] = '' if args.markers is None else arg.markers
+    cfg["marker_file"] = '' if args.markers is None else args.markers
     cfg["cluster_labels"] = '' if args.cluster_labels is None else args.cluster_labels
     cfg["rmmeta"] = args.meta_to_rm
     cfg["defaultreduction"] = args.defaultreduction
