@@ -292,14 +292,13 @@ The marker file must contain the following columns:
 - **pct.2**: Percentage of cells expressing the gene in all other clusters
 - **p_val_adj**: Adjusted p-value (e.g., Bonferroni correction)
 
-### 4.2 Example Format
+### 4.2 Example `--markers` TSV file format (from Seurat FindMarkers/AllMarkers)
 
-```tsv
-p_val	avg_log2FC	pct.1	pct.2	p_val_adj	cluster	gene
-0	2.5	0.95	0.25	0	0	CD3D
-0	2.3	0.92	0.18	0	0	CD3E
-1.2e-250	1.8	0.85	0.35	2.4e-246	1	CD14
-```
+| p_val    | avg_log2FC | pct.1 | pct.2 | p_val_adj | cluster | gene |
+| -------- | ---------- | ----- | ----- | --------- | ------- | ---- |
+| 0        | 2.5        | 0.95  | 0.25  | 0         | 0       | CD3D |
+| 0        | 2.3        | 0.92  | 0.18  | 0         | 0       | CD3E |
+| 1.2E-250 | 1.8        | 0.85  | 0.35  | 2.4E-246  | 1       | CD14 |
 
 ### 4.3 FindAllMarkers vs FindMarkers
 
