@@ -329,7 +329,7 @@ def shinycell(args):
         fatal(f"Seurat object not found or not readable: {args.object}")
 
     cfg = {}
-    cfg["seurat_object"] = args.object
+    cfg["seurat_object"] = os.path.abspath(args.object)
     cfg["run_dir"] = os.path.abspath(args.outdir)
     cfg["project_title"] = args.project
     cfg["marker_file"] = '' if args.markers is None else args.markers

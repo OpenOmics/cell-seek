@@ -21,20 +21,19 @@ rule all:
 rule shinycodes:
     input: 
         seurat_object       = seurat_object,
-        marker_list         = marker_file,
         files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
     output: join(run_dir, "wd", "server.R")
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
-        rname = "shinycodes",
-        project_title = project_title,
-        rmmeta = rmmeta,
-        max_levels = max_levels,
-        assaytouse = assaytouse,
-        outdir = join(run_dir, "wd"),
-        defred_flag = f"--defred {defaultreduction} " if defaultreduction else "",
-        cluster_flag = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
-        marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
+        rname               = "shinycodes",
+        project_title       = project_title,
+        rmmeta              = rmmeta,
+        max_levels          = max_levels,
+        assaytouse          = assaytouse,
+        outdir              = join(run_dir, "wd"),
+        defred_flag         = f"--defred {defaultreduction} " if defaultreduction else "",
+        cluster_flag        = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
+        marker_flag         = f"--markers {marker_file} " if marker_file else "",
     shell:
         dedent("""
         build_shinycell.R \\
@@ -51,20 +50,19 @@ rule shinycodes:
 rule shinyfiles:
     input:
         seurat_object       = seurat_object,
-        marker_list         = marker_file
     output:
         out_crumb           = join(run_dir, "wd", "sc1meta.rds"),
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
-        rname = "shinyfiles",
-        project_title = project_title,
-        rmmeta = rmmeta,
-        max_levels = max_levels,
-        assaytouse = assaytouse,
-        wd = join(run_dir, "wd"),
-        defred_flag = f"--defred {defaultreduction} " if defaultreduction else "",
-        cluster_flag = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
-        marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
+        rname               = "shinyfiles",
+        project_title       = project_title,
+        rmmeta              = rmmeta,
+        max_levels          = max_levels,
+        assaytouse          = assaytouse,
+        wd                  = join(run_dir, "wd"),
+        defred_flag         = f"--defred {defaultreduction} " if defaultreduction else "",
+        cluster_flag        = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
+        marker_flag         = f"--markers {marker_file} " if marker_file else "",
     shell:
         dedent("""
         build_shinycell.R \\
