@@ -263,7 +263,6 @@ shinycell_config <- delMeta(shinycell_config, remove_metas)
 files_params <- list(
   seurat_obj,
   shinycell_config,
-  assay.slot = "counts",
   shiny.dir = shiny_app_dir,
   shiny.prefix = "sc1"
 )
