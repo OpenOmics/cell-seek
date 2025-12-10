@@ -17,7 +17,7 @@ if (!suppressPackageStartupMessages(require("Seurat", quietly = TRUE))) prompt_f
 if (!suppressPackageStartupMessages(require("argparse", quietly = TRUE))) prompt_for_install("argparse")
 
 # give good tracebacks on errors
-options(error = function() traceback(2))
+options(error = function() traceback(3))
 err <- function(...) {
   cat(sprintf(...), sep = "\n", file = stderr())
 }
@@ -263,6 +263,7 @@ shinycell_config <- delMeta(shinycell_config, remove_metas)
 files_params <- list(
   seurat_obj,
   shinycell_config,
+  assay.slot = "counts",
   shiny.dir = shiny_app_dir,
   shiny.prefix = "sc1"
 )
