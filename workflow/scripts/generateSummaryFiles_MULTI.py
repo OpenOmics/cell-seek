@@ -128,7 +128,10 @@ def write_sheet(workbook, stats, samples, headers, filter):
                     if i.count('.') > 1:
                         worksheet.write(row, col, i.replace(',', ''))
                     else:
-                        worksheet.write(row, col, float(i.replace(',','')), formatFrac)
+                        if float(i.replace(',','')) <= 1:
+                            worksheet.write(row, col, float(i.replace(',','')), formatPer)
+                        else:
+                            worksheet.write(row, col, float(i.replace(',','')), formatFrac)
                 elif len(re.findall('\D', ''.join(re.findall('[^,]', i)))) > 0:
                     worksheet.write(row, col, i)
                 else:
