@@ -161,7 +161,7 @@ sil_files <- Sys.glob(file.path(seuratdir, "SilhouetteResult_res*.csv"))
 resolutions <- sapply(files, function(x) (x %>% basename %>% tools::file_path_sans_ext() %>% strsplit(split='res.'))[[1]][2]) %>% str_sort(numeric=T)
 sil_mean <- sapply(resolutions, function(resolution) {filename <- grep(paste0('res.', resolution, '.csv'), sil_files, value=T); if(length(filename) > 0) { data <- read.csv(filename); mean(data$sil_width)} else{-Inf}})
 
-if (max(sil_mean) > -Inf) {
+if (max(sil_mean, na.rm=T) > -Inf) {
   cat("The average silhouette score and a silhouette plot was calculated for each cluster resolution. This was done by calculating the score for each cell using the euclidean distance generated based on the cell's principal components to obtain an independent measure of the clustering results. The silhouette score ranges from -1 to 1, where: \n\n* 1 means that clusters are far apart and data points close to each other are assigned the same cluster label\n\n* 0 means that the distance between clusters are not signifcant and data points are close to more than one cluster\n\n* -1 means that clusters may be incorrectly assigned and data points are closer to other clusters than other data points in its own cluster\n\nThe resolution with the highest detected average silhouette score is resolution", sil_mean %>% which.max %>% names, "\n\n")
 }
 
