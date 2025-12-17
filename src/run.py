@@ -828,9 +828,10 @@ def finalcheck(config, flag, delimeter=','):
                 values = contents.get(i, set())
                 values.add(linelist[indices[i]])
                 contents[i] = values
-            value = name_type.get(linelist[indices['name']], set())
-            value.add(linelist[indices['type']])
-            name_type[linelist[indices['name']]] = value
+            if 'type' in indices:
+                value = name_type.get(linelist[indices['name']], set())
+                value.add(linelist[indices['type']])
+                name_type[linelist[indices['name']]] = value
 
     # Compiles the sample names and fastq paths from the input (config)
     samples  = set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']])
