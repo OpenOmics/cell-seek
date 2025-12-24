@@ -14,7 +14,7 @@ extra_css:
   - css/extra.css
 
 # Copyright
-copyright: Copyright &copy; 2023 OpenOmics
+copyright: Copyright &copy; 2026 OpenOmics
 
 # Configuration
 theme:
@@ -58,6 +58,9 @@ extra:
 
 # Extensions
 markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
   - markdown.extensions.md_in_html
   - markdown.extensions.admonition
   - markdown.extensions.attr_list
@@ -72,10 +75,10 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.critic
-  - pymdownx.details
+  - attr_list
   - pymdownx.emoji:
-      emoji_index: !!python/name:materialx.emoji.twemoji
-      emoji_generator: !!python/name:materialx.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
   - pymdownx.highlight
   - pymdownx.inlinehilite
   - pymdownx.keys
@@ -87,7 +90,6 @@ markdown_extensions:
   - pymdownx.smartsymbols
   - pymdownx.snippets:
       check_paths: true
-  - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
@@ -101,6 +103,7 @@ nav:
     - cell-seek run: usage/run.md
     - cell-seek genome: usage/genome.md
     - cell-seek unlock: usage/unlock.md
+    - cell-seek shinycell: usage/shinycell.md
     - cell-seek cache: usage/cache.md
   - FAQ:
     - General Questions: faq/questions.md

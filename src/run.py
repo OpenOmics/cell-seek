@@ -505,7 +505,11 @@ def add_sample_metadata(input_files, config, group=None):
     config['samples'] = []
     for file in input_files:
         # Split sample name on file extension
-        sample = re.split('\.R[12]\.fastq\.gz', os.path.basename(file))[0]
+        sample = re.split(r"(_S[0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file))[0]
+        if os.path.basename(file) == sample:
+            # Sample has a non-standard name, print warning message
+            err("Warning: Sample '{0}' has a file name that is not compatible with cellranger! Skipping over input file...".format(os.path.basename(file)))
+            continue
         if sample not in added:
             # Only add PE sample information once
             added.append(sample)
@@ -824,9 +828,10 @@ def finalcheck(config, flag, delimeter=','):
                 values = contents.get(i, set())
                 values.add(linelist[indices[i]])
                 contents[i] = values
-            value = name_type.get(linelist[indices['name']], set())
-            value.add(linelist[indices['type']])
-            name_type[linelist[indices['name']]] = value
+            if 'type' in indices:
+                value = name_type.get(linelist[indices['name']], set())
+                value.add(linelist[indices['type']])
+                name_type[linelist[indices['name']]] = value
 
     # Compiles the sample names and fastq paths from the input (config)
     samples  = set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']])

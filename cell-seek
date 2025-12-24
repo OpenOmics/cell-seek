@@ -32,31 +32,36 @@ EXAMPLE:
 
 # Python standard library
 from __future__ import print_function
-import sys, os, subprocess, re, json, textwrap, argparse
+from logging import config
+import sys
+import os
+import subprocess
+import json
+import textwrap
+import argparse
+import shutil
 
 # Local imports
 from src import version
 from src.run import init, setup, bind, dryrun, runner, finalcheck
-from src.shells import bash
 from src.utils import (
     Colors,
     err,
     exists,
     fatal,
-    hashed,
     permissions,
     check_cache,
-    require
+    require,
 )
 
 
 # Pipeline Metadata
 __version__ = version
-__authors__ = 'Skyler Kuhn, Vicky Chen'
-__email__ = 'skyler.kuhn@nih.gov, vicky.chen@nih.gov'
-__home__  =  os.path.dirname(os.path.abspath(__file__))
+__authors__ = "Skyler Kuhn, Vicky Chen"
+__email__ = "skyler.kuhn@nih.gov, vicky.chen@nih.gov"
+__home__ = os.path.dirname(os.path.abspath(__file__))
 _name = os.path.basename(sys.argv[0])
-_description = 'One single-cell pipeline to rule them all!'
+_description = "One single-cell pipeline to rule them all!"
 
 
 def unlock(sub_args):
@@ -71,12 +76,11 @@ def unlock(sub_args):
     outdir = sub_args.output
 
     try:
-        unlock_output = subprocess.check_output([
-            'snakemake', '--unlock',
-            '--cores', '1',
-            '--configfile=config.json'
-        ], cwd = outdir,
-        stderr=subprocess.STDOUT)
+        unlock_output = subprocess.check_output(
+            ["snakemake", "--unlock", "--cores", "1", "--configfile=config.json"],
+            cwd=outdir,
+            stderr=subprocess.STDOUT,
+        )
     except subprocess.CalledProcessError as e:
         # Unlocking process returned a non-zero exit code
         sys.exit("{}\n{}".format(e, e.output))
@@ -95,55 +99,56 @@ def run(sub_args):
     # Step 0. Check for required dependencies
     # The pipelines has only two requirements:
     # snakemake and singularity
-    require(['snakemake', 'singularity'], ['snakemake', 'singularity'])
+    require(["snakemake", "singularity"], ["snakemake", "singularity"])
 
     # Step 1. Initialize working directory,
     # copy over required resources to run
     # the pipeline
     git_repo = __home__
     input_files = init(
-        repo_path = git_repo,
-        output_path = sub_args.output,
-        links = sub_args.input,
-        sym_link = False
+        repo_path=git_repo,
+        output_path=sub_args.output,
+        links=sub_args.input,
+        sym_link=False,
     )
 
     # Step 2. Setup pipeline for execution,
     # dynamically create config.json config
     # file from user inputs and base config
     # templates
-    config = setup(sub_args,
-        ifiles = input_files,
-        repo_path = git_repo,
-        output_path = sub_args.output
+    config = setup(
+        sub_args, ifiles=input_files, repo_path=git_repo, output_path=sub_args.output
     )
 
     # Step 3. Resolve docker/singularity bind
     # paths from the config file.
-    bindpaths = bind(
-        sub_args,
-        config = config
-    )
+    bindpaths = bind(sub_args, config=config)
 
-    config['bindpaths'] = bindpaths
+    config["bindpaths"] = bindpaths
 
     # Step 4. Save config to output directory
-    with open(os.path.join(sub_args.output, 'config.json'), 'w') as fh:
-        json.dump(config, fh, indent = 4, sort_keys = True)
+    with open(os.path.join(sub_args.output, "config.json"), "w") as fh:
+        json.dump(config, fh, indent=4, sort_keys=True)
 
     # Optional Step: Dry-run pipeline
     if sub_args.dry_run:
         # Dryrun pipeline
-        dryrun_output = dryrun(outdir = sub_args.output) # python3 returns byte-string representation
-        print("\nDry-running {} pipeline:\n{}".format(_name, dryrun_output.decode("utf-8")))
-        for arg_check in ['rename', 'libraries']:
-            if config['options'][arg_check] != 'None':
+        dryrun_output = dryrun(
+            outdir=sub_args.output
+        )  # python3 returns byte-string representation
+        print(
+            "\nDry-running {} pipeline:\n{}".format(
+                _name, dryrun_output.decode("utf-8")
+            )
+        )
+        for arg_check in ["rename", "libraries"]:
+            if config["options"][arg_check] != "None":
                 finalcheck(config=config, flag=arg_check)
         sys.exit(0)
 
     # Step 4b. Perform final check of input files
-    for arg_check in ['rename', 'libraries']:
-        if config['options'][arg_check] != 'None':
+    for arg_check in ["rename", "libraries"]:
+        if config["options"][arg_check] != "None":
             finalcheck(config=config, flag=arg_check)
 
     # Step 5. Orchestrate pipeline execution,
@@ -151,24 +156,25 @@ def run(sub_args):
     # for debugging purposes or submit the master
     # job to the job scheduler, SLURM, and create
     # logging file
-    if not exists(os.path.join(sub_args.output, 'logfiles')):
+    if not exists(os.path.join(sub_args.output, "logfiles")):
         # Create directory for logfiles
-        os.makedirs(os.path.join(sub_args.output, 'logfiles'))
-    if sub_args.mode == 'local':
-        log = os.path.join(sub_args.output, 'logfiles', 'snakemake.log')
+        os.makedirs(os.path.join(sub_args.output, "logfiles"))
+    if sub_args.mode == "local":
+        log = os.path.join(sub_args.output, "logfiles", "snakemake.log")
     else:
-        log = os.path.join(sub_args.output, 'logfiles', 'master.log')
-    logfh = open(log, 'w')
-    mjob = runner(mode = sub_args.mode,
-        outdir = sub_args.output,
+        log = os.path.join(sub_args.output, "logfiles", "master.log")
+    logfh = open(log, "w")
+    mjob = runner(
+        mode=sub_args.mode,
+        outdir=sub_args.output,
         # additional_bind_paths = all_bind_paths,
-        alt_cache = sub_args.singularity_cache,
-        threads = int(sub_args.threads),
-        jobname = sub_args.job_name,
-        submission_script=os.path.join(__home__, 'src', 'run.sh'),
-        logger = logfh,
-        additional_bind_paths = ",".join(bindpaths),
-        tmp_dir = sub_args.tmp_dir,
+        alt_cache=sub_args.singularity_cache,
+        threads=int(sub_args.threads),
+        jobname=sub_args.job_name,
+        submission_script=os.path.join(__home__, "src", "run.sh"),
+        logger=logfh,
+        additional_bind_paths=",".join(bindpaths),
+        tmp_dir=sub_args.tmp_dir,
     )
 
     # Step 6. Wait for subprocess to complete,
@@ -181,19 +187,24 @@ def run(sub_args):
     # Step 7. Relay information about submission
     # of the master job or the exit code of the
     # pipeline that ran in local mode
-    if sub_args.mode == 'local':
+    if sub_args.mode == "local":
         if int(mjob.returncode) == 0:
-            print('{} pipeline has successfully completed'.format(_name))
+            print("{} pipeline has successfully completed".format(_name))
         else:
-            fatal('{} pipeline failed. Please see {} for more information.'.format(_name,
-                os.path.join(sub_args.output, 'logfiles', 'snakemake.log')))
-    elif sub_args.mode == 'slurm':
-        jobid = open(os.path.join(sub_args.output, 'logfiles', 'mjobid.log')).read().strip()
+            fatal(
+                "{} pipeline failed. Please see {} for more information.".format(
+                    _name, os.path.join(sub_args.output, "logfiles", "snakemake.log")
+                )
+            )
+    elif sub_args.mode == "slurm":
+        jobid = (
+            open(os.path.join(sub_args.output, "logfiles", "mjobid.log")).read().strip()
+        )
         if not sub_args.silent:
             if int(mjob.returncode) == 0:
-                print('Successfully submitted master job: ', end="")
+                print("Successfully submitted master job: ", end="")
             else:
-                fatal('Error occurred when submitting the master job.')
+                fatal("Error occurred when submitting the master job.")
         print(jobid)
 
 
@@ -205,7 +216,8 @@ def cache(sub_args):
         Parsed arguments for unlock sub-command
     """
     print(sub_args)
-    fatal('NotImplementedError... Coming Soon!')
+    fatal("NotImplementedError... Coming Soon!")
+
 
 def genome(sub_args):
     """Unlocks a previous runs output directory. If snakemake fails ungracefully,
@@ -218,18 +230,36 @@ def genome(sub_args):
     print("Generating custom json file...")
 
     print(sub_args)
-    if sub_args.gex != None:
+    if sub_args.gex is not None:
         sub_args.cite = sub_args.gex
-    #print([(i[0], type(i[1]) == str) for i in vars(sub_args).items()])
-    entryname = {'gex': 'gex_transcriptome', 'cite': 'cite_transcriptome', 'atac': 'atac_ref', 'vdj': 'vdj_ref', 'multiome': 'arc_ref'}
-    ref = {'references': {sub_args.name: {entryname[i[0]]: i[1] for i in vars(sub_args).items() if i[0] != 'name' and type(i[1]) == str}}}
-    #print(ref)
+    # print([(i[0], type(i[1]) == str) for i in vars(sub_args).items()])
+    entryname = {
+        "gex": "gex_transcriptome",
+        "cite": "cite_transcriptome",
+        "atac": "atac_ref",
+        "vdj": "vdj_ref",
+        "multiome": "arc_ref",
+    }
+    ref = {
+        "references": {
+            sub_args.name: {
+                entryname[i[0]]: i[1]
+                for i in vars(sub_args).items()
+                if i[0] != "name" and isinstance(i[1], str)
+            }
+        }
+    }
+    # print(ref)
 
-    with open(f'{sub_args.name}.json', 'w') as f:
+    with open(f"{sub_args.name}.json", "w") as f:
         json.dump(ref, f, indent=4)
 
+    print(
+        "Custom json file generated. File located at: {}".format(
+            os.path.abspath(f"{sub_args.name}.json")
+        )
+    )
 
-    print("Custom json file generated. File located at: {}".format(os.path.abspath(f"{sub_args.name}.json")))
 
 def genome_options(parser, user_option, prebuilt):
     """Dynamically checks if --genome option is a valid choice. Compares against a
@@ -249,32 +279,140 @@ def genome_options(parser, user_option, prebuilt):
         an exception is raised.
     """
     # Checks for custom built genomes using rna-seek build
-    if user_option.endswith('.json'):
-        with open(user_option, 'r') as _f:
+    if user_option.endswith(".json"):
+        with open(user_option, "r") as _f:
             ref = json.load(_f)
         # Basic check to see if user provided
         # JSON file is formatted properly
         if "references" not in ref.keys():
-            raise argparse.ArgumentTypeError(f"User provided Genome JSON does not appear to be valid, missing section containing 'references'!") 
-        genome_names = list(ref['references'].keys())  # resolves to reference genome name, should only be one
+            raise argparse.ArgumentTypeError(
+                "User provided Genome JSON does not appear to be valid, missing section containing 'references'!"
+            )
+        genome_names = list(
+            ref["references"].keys()
+        )  # resolves to reference genome name, should only be one
         if len(genome_names) > 1:
-            genomes = ','.join(genome_names)
-            raise argparse.ArgumentTypeError(f"User provided Genome JSON contains multiple genome(s): {genomes}") 
+            genomes = ",".join(genome_names)
+            raise argparse.ArgumentTypeError(
+                f"User provided Genome JSON contains multiple genome(s): {genomes}"
+            )
         # Check file is readable or accessible
         permissions(parser, user_option, os.R_OK)
     # Checks against vaild pre-built options
     # TODO: makes this more dynamic in the future to have it check against
     # a list of genomes (files) in config/genomes/*.json
-    elif not user_option in prebuilt:
+    elif user_option not in prebuilt:
         # User did NOT provide a vaild choice
-        parser.error("""provided invalid choice, '{}', to --genome argument!\n
+        parser.error(
+            """provided invalid choice, '{}', to --genome argument!\n
         Choose from one of the following pre-built genome options: \n
         \t{}\n
         or supply a custom reference genome JSON file with reference generated using cellranger mkref.\n
         Custom reference genom JSON file can be created using the cell-seek genome command.
-        """.format(user_option, prebuilt))
+        """.format(user_option, prebuilt)
+        )
 
     return user_option
+
+
+def shinycell(args):
+    if (args.markers is None) != (args.cluster_labels is None):
+        fatal("--markers requires --cluster_labels to be set as well (and vice versa)")
+
+    if args.markers is not None:
+        markers_path = os.path.abspath(os.path.expanduser(args.markers))
+        if not os.path.isfile(markers_path) or not os.access(markers_path, os.R_OK):
+            fatal(f"Markers file not found or not readable: {args.markers}")
+        args.markers = markers_path
+
+    if not os.path.exists(args.object) or not os.access(args.object, os.R_OK):
+        fatal(f"Seurat object not found or not readable: {args.object}")
+
+    cfg = {}
+    cfg["seurat_object"] = args.object
+    cfg["run_dir"] = os.path.abspath(args.outdir)
+    cfg["project_title"] = args.project
+    cfg["marker_file"] = '' if args.markers is None else args.markers
+    cfg["cluster_labels"] = '' if args.cluster_labels is None else args.cluster_labels
+    cfg["rmmeta"] = args.meta_to_rm
+    cfg["defaultreduction"] = args.defaultreduction
+    cfg["max_levels"] = args.max_levels
+    cfg["assaytouse"] = args.assaytouse
+    cfg["tmpdir"] = args.tmpdir
+    cfg['project'] = {}
+    cfg['project']['datapath'] = os.path.abspath(
+        os.path.dirname(args.object)
+    )
+    cfg['project']['workpath'] = os.path.abspath(args.outdir)
+
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir, mode=0o755)
+    json.dump(cfg, open(os.path.join(args.outdir, "config.json"), "w"), indent=4)
+
+    scrules = os.path.join(
+        os.path.dirname(__file__), "workflow", "rules", "shinycell2.smk"
+    )
+    cluster_resources = os.path.join(
+        os.path.dirname(__file__), "config", "cluster.json"
+    )
+    to_copy = {
+        scrules: os.path.join(args.outdir, "workflow", "Snakefile"),
+        cluster_resources: os.path.join(args.outdir, "config", "cluster.json"),
+    }
+    for src, dest in to_copy.items():
+        if not os.path.exists(os.path.dirname(dest)):
+            os.makedirs(os.path.dirname(dest), exist_ok=True)
+        shutil.copy(src, dest)
+
+    if not exists(os.path.join(args.outdir, "logfiles")):
+        os.makedirs(os.path.join(args.outdir, "logfiles"))
+    if args.mode == "local":
+        log = os.path.join(args.outdir, "logfiles", "snakemake.log")
+    else:
+        log = os.path.join(args.outdir, "logfiles", "master.log")
+    logfh = open(log, "w")
+
+    bindpaths = bind(args, config=cfg)
+
+    mjob = runner(
+        mode=args.mode,
+        outdir=args.outdir,
+        alt_cache=None,
+        threads=int(args.threads),
+        jobname=args.job_name,
+        submission_script=os.path.join(__home__, "src", "run.sh"),
+        logger=logfh,
+        additional_bind_paths=",".join(bindpaths),
+        tmp_dir=args.tmpdir,
+    )
+
+    if not args.silent:
+        print("\nRunning {} pipeline in '{}' mode...".format(_name, args.mode))
+    mjob.wait()
+    logfh.close()
+
+    if args.mode == "local":
+        if int(mjob.returncode) == 0:
+            print("{} pipeline has successfully completed".format(_name))
+        else:
+            fatal(
+                "{} pipeline failed. Please see {} for more information.".format(
+                    _name, os.path.join(args.outdir, "logfiles", "snakemake.log")
+                )
+            )
+    elif args.mode == "slurm":
+        jobid = (
+            open(os.path.join(args.outdir, "logfiles", "mjobid.log")).read().strip()
+        )
+        if not args.silent:
+            if int(mjob.returncode) == 0:
+                print("Successfully submitted master job: ", end="")
+            else:
+                fatal("Error occurred when submitting the master job.")
+        print(jobid)
+
+    return
+
 
 def parsed_arguments(name, description):
     """Parses user-provided command-line arguments. Requires argparse and textwrap
@@ -296,13 +434,17 @@ def parsed_arguments(name, description):
     description = "{0}{1}{2}".format(c.bold, description, c.end)
 
     # Create a top-level parser
-    parser = argparse.ArgumentParser(description = '{}: {}'.format(styled_name, description))
+    parser = argparse.ArgumentParser(
+        description="{}: {}".format(styled_name, description)
+    )
 
     # Adding Verison information
-    parser.add_argument('--version', action = 'version', version='%(prog)s {}'.format(__version__))
+    parser.add_argument(
+        "--version", action="version", version="%(prog)s {}".format(__version__)
+    )
 
     # Create sub-command parser
-    subparsers = parser.add_subparsers(help='List of available sub-commands')
+    subparsers = parser.add_subparsers(help="List of available sub-commands")
 
     # Sub-parser for the "run" sub-command
     # Grouped sub-parser arguments are currently
@@ -310,7 +452,8 @@ def parsed_arguments(name, description):
     # Here is a work around to create more useful help message for named
     # options that are required! Please note: if a required arg is added the
     # description below should be updated (i.e. update usage and add new option)
-    required_run_options = textwrap.dedent("""\
+    required_run_options = textwrap.dedent(
+        """\
         {0}: {1}
 
         {3}{4}Synopsis:{5}
@@ -374,11 +517,11 @@ def parsed_arguments(name, description):
                                 options: hg38, mm10, hg2024, mm2024.
                                   Example: --genome hg38
         {3}{4}Analysis options:{5}
-          --cellranger {{7.1.0, 7.2.0, 8.0.0, 9.0.0}}
+          --cellranger {{7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0}}
                                 The version of CellRanger to run. This option specifies
                                 which version of CellRanger to use when running GEX,
                                 CITE, or MULTI. Please select one of the following
-                                options: 7.1.0, 7.2.0, 8.0.0, 9.0.0
+                                options: 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0
                                   Example: --cellranger 7.1.0
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
@@ -707,10 +850,12 @@ def parsed_arguments(name, description):
         {3}{4}Misc Options:{5}
           -h, --help            Show usage information, help message, and exit.
                                   Example: --help
-        """.format(styled_name, description, name, c.bold, c.url, c.end, c.italic))
+        """.format(styled_name, description, name, c.bold, c.url, c.end)
+    )
 
     # Display example usage in epilog
-    run_epilog = textwrap.dedent("""\
+    run_epilog = textwrap.dedent(
+        """\
         {2}{3}Example:{4}
           # Step 1.) Grab an interactive node,
           # do not run on head node!
@@ -740,116 +885,114 @@ def parsed_arguments(name, description):
 
         {2}{3}Version:{4}
           {1}
-        """.format(name, __version__, c.bold, c.url, c.end))
+        """.format(name, __version__, c.bold, c.url, c.end)
+    )
 
     # Supressing help message of required args to overcome no sub-parser named groups
-    subparser_run = subparsers.add_parser('run',
-        help = 'Run the {} pipeline with input files.'.format(name),
-        usage = argparse.SUPPRESS,
+    subparser_run = subparsers.add_parser(
+        "run",
+        help="Run the {} pipeline with input files.".format(name),
+        usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description = required_run_options,
-        epilog  = run_epilog,
-        add_help=False
+        description=required_run_options,
+        epilog=run_epilog,
+        add_help=False,
     )
 
     # Required Arguments
     # Input FastQ files
     subparser_run.add_argument(
-        '--input',
+        "--input",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = True,
-        nargs = '+',
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=True,
+        nargs="+",
+        help=argparse.SUPPRESS,
     )
 
     # Output Directory, i.e
     # working directory
     subparser_run.add_argument(
-        '--output',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)),
-        required = True,
-        help = argparse.SUPPRESS
+        "--output",
+        type=lambda option: os.path.abspath(os.path.expanduser(option)),
+        required=True,
+        help=argparse.SUPPRESS,
     )
 
     # Version of pipeline to run
     # i.e. GEX, VDJ, Multi, etc.
     subparser_run.add_argument(
-        '--pipeline',
-        type = str.lower,
-        required = True,
-        default = "gex",
-        choices = ['gex', 'cite', 'multi', 'vdj', 'atac', 'multiome'],
-        help = argparse.SUPPRESS
+        "--pipeline",
+        type=str.lower,
+        required=True,
+        default="gex",
+        choices=["gex", "cite", "multi", "vdj", "atac", "multiome"],
+        help=argparse.SUPPRESS,
     )
 
     # Execution Method, run locally
     # on a compute node, submit to
     # SLURM job scheduler, etc.
     subparser_run.add_argument(
-        '--genome',
-        #type = str,
-        required = True,
-        type = lambda option: str(
-            genome_options(subparser_run, option, ['hg38', 'mm10', 'hg2024', 'mm2024'])
+        "--genome",
+        # type = str,
+        required=True,
+        type=lambda option: str(
+            genome_options(subparser_run, option, ["hg38", "mm10", "hg2024", "mm2024"])
         ),
-        #choices = ['hg38', 'mm10', 'hg2024', 'mm2024'],
-        help = argparse.SUPPRESS
+        # choices = ['hg38', 'mm10', 'hg2024', 'mm2024'],
+        help=argparse.SUPPRESS,
     )
 
     # Optional Arguments
     # Add custom help message
-    subparser_run.add_argument(
-        '-h', '--help',
-        action='help',
-        help=argparse.SUPPRESS
-    )
+    subparser_run.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
 
     # Analysis options
     # Rename fastq files for
     # cellranger count
     subparser_run.add_argument(
-        '--rename',
+        "--rename",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
     # Input Libraries files for
     # cellranger count
     subparser_run.add_argument(
-        '--libraries',
+        "--libraries",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input Libraries files
     subparser_run.add_argument(
-        '--features',
+        "--features",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input CMO Reference files
     subparser_run.add_argument(
-        '--cmo-reference',
+        "--cmo-reference",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input CMO Sample files
     subparser_run.add_argument(
-        '--cmo-sample',
+        "--cmo-sample",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input HTO Sample files
@@ -889,67 +1032,67 @@ def parsed_arguments(name, description):
     )
     # Exclude introns from count
     subparser_run.add_argument(
-        '--exclude-introns',
-        action = 'store_true',
-        required = False,
-        default = False,
-        help = argparse.SUPPRESS
+        "--exclude-introns",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
     )
 
     # How to run Cell Ranger aggregate
     subparser_run.add_argument(
-        '--aggregate',
-        type = str.lower,
-        required = False,
-        default = "",
-        choices = ['none', 'mapped'],
-        help = argparse.SUPPRESS
+        "--aggregate",
+        type=str.lower,
+        required=False,
+        default="",
+        choices=["none", "mapped"],
+        help=argparse.SUPPRESS,
     )
 
     # Thresholds to use for filtering in QC Analysis
     subparser_run.add_argument(
-        '--filter',
+        "--filter",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Metadata to add to Seurat Objects during QC Analysis
     subparser_run.add_argument(
-        '--metadata',
+        "--metadata",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Create BAM file during run
     subparser_run.add_argument(
-        '--create-bam',
-        action = 'store_true',
-        required = False,
-        default = False,
-        help = argparse.SUPPRESS
+        "--create-bam",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
     )
 
     # Create BAM file during run
     subparser_run.add_argument(
-        '--cellranger',
-        type = str.lower,
-        required = False,
-        default = "",
-        choices = ['7.1.0', '7.2.0', '8.0.0', '9.0.0'],
-        help = argparse.SUPPRESS
+        "--cellranger",
+        type=str.lower,
+        required=False,
+        default="",
+        choices=["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        help=argparse.SUPPRESS,
     )
 
     # Number of cells to force samples to when running Cell Ranger analysis
     subparser_run.add_argument(
-        '--forcecells',
+        "--forcecells",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Orchestration Options
@@ -957,69 +1100,71 @@ def parsed_arguments(name, description):
     # on a compute node or submit to
     # a supported job scheduler, etc.
     subparser_run.add_argument(
-        '--mode',
-        type = str,
-        required = False,
-        default = "slurm",
-        choices = ['slurm', 'local'],
-        help = argparse.SUPPRESS
+        "--mode",
+        type=str,
+        required=False,
+        default="slurm",
+        choices=["slurm", "local"],
+        help=argparse.SUPPRESS,
     )
 
     # Name of master job
     subparser_run.add_argument(
-        '--job-name',
-        type = str,
-        required = False,
-        default = 'pl:{}'.format(name),
-        help = argparse.SUPPRESS
+        "--job-name",
+        type=str,
+        required=False,
+        default="pl:{}".format(name),
+        help=argparse.SUPPRESS,
     )
 
     # Dry-run
     # Do not execute the workflow,
     # prints what steps remain
     subparser_run.add_argument(
-        '--dry-run',
-        action = 'store_true',
-        required = False,
-        default = False,
-        help = argparse.SUPPRESS
+        "--dry-run",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
     )
 
     # Silent output mode
     subparser_run.add_argument(
-        '--silent',
-        action = 'store_true',
-        required = False,
-        default = False,
-        help = argparse.SUPPRESS
+        "--silent",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
     )
 
     # Singularity cache directory,
     # default uses output directory
     subparser_run.add_argument(
-        '--singularity-cache',
-        type = lambda option: check_cache(parser, os.path.abspath(os.path.expanduser(option))),
-        required = False,
-        help = argparse.SUPPRESS
+        "--singularity-cache",
+        type=lambda option: check_cache(
+            parser, os.path.abspath(os.path.expanduser(option))
+        ),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Local SIF cache directory,
     # default pull from Dockerhub
     subparser_run.add_argument(
-        '--sif-cache',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)),
-        required = False,
-        help = argparse.SUPPRESS
+        "--sif-cache",
+        type=lambda option: os.path.abspath(os.path.expanduser(option)),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Base directory to write
     # temporary/intermediate files
     subparser_run.add_argument(
-        '--tmp-dir',
-        type = str,
-        required = False,
-        default = '/lscratch/$SLURM_JOBID/',
-        help = argparse.SUPPRESS
+        "--tmp-dir",
+        type=str,
+        required=False,
+        default="/lscratch/$SLURM_JOBID/",
+        help=argparse.SUPPRESS,
     )
 
     # Number of threads for the
@@ -1028,11 +1173,7 @@ def parsed_arguments(name, description):
     # local rules or when running
     # in local mode.
     subparser_run.add_argument(
-        '--threads',
-        type = int,
-        required = False,
-        default = 2,
-        help = argparse.SUPPRESS
+        "--threads", type=int, required=False, default=2, help=argparse.SUPPRESS
     )
 
     # Sub-parser for the "unlock" sub-command
@@ -1041,7 +1182,8 @@ def parsed_arguments(name, description):
     # Here is a work around to create more useful help message for named
     # options that are required! Please note: if a required arg is added the
     # description below should be updated (i.e. update usage and add new option)
-    required_unlock_options = textwrap.dedent("""\
+    required_unlock_options = textwrap.dedent(
+        """\
         {0}: {1}
 
         {3}{4}Synopsis:{5}
@@ -1069,44 +1211,40 @@ def parsed_arguments(name, description):
           -h, --help            Show usage information, help message,
                                 and exit.
                                   Example: --help
-        """.format(styled_name, description, name, c.bold, c.url, c.end))
+        """.format(styled_name, description, name, c.bold, c.url, c.end)
+    )
 
     # Display example usage in epilog
-    unlock_epilog = textwrap.dedent("""\
+    unlock_epilog = textwrap.dedent(
+        """\
         {2}{3}Example:{4}
           # Unlock output directory of pipeline
           {0} unlock --output /data/$USER/output
 
         {2}{3}Version:{4}
           {1}
-        """.format(name, __version__, c.bold, c.url, c.end))
+        """.format(name, __version__, c.bold, c.url, c.end)
+    )
 
     # Supressing help message of required args to overcome no sub-parser named groups
     subparser_unlock = subparsers.add_parser(
-        'unlock',
-        help = 'Unlocks a previous runs output directory.',
-        usage = argparse.SUPPRESS,
+        "unlock",
+        help="Unlocks a previous runs output directory.",
+        usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description = required_unlock_options,
-        epilog = unlock_epilog,
-        add_help = False
+        description=required_unlock_options,
+        epilog=unlock_epilog,
+        add_help=False,
     )
 
     # Required Arguments
     # Output Directory (analysis working directory)
     subparser_unlock.add_argument(
-        '--output',
-        type = str,
-        required = True,
-        help = argparse.SUPPRESS
+        "--output", type=str, required=True, help=argparse.SUPPRESS
     )
 
     # Add custom help message
-    subparser_unlock.add_argument(
-        '-h', '--help',
-        action='help',
-        help=argparse.SUPPRESS
-    )
+    subparser_unlock.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
 
     # Sub-parser for the "unlock" sub-command
     # Grouped sub-parser arguments are currently
@@ -1114,7 +1252,8 @@ def parsed_arguments(name, description):
     # Here is a work around to create more useful help message for named
     # options that are required! Please note: if a required arg is added the
     # description below should be updated (i.e. update usage and add new option)
-    required_genome_options = textwrap.dedent("""\
+    required_genome_options = textwrap.dedent(
+        """\
         {0}: {1}
 
         {3}{4}Synopsis:{5}
@@ -1162,75 +1301,87 @@ def parsed_arguments(name, description):
           -h, --help            Show usage information, help message,
                                 and exit.
                                   Example: --help
-        """.format(styled_name, description, name, c.bold, c.url, c.end))
+        """.format(styled_name, description, name, c.bold, c.url, c.end)
+    )
 
     # Display example usage in epilog
-    genome_epilog = textwrap.dedent("""\
+    genome_epilog = textwrap.dedent(
+        """\
         {2}{3}Example:{4}
           # Create custom json file
           {0} genome --name NAME --gex /data/REF_PATH_GEX
 
         {2}{3}Version:{4}
           {1}
-        """.format(name, __version__, c.bold, c.url, c.end))
+        """.format(name, __version__, c.bold, c.url, c.end)
+    )
 
     # Supressing help message of required args to overcome no sub-parser named groups
     subparser_genome = subparsers.add_parser(
-        'genome',
-        help = 'Create a custom genome json file using provided reference paths.',
-        usage = argparse.SUPPRESS,
+        "genome",
+        help="Create a custom genome json file using provided reference paths.",
+        usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description = required_genome_options,
-        epilog = genome_epilog,
-        add_help = False
+        description=required_genome_options,
+        epilog=genome_epilog,
+        add_help=False,
     )
 
     # Name of the reference and generated output file
     subparser_genome.add_argument(
-        '--name',
-        type = str,
-        required = True,
-        help = argparse.SUPPRESS
+        "--name", type=str, required=True, help=argparse.SUPPRESS
     )
 
     # Path to the GEX/CITE reference
     subparser_genome.add_argument(
-        '--gex',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)) if os.path.isdir(option) else parser.error("Path '{}' does not exist! Failed to provide valid input.".format(option)),
-        required = False,
-        help = argparse.SUPPRESS
+        "--gex",
+        type=lambda option: os.path.abspath(os.path.expanduser(option))
+        if os.path.isdir(option)
+        else parser.error(
+            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        ),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Path to the VDJ reference
     subparser_genome.add_argument(
-        '--vdj',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)) if os.path.isdir(option) else parser.error("Path '{}' does not exist! Failed to provide valid input.".format(option)),
-        required = False,
-        help = argparse.SUPPRESS
+        "--vdj",
+        type=lambda option: os.path.abspath(os.path.expanduser(option))
+        if os.path.isdir(option)
+        else parser.error(
+            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        ),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Path to the ATAC reference
     subparser_genome.add_argument(
-        '--atac',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)) if os.path.isdir(option) else parser.error("Path '{}' does not exist! Failed to provide valid input.".format(option)),
-        required = False,
-        help = argparse.SUPPRESS
+        "--atac",
+        type=lambda option: os.path.abspath(os.path.expanduser(option))
+        if os.path.isdir(option)
+        else parser.error(
+            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        ),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Path to the ARC reference
     subparser_genome.add_argument(
-        '--multiome',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)) if os.path.isdir(option) else parser.error("Path '{}' does not exist! Failed to provide valid input.".format(option)),
-        required = False,
-        help = argparse.SUPPRESS
+        "--multiome",
+        type=lambda option: os.path.abspath(os.path.expanduser(option))
+        if os.path.isdir(option)
+        else parser.error(
+            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        ),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Add custom help message
-    subparser_genome.add_argument(
-        '-h', '--help',
-        action='help',
-        help=argparse.SUPPRESS
-    )
+    subparser_genome.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
 
     # Sub-parser for the "cache" sub-command
     # Grouped sub-parser arguments are
@@ -1238,7 +1389,8 @@ def parsed_arguments(name, description):
     # Here is a work around to create more useful help message for named
     # options that are required! Please note: if a required arg is added the
     # description below should be updated (i.e. update usage and add new option)
-    required_cache_options = textwrap.dedent("""\
+    required_cache_options = textwrap.dedent(
+        """\
         {0}: {1}
 
         {3}{4}Synopsis:{5}
@@ -1278,84 +1430,300 @@ def parsed_arguments(name, description):
                                 and exits.
                                   Example: --help
 
-        """.format(styled_name, description, name, c.bold, c.url, c.end))
+        """.format(styled_name, description, name, c.bold, c.url, c.end)
+    )
 
     # Display example usage in epilog
-    cache_epilog = textwrap.dedent("""\
+    cache_epilog = textwrap.dedent(
+        """\
         {2}{3}Example:{4}
           # Cache remote resources of pipeline
           {0} cache --sif-cache /data/$USER/cache
 
         {2}{3}Version:{4}
           {1}
-        """.format(name, __version__, c.bold, c.url, c.end))
+        """.format(name, __version__, c.bold, c.url, c.end)
+    )
 
     # Supressing help message of required args to overcome no sub-parser named groups
     subparser_cache = subparsers.add_parser(
-        'cache',
-        help = 'Cache remote resources locally.',
-        usage = argparse.SUPPRESS,
+        "cache",
+        help="Cache remote resources locally.",
+        usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description = required_cache_options,
-        epilog = cache_epilog,
-        add_help = False
+        description=required_cache_options,
+        epilog=cache_epilog,
+        add_help=False,
     )
 
     # Required Arguments
     # Output Directory (analysis working directory)
     subparser_cache.add_argument(
-        '--sif-cache',
-        type = lambda option: os.path.abspath(os.path.expanduser(option)),
-        required = True,
-        help = argparse.SUPPRESS
+        "--sif-cache",
+        type=lambda option: os.path.abspath(os.path.expanduser(option)),
+        required=True,
+        help=argparse.SUPPRESS,
     )
 
     # Optional Arguments
     # Dry-run cache command (do not pull any remote resources)
     subparser_cache.add_argument(
-        '--dry-run',
-        action = 'store_true',
-        required = False,
-        default = False,
-        help=argparse.SUPPRESS
+        "--dry-run",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
     )
 
     # Add custom help message
-    subparser_cache.add_argument(
-        '-h', '--help',
-        action='help',
+    subparser_cache.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
+
+    # shinycell builder subcommands
+    required_shinycell_options = textwrap.dedent(
+        """\
+        {0}: {1}
+
+        {3}{4}Synopsis:{5}
+        $ {2} shinycell [-h] \\
+                -j OBJ -o OUTDIR --proj PROJECT \\
+                [--markers MARKERS] [--cluster_labels CLUSTER_LABELS] \\
+                [--rmmeta META1,META2] [--defred DEFAULTRED] \\
+                [-l MAXLEVELS] [--filesonly] [--codesonly] [-a ASSAYS]
+
+        Optional arguments are shown in square brackets above.
+
+        {3}{4}Description:{5}
+        Builds a ShinyCell2 application from a Seurat RDS object. The command
+        validates inputs, creates configuration, and writes the files and/or
+        Shiny code required to deploy an interactive single-cell web app.
+
+        {3}{4}Required arguments:{5}
+        -j, --obj OBJ         Path to an RDS file produced with saveRDS()
+                                that contains a Seurat object. The script will
+                                attempt to read and validate the Seurat object.
+                                Example: -j seurat_object.rds
+        -o, --outdir OUTDIR   Output directory where the Shiny app files and
+                                generated code will be written. Directory will be
+                                created if it does not exist.
+                                Example: -o /srv/shiny-server/my_app
+        --proj PROJECT        Project name used as the app title and prefix
+                                for generated assets.
+                                Example: --proj NCBR-34
+
+        {3}{4}Optional arguments:{5}
+        --markers MARKERS     Path to a plain text file with marker genes,
+                                one gene per line. When provided, requires
+                                --cluster_labels to be set as well. Used to
+                                generate marker-based DEG pages or panels.
+                                Default: None (No DEG pages/panels will be created)
+                                Example: --markers markers.txt
+        --cluster_labels NAME
+                                Metadata column name in seurat_obj@meta.data that
+                                contains cluster identities corresponding to the
+                                markers file. Required when --markers is provided.
+                                Default: None (No DEG pages/panels will be created)
+                                Example: --cluster_labels seurat_clusters
+        --rmmeta META1,META2  Comma-delimited list of metadata column names to
+                                drop from the Seurat object before deploying.
+                                Useful to remove large or sensitive columns.
+                                Default: None (No metadata columns are removed)
+                                Example: --rmmeta barcode,unwanted_col
+        --defred DEFAULTRED   Default dimensionality reduction to use for the
+                                app (must exist in Seurat object reductions).
+                                The code expects the reduction to expose a key
+                                so UMAP1/UMAP2 (or <KEY>1/<KEY>2) coordinate names
+                                can be derived.
+                                Default: None (Uses all active reduction)
+                                Example: --defred UMAP
+        -l, --maxlevels INT   Maximum allowed number of factor levels for
+                                categorical metadata fields. Fields exceeding this
+                                will be treated as continuous / filtered out.
+                                Default: 50
+                                Example: -l 50
+        -a, --assay ASSAYS    Comma-delimited list of assays to include in the
+                                Shiny app (e.g. RNA,spatial,ATAC). If omitted,
+                                default assays present in the Seurat object are
+                                used when compatible.
+                                Default: None (Uses all assays in Seurat object)
+                                Example: -a RNA,spatial
+
+        {3}{4}Misc Options:{5}
+        -h, --help            Show usage information, help message, and exit.
+                                    Example: --help
+        """.format(styled_name, description, name, c.bold, c.url, c.end)
+    )
+
+    shinycell_epilog = textwrap.dedent(
+        """\
+        {2}{3}Examples:{4}
+        # Basic: create a ShinyCell2 app from a Seurat RDS file
+        ./{0} shinycell -j seurat_obj.rds -o ./ShinyCell2_test --proj NCBR-34
+
+        # Include markers and cluster labels (markers file must exist)
+        ./{0} shinycell -j seurat_obj.rds -o ./ShinyCell2_markers \\
+                        --proj NCBR-34 --markers markers.txt \\
+                        --cluster_labels seurat_clusters
+
+        # Specify assays to include and drop unwanted metadata columns
+        ./{0} shinycell -j seurat_obj.rds -o ./ShinyCell2_assays \\
+                        --proj NCBR-34 -a RNA,spatial --rmmeta large_matrix
+
+        {2}{3}Notes:{4}
+        - When using --markers you MUST also specify --cluster_labels.
+        - --defred must correspond to an existing reduction name in the Seurat
+            object; the script will resolve the reduction key to form e.g. UMAP1/2.
+        - Use --rmmeta to remove columns that are large, private, or not
+            appropriate for public deployment.
+
+        {2}{3}Version:{4}
+        {1}
+        """.format(name, __version__, c.bold, c.url, c.end)
+    )
+    subparser_shinycell = subparsers.add_parser(
+        "shinycell",
+        help="Run the ShinyCell2 application creation pipeline.",
+        usage=argparse.SUPPRESS,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=required_shinycell_options,
+        epilog=shinycell_epilog,
+        add_help=False,
+    )
+    subparser_shinycell.add_argument(
+        "-j",
+        "--obj",
+        dest="object",
+        help=argparse.SUPPRESS,
+        required=True,
+    )
+    subparser_shinycell.add_argument(
+        "-o",
+        "--outdir",
+        dest="outdir",
+        help=argparse.SUPPRESS,
+        required=True,
+    )
+    subparser_shinycell.add_argument(
+        "--proj",
+        dest="project",
+        help = argparse.SUPPRESS,
+        required=True,
+    )
+    subparser_shinycell.add_argument(
+        "--markers",
+        dest="markers",
+        help=argparse.SUPPRESS,
+        default=None,
+    )
+    subparser_shinycell.add_argument(
+        "--cluster_labels",
+        dest="cluster_labels",
+        help=argparse.SUPPRESS,
+        default=None,
+    )
+    subparser_shinycell.add_argument(
+        "--rmmeta",
+        dest="meta_to_rm",
+        help=argparse.SUPPRESS,
+        default=None,
+        metavar="<META.VAR.TO.RM>, [<META.VAR.TO.RM>,] [<META.VAR.TO.RM>,] [...]",
+    )
+    subparser_shinycell.add_argument(
+        "--defred",
+        dest="defaultreduction",
+        help=(
+            "The default reduction to use with ShinyCell2, this value must exist in Seurat::DefaultDimReduc(obj).\n"
+            "The two major principal components for this reductions must be labeled the same label with a 1 and a 2 trailing it.\n"
+            "i.e. defaultreduction = UMAP, UMAP1 and UMAP2 are the two components that must exist"
+        ),
+        default=None,
+    )
+    subparser_shinycell.add_argument(
+        "-l",
+        "--maxlevels",
+        dest="max_levels",
+        type=int,
+        help="The maximum allowable amount levels/factors of categorical values (int).",
+        default=50,
+    )
+    subparser_shinycell.add_argument(
+        "-a",
+        "--assay",
+        dest="assaytouse",
+        metavar="<ASSAY1>, <ASSAY2>, <ASSAY3>, ...",
+        help=(
+            "The assay to utilize for ShinyCell2 web application.\n"
+            "Comma delimit multiple assays in a single string e.g.: RNA,spatial,ATAC,etc."
+        ),
+        default=None,
+    )
+    subparser_shinycell.add_argument(
+        "--tmp-dir",
+        dest="tmpdir",
+        type=str,
+        required=False,
+        default="/lscratch/$SLURM_JOBID/",
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "--mode",
+        type=str,
+        required=False,
+        default="slurm",
+        choices=["slurm", "local"],
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "--threads", 
+        type=int,
+        required=False,
+        default=2,
         help=argparse.SUPPRESS
+    )
+    subparser_shinycell.add_argument(
+        "--job-name",
+        type=str,
+        required=False,
+        default="pl:{}:shinycell".format(name),
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "--silent",
+        action="store_true",
+        required=False,
+        default=False,
+        help=argparse.SUPPRESS,
+    )
+    subparser_shinycell.add_argument(
+        "-h", "--help", action="help", help=argparse.SUPPRESS
     )
 
     # Define handlers for each sub-parser
-    subparser_run.set_defaults(func = run)
-    subparser_unlock.set_defaults(func = unlock)
-    subparser_cache.set_defaults(func = cache)
-    subparser_genome.set_defaults(func = genome)
+    subparser_run.set_defaults(func=run)
+    subparser_unlock.set_defaults(func=unlock)
+    subparser_cache.set_defaults(func=cache)
+    subparser_genome.set_defaults(func=genome)
+    subparser_shinycell.set_defaults(func=shinycell)
+
     # Parse command-line args
     args = parser.parse_args()
     return args
 
 
 def main():
-
     # Sanity check for usage
     if len(sys.argv) == 1:
         # Nothing was provided
-        fatal('Invalid usage: {} [-h] [--version] ...'.format(_name))
+        fatal("Invalid usage: {} [-h] [--version] ...".format(_name))
 
     # Collect args for sub-command
-    args = parsed_arguments(
-        name = _name,
-        description = _description
-    )
+    args = parsed_arguments(name=_name, description=_description)
 
     # Display version information
-    err('{} ({})'.format(_name, __version__))
+    err("{} ({})".format(_name, __version__))
 
     # Mediator method to call sub-command's set handler function
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

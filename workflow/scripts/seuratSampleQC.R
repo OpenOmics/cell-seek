@@ -236,11 +236,11 @@ for(resolution in c(0.1, seq(0.2,1.0,0.2), 1.5, 2.0)){
   try({
     clusters <- Idents(seur)
     sil<-silhouette(as.numeric(clusters), dist=d)
+    write.csv(sil, paste0('SilhouetteResult_res.', resolution, '.csv'), row.names=F, quote=F)
     pdf(paste0("SilhouettePlot_res.",resolution,".pdf"))
     print(plot(sil, col=as.factor(clusters[order(clusters, decreasing=FALSE)]), main=paste("Silhouette plot of Seurat clustering - resolution ", resolution, sep=""), lty=2))
     print(abline(v=mean(sil[,3]), col="red4", lty=2))
     dev.off()
-    write.csv(sil, paste0('SilhouetteResult_res.', resolution, '.csv'), row.names=F, quote=F)
   })
 }
 

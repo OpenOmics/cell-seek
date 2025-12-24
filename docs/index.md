@@ -40,6 +40,7 @@ The **`./cell-seek`** pipeline is composed several inter-related sub commands to
  * [<code>cell-seek <b>run</b></code>](usage/run.md): Run the cell-seek pipeline with your input files.
  * [<code>cell-seek <b>genome</b></code>](usage/genome.md): Create a custom genome reference file that can be used with the pipeline.
  * [<code>cell-seek <b>unlock</b></code>](usage/unlock.md): Unlocks a previous runs output directory.
+ * [<code>cell-seek <b>shinycell</b></code>](usage/shinycell.md): Build a ShinyCell2 application from a Seurat RDS object.
  * [<code>cell-seek <b>cache</b></code>](usage/cache.md): Cache remote resources locally, coming soon!
 
 **cell-seek** is a comprehensive set of pipelines to perform the initial processing of different single cell technologies. It relies on technologies like [Singularity<sup>1</sup>](https://singularity.lbl.gov/) to maintain the highest-level of reproducibility. The pipeline consists of a series of data processing and quality-control steps orchestrated by [Snakemake<sup>2</sup>](https://snakemake.readthedocs.io/en/stable/), a flexible and scalable workflow management system, to submit jobs to a cluster.
