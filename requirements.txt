@@ -1,0 +1,12 @@
+mkdocs>=1.6.1
+mkdocs-awesome-pages-plugin==2.2.1
+mkdocs-git-revision-date-localized-plugin==0.7
+mkdocs-material
+mkdocs-material-extensions
+mkdocs-minify-plugin==0.3.0
+mkdocs-redirects==1.0.1
+nltk>=3.6.6
+pygments>=2.12
+pymdown-extensions>=10.16.1
+mkdocs-git-revision-date-plugin
+legacy-cgi
