@@ -4,6 +4,7 @@ LABEL maintainer="OpenOmics"
 LABEL description="Docker image for Signac scATAC-seq QC analysis"
 
 # Install system dependencies
+ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     libhdf5-dev \
     libcurl4-openssl-dev \
@@ -58,16 +59,6 @@ RUN R -e "install.packages(c( \
 
 # Create scripts directory
 RUN mkdir -p /opt/scripts
-
-# Copy R scripts and Rmd files
-COPY signacSampleQC.R /opt/scripts/
-COPY signacMultiSampleQC.R /opt/scripts/
-COPY signacSampleQCReport.Rmd /opt/scripts/
-COPY signacMultiSampleQCreport.Rmd /opt/scripts/
-
-# Make scripts executable
-RUN chmod +x /opt/scripts/*.R
-
 RUN export PATH="/opt/scripts:${PATH}"
 
 # Set working directory
