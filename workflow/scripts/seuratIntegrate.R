@@ -44,6 +44,7 @@ for (method in c('CCAIntegration', 'RPCAIntegration', 'HarmonyIntegration', 'Joi
     orig.reduction = "pca", new.reduction = reduction,
     verbose = FALSE
     )
+    obj <- FindNeighbors(obj, reduction = reduction, dims = 1:30)
     obj <- FindClusters(obj, resolution = 0.2, cluster.name = clusters)
     obj <- RunUMAP(obj, reduction = reduction, dims = 1:30, reduction.name = umap)
   })
