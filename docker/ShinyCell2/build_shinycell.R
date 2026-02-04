@@ -123,12 +123,6 @@ shiny_app_dir <- normalizePath(args$outdir, mustWork = FALSE)
 
 seurat_obj <- readRDS(rds_file)
 
-# Remove sketch assay if it exists (not compatible with ShinyCell2)
-if ("sketch" %in% names(seurat_obj@assays)) {
-  cat("Removing unsupported 'sketch' assay from Seurat object...\n")
-  seurat_obj[["sketch"]] <- NULL
-}
-
 # Validate mutually inclusive args: cluster_labels and markers
 if (!is.null(args$cluster_labels) && is.null(args$markers)) {
   fatal("--cluster_labels requires --markers to be set as well")
@@ -220,13 +214,14 @@ if (class(seurat_obj) == "SeuratObject") {
 # ShinyCell2 does NOT support:
 #   - celltype "assays" added by azimuth (prediction.score.celltype.l*)
 #   - HTO
+#   - sketch assays for large datasets
 for (assay in Assays(seurat_obj)) {
   if (startsWith(assay, "prediction.score.celltype.l")) {
     seurat_obj[[assay]] <- NULL
   }
 }
 
-unsupported_assays <- c("HTO")
+unsupported_assays <- c("HTO", "sketch")
 for (assay in unsupported_assays) {
   if (assay %in% names(seurat_obj@assays)) {
     cat(paste0(assay, "unsupported assay removed!", sep = " "))
