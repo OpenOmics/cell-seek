@@ -270,10 +270,10 @@ shinycell_config <- do.call(
   c(seurat_obj, config_params)
 )
 
-if (!is.null(length(meta_to_include) > 0)) {
-  shinycell_config$meta.to.del <- remove_metas
-  shinycell_config <- delMeta(shinycell_config, remove_metas)
-}
+# if (!is.null(length(meta_to_include) > 0)) {
+#   shinycell_config$meta.to.del <- remove_metas
+#   shinycell_config <- delMeta(shinycell_config, remove_metas)
+# }
 
 # Build the Shiny Application,
 # in the default location for
