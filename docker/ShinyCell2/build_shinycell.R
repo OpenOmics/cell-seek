@@ -123,6 +123,12 @@ shiny_app_dir <- normalizePath(args$outdir, mustWork = FALSE)
 
 seurat_obj <- readRDS(rds_file)
 
+# Remove sketch assay if it exists (not compatible with ShinyCell2)
+if ("sketch" %in% names(seurat_obj@assays)) {
+  cat("Removing unsupported 'sketch' assay from Seurat object...\n")
+  seurat_obj[["sketch"]] <- NULL
+}
+
 # Validate mutually inclusive args: cluster_labels and markers
 if (!is.null(args$cluster_labels) && is.null(args$markers)) {
   fatal("--cluster_labels requires --markers to be set as well")

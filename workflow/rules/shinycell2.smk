@@ -3,7 +3,7 @@ from textwrap import dedent
 
 seurat_object       = config['seurat_object']
 run_dir             = config['run_dir']
-project_title       = config['project_title']
+project_title       = config['project_title'].replace("\"", "")
 marker_file         = config['marker_file'] if exists(config['marker_file']) else []
 cluster_labels      = config['cluster_labels']
 rmmeta              = config['rmmeta']
@@ -27,19 +27,19 @@ rule shinycodes:
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
         rname = "shinycodes",
-        project_title = project_title,
         rmmeta = rmmeta,
         max_levels = max_levels,
         assaytouse = assaytouse,
         outdir = join(run_dir, "wd"),
+        title = f'"{project_title}"',
         defred_flag = f"--defred {defaultreduction} " if defaultreduction else "",
         cluster_flag = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
-        marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
+        marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else ""
     shell:
         dedent("""
         build_shinycell.R \\
             -j {input.seurat_object} {params.marker_flag} \\
-            --proj {params.project_title} {params.cluster_flag} \\
+            --proj {params.title} {params.cluster_flag} \\
             --rmmeta {params.rmmeta} {params.defred_flag} \\
             -l {params.max_levels} \\
             -a {params.assaytouse} \\
@@ -57,11 +57,11 @@ rule shinyfiles:
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
         rname = "shinyfiles",
-        project_title = project_title,
         rmmeta = rmmeta,
         max_levels = max_levels,
         assaytouse = assaytouse,
         wd = join(run_dir, "wd"),
+        title = f'"{project_title}"',
         defred_flag = f"--defred {defaultreduction} " if defaultreduction else "",
         cluster_flag = f"--cluster_labels {cluster_labels} " if cluster_labels else "",
         marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
@@ -69,7 +69,7 @@ rule shinyfiles:
         dedent("""
         build_shinycell.R \\
             -j {input.seurat_object} {params.marker_flag} \\
-            --proj {params.project_title} {params.cluster_flag} \\
+            --proj {params.title} {params.cluster_flag} \\
             --rmmeta {params.rmmeta} {params.defred_flag} \\
             -l {params.max_levels} \\
             -a {assaytouse} \\
