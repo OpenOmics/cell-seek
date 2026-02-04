@@ -4,7 +4,7 @@ prompt_for_install <- function(pkg) {
   response <- tolower(readLines("stdin", n = 1))
   if (response == "y") {
     if (pkg == "ShinyCell2") {
-      remotes::install_github("OpenOmics/ShinyCell2@deg_page", quiet = TRUE)
+      remotes::install_github("OpenOmics/ShinyCell2", quiet = TRUE)
     } else {
       install.packages(pkg, quiet = TRUE)
     }
