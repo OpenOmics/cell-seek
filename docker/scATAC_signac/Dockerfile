@@ -20,10 +20,13 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     pandoc \
     zlib1g-dev \
+    ca-certificates \
+    curl \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
-# Install R packages from CRAN
-RUN R -e "install.packages('BiocManager', repos='https://cloud.r-project.org')"
+# Configure R to use CRAN mirror and install BiocManager
+RUN R -e "install.packages('BiocManager', dependencies=TRUE)"
 
 # Install Bioconductor packages
 RUN R -e "BiocManager::install(c( \
@@ -39,7 +42,7 @@ RUN R -e "BiocManager::install(c( \
     'BiocGenerics' \
     ), ask=FALSE, update=TRUE)"
 
-# Install additional CRAN packages
+# # Install additional CRAN packages
 RUN R -e "install.packages(c( \
     'ggplot2', \
     'gridExtra', \
@@ -55,14 +58,14 @@ RUN R -e "install.packages(c( \
     'base64enc', \
     'xfun', \
     'tools' \
-    ), repos='https://cloud.r-project.org')"
+    ), dependencies=TRUE)"
 
-# Create scripts directory
+# # Create scripts directory
 RUN mkdir -p /opt/scripts
 RUN export PATH="/opt/scripts:${PATH}"
 
-# Set working directory
+# # Set working directory
 WORKDIR /data
 
-# Default command
+# # Default command
 CMD ["/bin/bash"]
