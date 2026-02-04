@@ -4,7 +4,7 @@ prompt_for_install <- function(pkg) {
   response <- tolower(readLines("stdin", n = 1))
   if (response == "y") {
     if (pkg == "ShinyCell2") {
-      remotes::install_github("OpenOmics/ShinyCell2@deg_page", quiet = TRUE)
+      remotes::install_github("OpenOmics/ShinyCell2", quiet = TRUE)
     } else {
       install.packages(pkg, quiet = TRUE)
     }
@@ -112,7 +112,7 @@ parser$add_argument(
 args <- parser$parse_args()
 
 if (args$silent) {
-  options(error = traceback(1))
+  options(error = function() traceback(1))
   options(warn = -1)
 }
 
@@ -236,26 +236,44 @@ if (!is.null(max.levels)) {
   config_params$maxLevels <- max.levels
 }
 
-shinycell_config <- do.call(
-  createConfig,
-  c(seurat_obj, config_params)
-)
-
+# Determine which metadata to include based on remove_metas list
 remove_metas <- c()
 
 if (!is.null(rmmeta)) {
   remove_metas <- c(remove_metas, rmmeta)
 }
 
-for (config_label in shinycell_config$ID) {
+# Add any metadata columns related to unsupported assays to remove_metas
+all_meta_cols <- colnames(seurat_obj@meta.data)
+for (meta_col in all_meta_cols) {
   for (assay in unsupported_assays) {
-    if (grepl(assay, config_label, fixed = TRUE)) {
-      remove_metas <- c(remove_metas, config_label)
+    if (grepl(assay, meta_col, fixed = TRUE)) {
+      remove_metas <- c(remove_metas, meta_col)
     }
   }
 }
 
-shinycell_config <- delMeta(shinycell_config, remove_metas)
+# Remove duplicates from remove_metas
+remove_metas <- unique(remove_metas)
+
+# Create meta.to.include: all metadata columns NOT in remove_metas
+meta_to_include <- setdiff(all_meta_cols, remove_metas)
+
+# Add meta.to.include to config parameters if there are columns to include
+if (length(meta_to_include) > 0) {
+  # config_params$meta.to.del <- remove_metas
+  config_params$meta.to.include <- meta_to_include
+}
+
+shinycell_config <- do.call(
+  createConfig,
+  c(seurat_obj, config_params)
+)
+
+if (!is.null(length(meta_to_include) > 0)) {
+  shinycell_config$meta.to.del <- remove_metas
+  shinycell_config <- delMeta(shinycell_config, remove_metas)
+}
 
 # Build the Shiny Application,
 # in the default location for
