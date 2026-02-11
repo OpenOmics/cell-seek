@@ -51,6 +51,9 @@ def force_cells(wildcards):
 rule count:
     output:
         html = join(workpath, "{sample}", "outs", "web_summary.html")
+        matrix = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5")
+        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz")
+        filterfile = join(workpath, "{sample}", "outs", "singlecell.csv")
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
@@ -63,6 +66,7 @@ rule count:
         fastqs = filterFastq,
         forcecells = force_cells
     envmodules: config["tools"]["cellranger-atac"]
+    threads: 24
     shell:
         """
         # Remove output directory
@@ -73,6 +77,7 @@ rule count:
               cellranger-atac count \\
                   --id {params.id} \\
                   --sample {params.sample} \\
+                  --localcores {threads} \\
                   --reference {params.reference} \\
                   --fastqs {params.fastqs} {params.forcecells} \\
               2>{log.err} 1>{log.log}
@@ -81,6 +86,7 @@ rule count:
             cellranger-atac count \\
                 --id {params.id} \\
                 --sample {params.sample} \\
+                --localcores {threads} \\
                 --reference {params.reference} \\
                 --fastqs {params.fastqs} {params.forcecells} \\
             2>{log.err} 1>{log.log}
@@ -116,4 +122,38 @@ rule sampleCleanup:
         if [ -d '{params.cr_temp}' ]; then
             rm -r {params.cr_temp}
         fi
+        """
+
+
+rule prelim_analysis_one:
+    input:
+        matrix = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"),
+        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz")
+        filterfile = join(workpath, "{sample}", "outs", "singlecell.csv")
+    output:
+        join(workpath, "prelim_analysis", "{sample}_prelim_analysis.rds")
+    params:
+        rname = "prelim_analysis_one",
+        script = join("workflow", "scripts", "signacMultiSampleQC.R"),
+    container: config["images"]["cite_base"]
+    shell:
+        """
+        Rscript {params.script}
+        """
+
+
+
+rule prelim_analysis_all:
+    input:
+        matrix = expand(join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"), sample=samples),
+        fragments = expand(join(workpath, "{sample}", "outs", "fragments.tsv.gz"), sample=samples),
+        filterfile = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples)
+    output:
+    params:
+        rname = "prelim_analysis_all",
+        script = join("workflow", "scripts", "signacMultiSampleQC.R"),
+    container: config["images"]["cite_base"]
+    shell:
+        """
+        Rscript {params.script}
         """
