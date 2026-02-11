@@ -2,30 +2,30 @@
     "references": {
         "hg38": {
             "gex_transcriptome": "/data/OpenOmics/references/cyte-seek/hg38/refdata-gex-GRCh38-2020-A/",
-	    "cite_transcriptome": "/data/OpenOmics/references/cyte-seek/hg38/refdata-gex-GRCh38-2020-A/",
-	    "atac_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-arc-GRCh38-2020-A-2.0.0",
-	    "vdj_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0/",
-	    "arc_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-arc-GRCh38-2020-A-2.0.0"
+            "cite_transcriptome": "/data/OpenOmics/references/cyte-seek/hg38/refdata-gex-GRCh38-2020-A/",
+            "atac_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-arc-GRCh38-2020-A-2.0.0",
+            "vdj_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0/",
+            "arc_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-arc-GRCh38-2020-A-2.0.0"
         },
         "mm10": {
             "gex_transcriptome": "/data/OpenOmics/references/cyte-seek/mm10/refdata-gex-mm10-2020-A",
-	    "cite_transcriptome": "/data/OpenOmics/references/cyte-seek/mm10/refdata-gex-mm10-2020-A",
-	    "atac_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-arc-mm10-2020-A-2.0.0",
-	    "vdj_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-vdj-GRCm38-alts-ensembl-7.0.0/",
-	    "arc_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-arc-mm10-2020-A-2.0.0"
+            "cite_transcriptome": "/data/OpenOmics/references/cyte-seek/mm10/refdata-gex-mm10-2020-A",
+            "atac_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-arc-mm10-2020-A-2.0.0",
+            "vdj_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-vdj-GRCm38-alts-ensembl-7.0.0/",
+            "arc_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-arc-mm10-2020-A-2.0.0"
         },
-	"hg2024": {
-	    "gex_transcriptome": "/data/OpenOmics/references/cell-seek/human/refdata-gex-GRCh38-2024-A",
-	    "cite_transcriptome": "/data/OpenOmics/references/cell-seek/human/refdata-gex-GRCh38-2024-A",
+        "hg2024": {
+            "gex_transcriptome": "/data/OpenOmics/references/cell-seek/human/refdata-gex-GRCh38-2024-A",
+            "cite_transcriptome": "/data/OpenOmics/references/cell-seek/human/refdata-gex-GRCh38-2024-A",
             "atac_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-arc-GRCh38-2024-A",
-	    "vdj_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0/",
+            "vdj_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-vdj-GRCh38-alts-ensembl-7.1.0/",
             "arc_ref": "/data/OpenOmics/references/cell-seek/human/refdata-cellranger-arc-GRCh38-2024-A"
-	},
+        },
         "mm2024": {
             "gex_transcriptome": "/data/OpenOmics/references/cell-seek/mouse/refdata-gex-GRCm39-2024-A",
             "cite_transcriptome": "/data/OpenOmics/references/cell-seek/mouse/refdata-gex-GRCm39-2024-A",
             "atac_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-arc-GRCm39-2024-A",
-	    "vdj_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-vdj-GRCm38-alts-ensembl-7.0.0/",
+            "vdj_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-vdj-GRCm38-alts-ensembl-7.0.0/",
             "arc_ref": "/data/OpenOmics/references/cell-seek/mouse/refdata-cellranger-arc-GRCm39-2024-A"
         }
     }
