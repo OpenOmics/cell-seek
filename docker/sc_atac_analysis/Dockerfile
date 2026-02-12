@@ -60,7 +60,7 @@ RUN R -e "install.packages(c( \
 RUN mkdir -p /opt/scripts
 RUN export PATH="/opt/scripts:${PATH}"
 
-ADD signacSampleQC.R signacSampleQC.Rmd signacMultiSampleQC.R signacMultiSampleQC.Rmd /opt/scripts/
+ADD signacSampleQC.R signacSampleQCReport.Rmd signacMultiSampleQC.R signacMultiSampleQCreport.Rmd /opt/scripts/
 
 # Set working directory
 WORKDIR /data
