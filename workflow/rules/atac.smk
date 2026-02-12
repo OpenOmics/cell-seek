@@ -1,4 +1,5 @@
 # Pipeline output definition
+from textwrap import dedent
 
 # CellRanger counts, summary report
 pipeline_output += expand(
@@ -131,15 +132,34 @@ rule prelim_analysis_one:
         fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz")
         filterfile = join(workpath, "{sample}", "outs", "singlecell.csv")
     output:
-        join(workpath, "prelim_analysis", "{sample}_prelim_analysis.rds")
+        filter_info = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
     params:
         rname = "prelim_analysis_one",
-        script = join("workflow", "scripts", "signacMultiSampleQC.R"),
-    container: config["images"]["cite_base"]
+        script = join("/opt", "scripts", "signacSampleQC.R"),
+        scriptrmd = join("/opt", "scripts", "signacSampleQC.Rmd"),
+        genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
+        genome = genome,
+        outdir = lambda wc: join(workpath, "scATAC_analysis", wc.sample),
+        project = lambda wc: f"Preliminary QC Report for Cell-seek Sample {wc.sample} Analysis"
+    container: config["images"]["signac_base"]
     shell:
-        """
-        Rscript {params.script}
-        """
+        dedent("""
+        Rscript {params.script} \\
+            --sample {wildcards.sample} \\
+            --featurematrix {input.matrix} \\
+            --fragments {input.fragments} \\
+            --barcodes {input.filterfile} \\
+            --genes {params.genes} \\
+            --genome {params.genome} \\
+            --project {params.project} \\
+            -o {params.outdir}
+        R -e "rmarkdown::render('/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQCReport.Rmd',
+                params=list(signacdir='/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQC_output',
+                            thresholds='{output.filter_info}',
+                            sample='{wildcards.sample}',
+                            defaultfilter=TRUE),
+                            output_file='/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/{wildcards.sample}.QC_Report.html')"
+        """)
 
 
 
@@ -149,11 +169,32 @@ rule prelim_analysis_all:
         fragments = expand(join(workpath, "{sample}", "outs", "fragments.tsv.gz"), sample=samples),
         filterfile = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples)
     output:
+        filter_info = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
     params:
         rname = "prelim_analysis_all",
-        script = join("workflow", "scripts", "signacMultiSampleQC.R"),
-    container: config["images"]["cite_base"]
+        script = join("/opt", "scripts", "signacMultiSampleQC.R"),
+        genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
+        genome = genome,
+        sids = ','.join(samples),
+        scriptrmd = join("/opt", "scripts", "signacMultiSampleQC.Rmd"),
+        outdir = join(workpath, "scATAC_analysis", "cohort"),
+        project = "Preliminary QC Report for Cell-seek Multi-Sample Analysis"
+    container: config["images"]["signac_base"]
     shell:
-        """
-        Rscript {params.script}
-        """
+        dedent("""
+        Rscript {params.script} \\
+            --sample {params.sids} \\
+            --featurematrix {input.matrix} \\
+            --fragments {input.fragments} \\
+            --barcodes {input.filterfile} \\
+            --genes {params.genes} \\
+            --genome {params.genome} \\
+            --project {params.project} \\
+            -o {params.outdir} 
+        R -e "rmarkdown::render('{params.scriptrmd}',
+                params=list(signacdir='{params.outdir}',
+                            thresholds='{outputs.filter_info}',
+                            sample='${SID}',
+                            defaultfilter=TRUE),
+                            output_file='{params.outdir}/Cohort_QC_Report.html')"
+        """)
