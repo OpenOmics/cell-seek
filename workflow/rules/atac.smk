@@ -19,6 +19,15 @@ pipeline_output += expand(
     sample=samples
 )
 
+# scATAC preliminary analysis outputs
+## sample specific QC reports
+pipeline_output += expand(
+    join(workpath, "scATAC_analysis", "{sample}", "{sample}.QC_Report.html"),
+    sample=samples
+)
+## cohort level QC report
+pipeline_output += [join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv")]
+
 # Function definitions
 def filterFastq(wildcards):
     """
@@ -51,9 +60,9 @@ def force_cells(wildcards):
 
 rule count:
     output:
-        html = join(workpath, "{sample}", "outs", "web_summary.html")
-        matrix = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5")
-        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz")
+        html = join(workpath, "{sample}", "outs", "web_summary.html"),
+        matrix = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"),
+        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz"),
         filterfile = join(workpath, "{sample}", "outs", "singlecell.csv")
     log:
         err = "run_{sample}_10x_cellranger_count.err",
@@ -69,7 +78,7 @@ rule count:
     envmodules: config["tools"]["cellranger-atac"]
     threads: 24
     shell:
-        """
+        dedent("""
         # Remove output directory
         # prior to running cellranger
         if [ -d '{params.id}' ]; then
@@ -92,7 +101,7 @@ rule count:
                 --fastqs {params.fastqs} {params.forcecells} \\
             2>{log.err} 1>{log.log}
         fi
-        """
+        """)
 
 rule summaryFiles:
     input:
@@ -129,10 +138,11 @@ rule sampleCleanup:
 rule prelim_analysis_one:
     input:
         matrix = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"),
-        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz")
+        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz"),
         filterfile = join(workpath, "{sample}", "outs", "singlecell.csv")
     output:
-        filter_info = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
+        filter_info = join(workpath, "scATAC_analysis", "{sample}", "cell_filter_info.csv"),
+        report = join(workpath, "scATAC_analysis", "{sample}", "{sample}.QC_Report.html")
     params:
         rname = "prelim_analysis_one",
         script = join("/opt", "scripts", "signacSampleQC.R"),
@@ -158,7 +168,7 @@ rule prelim_analysis_one:
                             thresholds='{output.filter_info}',
                             sample='{wildcards.sample}',
                             defaultfilter=TRUE),
-                            output_file='/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/{wildcards.sample}.QC_Report.html')"
+                            output_file='{params.outdir}/{wildcards.sample}/{wildcards.sample}.QC_Report.html')"
         """)
 
 
@@ -170,6 +180,7 @@ rule prelim_analysis_all:
         filterfile = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples)
     output:
         filter_info = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
+        report = join(workpath, "scATAC_analysis", "cohort", "Cohort_QC_Report.html")
     params:
         rname = "prelim_analysis_all",
         script = join("/opt", "scripts", "signacMultiSampleQC.R"),
@@ -193,8 +204,8 @@ rule prelim_analysis_all:
             -o {params.outdir} 
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
-                            thresholds='{outputs.filter_info}',
-                            sample='${SID}',
+                            thresholds='{output.filter_info}',
+                            sample='{sample}',
                             defaultfilter=TRUE),
                             output_file='{params.outdir}/Cohort_QC_Report.html')"
         """)
