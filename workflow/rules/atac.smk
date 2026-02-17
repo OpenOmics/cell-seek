@@ -161,7 +161,7 @@ rule prelim_analysis_one:
             --barcodes {input.filterfile} \\
             --genes {params.genes} \\
             --genome {params.genome} \\
-            --project {params.project} \\
+            --project "{params.project}" \\
             -o {params.outdir}
         R -e "rmarkdown::render('/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQCReport.Rmd',
                 params=list(signacdir='/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQC_output',
@@ -200,12 +200,12 @@ rule prelim_analysis_all:
             --barcodes {input.filterfile} \\
             --genes {params.genes} \\
             --genome {params.genome} \\
-            --project {params.project} \\
+            --project "{params.project}" \\
             -o {params.outdir} 
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
                             thresholds='{output.filter_info}',
-                            sample='{sample}',
+                            sample='{params.sids}',
                             defaultfilter=TRUE),
                             output_file='{params.outdir}/Cohort_QC_Report.html')"
         """)
