@@ -195,7 +195,7 @@ rule prelim_analysis_all:
         dedent("""
         Rscript {params.script} \\
             --sample {params.sids} \\
-            --featurematrix {input.matrix} \\
+            --matrix {input.matrix} \\
             --fragments {input.fragments} \\
             --barcodes {input.filterfile} \\
             --genes {params.genes} \\
