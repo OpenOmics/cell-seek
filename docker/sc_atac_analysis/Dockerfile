@@ -22,21 +22,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages from CRAN
-RUN R -e "install.packages('BiocManager', repos='https://cloud.r-project.org')"
+RUN R -e "install.packages('pak', repos='https://cloud.r-project.org')"
 
 # Install Bioconductor packages
-RUN R -e "BiocManager::install(c( \
-    'Signac', \
-    'Seurat', \
-    'GenomicRanges', \
-    'rtracklayer', \
-    'SeuratObject', \
-    'BSgenome', \
-    'GenomeInfoDb', \
-    'IRanges', \
-    'S4Vectors', \
-    'BiocGenerics' \
-    ), ask=FALSE, update=TRUE)"
+RUN R -e "pak::pkg_install(c('Signac', 'Seurat', 'GenomicRanges', \
+                             'rtracklayer', 'SeuratObject', 'BSgenome', \
+                             'GenomeInfoDb', 'IRanges', 'S4Vectors', \
+                             'BiocGenerics'))"
 
 # Install additional CRAN packages
 RUN R -e "install.packages(c( \
