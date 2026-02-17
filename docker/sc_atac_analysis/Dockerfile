@@ -6,6 +6,7 @@ LABEL description="Docker image for Signac scATAC-seq QC analysis"
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     libhdf5-dev \
+    libhdf5-serial-dev \
     libcurl4-openssl-dev \
     libssl-dev \
     libxml2-dev \
@@ -28,25 +29,11 @@ RUN R -e "install.packages('pak', repos='https://cloud.r-project.org')"
 RUN R -e "pak::pkg_install(c('Signac', 'Seurat', 'GenomicRanges', \
                              'rtracklayer', 'SeuratObject', 'BSgenome', \
                              'GenomeInfoDb', 'IRanges', 'S4Vectors', \
-                             'BiocGenerics', 'hdf5r'))"
-
-# Install additional CRAN packages
-RUN R -e "install.packages(c( \
-    'ggplot2', \
-    'gridExtra', \
-    'dplyr', \
-    'stringr', \
-    'optparse', \
-    'cluster', \
-    'devtools', \
-    'hdf5r', \
-    'knitr', \
-    'rmarkdown', \
-    'flextable', \
-    'base64enc', \
-    'xfun', \
-    'tools' \
-    ), repos='https://cloud.r-project.org')"
+                             'BiocGenerics', 'hdf5r',     'ggplot2', \
+                             'gridExtra', 'dplyr', 'stringr', \
+                             'optparse', 'cluster', 'devtools', 'hdf5r', \
+                             'knitr', 'rmarkdown',  'flextable',  \
+                             'base64enc', 'xfun', 'tools'))"
 
 # Create scripts directory
 RUN mkdir -p /opt/scripts
