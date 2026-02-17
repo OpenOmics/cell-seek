@@ -23,10 +23,14 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages from CRAN
-RUN R -e "install.packages(c('pak', 'hdf5r'), repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('pak', 'hdf5r', 'remotes'), repos='https://cloud.r-project.org')"
 
-# Install Bioconductor packages
-RUN R -e "pak::pkg_install(c('Signac', 'Seurat', 'GenomicRanges', \
+# Install Signac and Seurat from github
+RUN R -e "remotes::install_github('satijalab/seurat', 'seurat5')"
+RUN R -e "remotes::install_github('stuart-lab/signac', 'seurat5')"
+
+# Install Bioconductor and CRAN packages
+RUN R -e "pak::pkg_install(c('Seurat', 'GenomicRanges', \
                              'rtracklayer', 'SeuratObject', 'BSgenome', \
                              'GenomeInfoDb', 'IRanges', 'S4Vectors', \
                              'BiocGenerics', 'hdf5r',     'ggplot2', \
@@ -34,6 +38,7 @@ RUN R -e "pak::pkg_install(c('Signac', 'Seurat', 'GenomicRanges', \
                              'optparse', 'cluster', 'devtools', \
                              'knitr', 'rmarkdown',  'flextable',  \
                              'base64enc', 'xfun', 'tools'))"
+
 
 # Create scripts directory
 RUN mkdir -p /opt/scripts
