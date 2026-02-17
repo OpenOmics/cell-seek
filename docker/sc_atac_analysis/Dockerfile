@@ -12,6 +12,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libpng-dev \
     libgit2-dev \
+    libglpk-dev \
     libfontconfig1-dev \
     libharfbuzz-dev \
     libfribidi-dev \
@@ -20,25 +21,15 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     pandoc \
     zlib1g-dev \
+    libbz2-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages from CRAN
-RUN R -e "install.packages(c('pak', 'hdf5r', 'remotes'), repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('hdf5r', 'remotes', 'sparseMatrixStats'), repos='https://cloud.r-project.org')"
 
 # Install Signac and Seurat from github
 RUN R -e "remotes::install_github('satijalab/seurat', 'seurat5')"
-RUN R -e "remotes::install_github('stuart-lab/signac', 'seurat5')"
-
-# Install Bioconductor and CRAN packages
-RUN R -e "pak::pkg_install(c('Seurat', 'GenomicRanges', \
-                             'rtracklayer', 'SeuratObject', 'BSgenome', \
-                             'GenomeInfoDb', 'IRanges', 'S4Vectors', \
-                             'BiocGenerics', 'hdf5r',     'ggplot2', \
-                             'gridExtra', 'dplyr', 'stringr', \
-                             'optparse', 'cluster', 'devtools', \
-                             'knitr', 'rmarkdown',  'flextable',  \
-                             'base64enc', 'xfun', 'tools'))"
-
+RUN R -e "setRepositories(ind=1:3); install.packages('Signac')"
 
 # Create scripts directory
 RUN mkdir -p /opt/scripts
