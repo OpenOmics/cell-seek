@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages from CRAN
-RUN R -e "install.packages('pak', repos='https://cloud.r-project.org')"
+RUN R -e "install.packages(c('pak', 'hdf5r'), repos='https://cloud.r-project.org')"
 
 # Install Bioconductor packages
 RUN R -e "pak::pkg_install(c('Signac', 'Seurat', 'GenomicRanges', \
@@ -31,7 +31,7 @@ RUN R -e "pak::pkg_install(c('Signac', 'Seurat', 'GenomicRanges', \
                              'GenomeInfoDb', 'IRanges', 'S4Vectors', \
                              'BiocGenerics', 'hdf5r',     'ggplot2', \
                              'gridExtra', 'dplyr', 'stringr', \
-                             'optparse', 'cluster', 'devtools', 'hdf5r', \
+                             'optparse', 'cluster', 'devtools', \
                              'knitr', 'rmarkdown',  'flextable',  \
                              'base64enc', 'xfun', 'tools'))"
 
