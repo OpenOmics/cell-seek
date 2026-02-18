@@ -1,4 +1,4 @@
-FROM rocker/r-ver:4.3.2
+FROM rocker/r-ver:4.5.0
 
 LABEL maintainer="OpenOmics"
 LABEL description="Docker image for Signac scATAC-seq QC analysis"
@@ -25,11 +25,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages from CRAN
-RUN R -e "install.packages(c('hdf5r', 'remotes', 'sparseMatrixStats'), repos='https://cloud.r-project.org')"
-
-# Install Signac and Seurat from github
-RUN R -e "remotes::install_github('satijalab/seurat', 'seurat5')"
-RUN R -e "setRepositories(ind=1:3); install.packages('Signac')"
+RUN R -e "install.packages(c('hdf5r', 'rtracklayer', 'GenomicRanges', 'stringr', 'dplyr', \
+                             'ggplot2', 'cluster', 'stringr', 'Seurat', 'Signac'), repos='https://cloud.r-project.org')"
 
 # Create scripts directory
 RUN mkdir -p /opt/scripts
