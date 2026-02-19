@@ -26,8 +26,8 @@ RUN apt-get update && apt-get install -y \
 
 # Install R packages from CRAN
 RUN R -e "install.packages(c('hdf5r', 'rtracklayer', 'stringr', 'dplyr', 'ggplot2', 'cluster', 'stringr', 'Seurat', 'BiocManager'), repos='https://cloud.r-project.org')"
-RUN R -e "BiocManager::install(c('GenomeInfoDb', 'GenomicRanges', 'IRanges', 'Rsamtools', 'S4Vectors', 'BiocGenerics'))"
-RUN R -e "install.packages('Signac')"
+RUN R -e "BiocManager::install(c('GenomeInfoDb', 'GenomicRanges', 'IRanges', 'Rsamtools', 'S4Vectors', 'BiocGenerics', 'SeuratObject'))"
+RUN R -e "install.packages('remotes'); BiocManager::install(c('Rsamtools', 'fastmatch', 'RcppRoll')); remotes::install_github('stuart-lab/signac', dependencies = FALSE)"
 
 # Create scripts directory
 RUN mkdir -p /opt/scripts
