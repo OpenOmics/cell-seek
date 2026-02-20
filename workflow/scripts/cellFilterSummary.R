@@ -13,8 +13,13 @@ opt <- parse_args(OptionParser(option_list=option_list))
 
 filenames <- Sys.glob(file.path(opt$datapath, '*', opt$filename))
 foldernames <- filenames |> dirname() |> dirname() |> basename() |> unique()
-filters <- read.csv(filenames[1]) 
-filters$Sample <- basename(dirname(filenames[1]))
+filename <- filenames[[1]]
+filters <- read.csv(filename)
+if (length(foldernames) == 1) {
+  filters$Sample <- basename(dirname(filename))
+} else {
+  filters$Sample <- sprintf('%s - %s', filename |> dirname() |> dirname() |> basename(), basename(dirname(filename)))
+}
 
 if(length(filenames) > 1) {
   for (filename in filenames[2:length(filenames)]) {
