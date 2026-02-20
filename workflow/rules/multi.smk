@@ -116,36 +116,6 @@ def metadataFile(wildcards):
         return(f"--metadata {METADATA_FILE}")
 
 
-def cellLibraryFilterSummary_input(wildcards):
-    # note 1: ck_output is the same as OUTDIR
-
-    # note 2: checkpoints will have attributes for each of the checkpoint
-    # rules, accessible by name.
-    #
-    #  outs = directory(join(workpath, "{sample}", "outs", "per_sample_outs"))
-    #  directory("{sample}/clusters")
-    #  checkpoint_output = checkpoints.parse_clusters.get(**wildcards).output[0]
-    #  clusters = glob_wildcards(f"{checkpoint_output}/Cluster{{cluster}}_cells.txt").cluster
-    #print(wildcards)
-    checkpoint_output = checkpoints.multi.get(**wildcards).output['outs']
-    SMP = glob_wildcards(os.path.join(checkpoint_output, "{count_sample}", "count", "sample_filtered_feature_bc_matrix")).count_sample
-    return expand(join(workpath, "seurat", "{sample}", "{count_sample}", "seurat.complete"), **wildcards, count_sample=SMP, sample=lib_samples)
-
-def seuratQCSummaryReport_input(wildcards):
-    # note 1: ck_output is the same as OUTDIR
-
-    # note 2: checkpoints will have attributes for each of the checkpoint
-    # rules, accessible by name.
-    #
-    #  outs = directory(join(workpath, "{sample}", "outs", "per_sample_outs"))
-    #  directory("{sample}/clusters")
-    #  checkpoint_output = checkpoints.parse_clusters.get(**wildcards).output[0]
-    #  clusters = glob_wildcards(f"{checkpoint_output}/Cluster{{cluster}}_cells.txt").cluster
-    checkpoint_output = checkpoints.multi.get(**wildcards).params['outs']
-    #SMP = glob_wildcards(os.path.join(os.path.dirname(checkpoint_output), "{count_sample}", "seurat.complete")).count_sample
-    SMP = glob_wildcards(os.path.join(checkpoint_output, "{count_sample}", "count", "sample_filtered_feature_bc_matrix")).count_sample
-    return expand(join(workpath, "seurat", "{sample}", "{count_sample}", "seur_cluster.rds"), **wildcards, count_sample=SMP)
-
 
 def get_last_two_path_components(path_str):
     """
@@ -170,12 +140,17 @@ def seuratQCSummarySamples(wildcards):
     Wrapper to return the sample list into an R friendly input format
     """
     lib_samples_expanded = [get_last_two_path_components(i) for i in glob.glob(join(workpath, "seurat", "*", "*", "seur_cluster.rds"))]
-    #return("c('{}')".format("','".join(lib_samples)))
     return("c('{}')".format("','".join(lib_samples_expanded)))
 
-def seuratQC_output(wildcards):
-    checkpoint_output = checkpoints.multi.get(**wildcards)
-    print(checkpoint_output)
+def seuratQCSummarySkippedSamples(wildcards):
+    """
+    Wrapper to return the sample list into an R friendly input format
+    """
+    lib_samples_expanded = set(get_last_two_path_components(i) for i in glob.glob(join(workpath, "seurat", "*", "*", "seur_cluster.rds")))
+    lib_samples_expanded_2 = set(get_last_two_path_components(i) for i in glob.glob(join(workpath, "seurat", "*", "*", "seuratQC.complete")))
+    
+    return("c('{}')".format("','".join(lib_samples_expanded_2-lib_samples_expanded)))
+
 
 def seuratQCReportCopy_output(wildcards):
     # note 1: ck_output is the same as OUTDIR
@@ -183,17 +158,11 @@ def seuratQCReportCopy_output(wildcards):
     # note 2: checkpoints will have attributes for each of the checkpoint
     # rules, accessible by name.
     #checkpoint_output = checkpoints.multi.get(**wildcards).output['outs']
-    #SMP = glob_wildcards(os.path.join(checkpoint_output, "{count_sample}", "count", "sample_filtered_feature_bc_matrix")).count_sample
-    #print(wildcards)
-    #print(checkpoints)
     checkpoint_output = checkpoints.multi.get(**wildcards).output['outs']
     if int(CELLRANGER.split('.')[0]) >= 10:
       SMP = glob_wildcards(os.path.join(checkpoint_output, "{count_sample}", "sample_filtered_feature_bc_matrix")).count_sample
     else:
       SMP = glob_wildcards(os.path.join(checkpoint_output, "{count_sample}", "count", "sample_filtered_feature_bc_matrix")).count_sample
-    #print(checkpoint_output)
-    #print(SMP)
-    #SMP = glob_wildcards(os.path.join(os.path.dirname(checkpoint_output), "{count_sample}", "seurat.complete")).count_sample
     return expand(join(workpath, "seurat", "{sample}", "{count_sample}", "copySeuratQCReport.complete"), **wildcards, count_sample=SMP)
 
 # Rule definitions
@@ -425,7 +394,9 @@ rule seuratQCSummaryReport:
     params:
         rname = "seuratQCSummaryReport",
         samples = seuratQCSummarySamples,
+        test = seuratQCSummarySkippedSamples,
         seuratdir = join(workpath, "seurat"),
+        cleanreport = join(workpath, "seurat", "Clean_Summary_QC_Report.html"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
     envmodules: config["tools"]["rversion"]
     shell:
@@ -433,7 +404,10 @@ rule seuratQCSummaryReport:
         unset __RLIBSUSER
         unset R_LIBS_USER
 
-        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}', skipped={params.test}), output_file='{output.report}')"
+        if [[ '{params.test}' != "c('')" ]]; then
+        R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{params.cleanreport}')"
+        fi
         """
 
 rule copySeuratQCSummaryReport:
