@@ -1,5 +1,6 @@
 {
     "images": {
-        "cite_base": "docker://skchronicles/chicyte:v0.1.0"
+        "cite_base": "docker://skchronicles/chicyte:v0.1.0",
+        "signac_base": "docker://rroutsong/signac_analysis:0.0.2"
     }
 }
