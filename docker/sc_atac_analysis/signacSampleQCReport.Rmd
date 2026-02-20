@@ -1,5 +1,5 @@
 ---
-title: "Preliminary QC Report for Sample `r params$sample`"
+title: 'Preliminary QC Report for Sample `r params$sample`'
 subtitle: "Initial Sample Preprocessing - scATAC-seq"
 date: '`r Sys.Date()`'
 output:
