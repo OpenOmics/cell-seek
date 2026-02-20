@@ -503,13 +503,17 @@ def add_sample_metadata(input_files, config, group=None):
     # when user has samplesheet
     added = []
     config['samples'] = []
+    input_folders = folder_inputs(input_files)
     for file in input_files:
-        # Split sample name on file extension
-        sample = re.split(r"(_S[0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file))[0]
-        if os.path.basename(file) == sample:
-            # Sample has a non-standard name, print warning message
-            err("Warning: Sample '{0}' has a file name that is not compatible with cellranger! Skipping over input file...".format(os.path.basename(file)))
-            continue
+        if not input_folders:
+            # Split sample name on file extension
+            sample = re.split(r"(_S[0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file))[0]
+            if os.path.basename(file) == sample:
+                # Sample has a non-standard name, print warning message
+                err("Warning: Sample '{0}' has a file name that is not compatible with cellranger! Skipping over input file...".format(os.path.basename(file)))
+                continue
+        else:
+            sample = os.path.basename(file)
         if sample not in added:
             # Only add PE sample information once
             added.append(sample)
@@ -873,7 +877,6 @@ def finalcheck(config, flag, delimeter=','):
 
     names = [name for name in name_type if (len(name_type[name]) <= 1)]
     if len(names) > 0:
-        print(config['options'].keys())
         print(f"\nWarning: Some samples only have one feature type associated with them! \nWarning: --{{}} {{}} only contains one feature type for some of the samples.\n \
             └── Please note that only one feature type was provided for the following sample(s): {{}} \n \
             Flex and OCM captures may contain only one feature type. \n \
@@ -896,7 +899,7 @@ def check_conditional_parameters(config):
             "Error: Version of cellranger to use is required for {} pipeline\n \
             └── Please use the --cellranger flag to select one of the available versions: {}".format(
                 config['options']['pipeline'],
-                ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0'])
+                ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'])
             )
         ]
 
@@ -908,7 +911,7 @@ def check_conditional_parameters(config):
                     "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
                     └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
                         [i for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None'][0].replace('_', '-'),
-                        ', '.join(['9.0.0'])
+                        ', '.join(['9.0.0', '10.0.0'])
                     )
                 ]
         else:
@@ -916,7 +919,7 @@ def check_conditional_parameters(config):
                 "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
                 └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
                     [i for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None'][0].replace('_', '-'),
-                    ', '.join(['9.0.0'])
+                    ', '.join(['9.0.0', '10.0.0'])
                 )
             ]
     if any([config['options'][i] != 'None' for i in ['probe_sample', 'probe_set']]):
@@ -925,14 +928,14 @@ def check_conditional_parameters(config):
                 errorMessage += [
                     "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
                     └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                        ', '.join(['8.0.0', '9.0.0'])
+                        ', '.join(['8.0.0', '9.0.0', '10.0.0'])
                     )
                 ]
         else:
             errorMessage += [
                 "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
                 └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                    ', '.join(['8.0.0', '9.0.0'])
+                    ', '.join(['8.0.0', '9.0.0', '10.0.0'])
                 )
             ]
         
