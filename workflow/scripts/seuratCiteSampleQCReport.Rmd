@@ -94,11 +94,21 @@ cat("\n")
 The following are the UMAP plots for the sample that was generated prior to filtering cells.
 
 ```{r, results='asis', fig.width=5, fig.height=7, out.width="70%"}
-if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA.png'))) {
-  cat("### Clustering{-}\n\n")
-  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA.png)")), "\n")
+if(file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA_Filter.png'))) {
+  cat("### Filtered Cells{-}\n\n")
+  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA_Filter.png)")), "\n")
 }
 cat("\n\n")
+if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_nFeature_RNA.png'))) {
+  cat("### Number of Genes{-}\n\n")
+  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_nFeature_RNA.png)")), "\n")
+  cat("\n\n")
+}
+if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_nCount_RNA.png'))) {
+  cat("### Number of Molecules{-}\n\n")
+  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_nCount_RNA.png)")), "\n")
+    cat("\n\n")
+}
 if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_percent.mito.png'))) {
   cat("### Mitochondrial Genes{-}\n\n")
   cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_percent.mito.png)")), "\n")
@@ -114,11 +124,6 @@ if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_percent.rps.png'))) {
   cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_percent.rps.png)")), "\n")
   cat("\n\n")
 }
-if(file.exists(file.path(seuratdir, 'PreFilter_UMAP_RNA_Filter.png'))) {
-  cat("### Filtered Cells{-}\n\n")
-  cat(paste0("![](", file.path(seuratdir, "PreFilter_UMAP_RNA_Filter.png)")), "\n")
-}
-cat("\n\n")
 
 ```
 
@@ -134,7 +139,7 @@ cat("The following are the thresholds that were set for each set of statistics.\
 
 thresh <- read.csv(file.path(seuratdir, 'cell_filter_info.csv'))
 
-printed <- c(apply(expand.grid(c("nFeature_RNA", "nCount_RNA", "nCount_ADT", "nCount_HTO", "percent.mito"), c("low", "high")), 1, paste, collapse='_'), "numCellsRemove", "pctCellsRemove")
+printed <- c(apply(expand.grid(c("nFeature_RNA", "nCount_RNA", "nCount_ADT", "nCount_HTO", "percent.mito"), c("low", "high")), 1, paste, collapse='_'), "numCellsRemove", "pctCellsRemove", "initialCellCount", "finalCellCount")
 
 get_value <- function(thresh, value) {
   if (is.null(thresh[[value]])) {NA} else{sprintf("%.0f", thresh[[value]])}
@@ -160,9 +165,13 @@ if (length(grep(colnames(thresh), pattern='percent.mito') > 0)) {
 cat("Mitochondrial Percentage Thresholds:", paste0("(", get_value(thresh, "percent.mito_low"), ", ", get_value(thresh, "percent.mito_high"), ")"), "\n\n")
 }
 
+cat("Initial cell count:", get_value(thresh, "initialCellCount"), "\n\n")
+
 cat("Total cells filtered:", get_value(thresh, "numCellsRemove"), "\n\n")
 
 cat("Percentage cells filtered:", get_value(thresh, "pctCellsRemove"), "\n\n")
+
+cat("Final cell count:", get_value(thresh, "finalCellCount"), "\n\n")
 
 if (length(setdiff(names(thresh), printed) > 0)) {
   cat("The following additional thresholds were also used: \n\n")
@@ -253,19 +262,7 @@ for (filename in Sys.glob(file.path(seuratdir, "UMAP_HTO_*-split.png"))) {
 }
 ```
 
-### Mitochondrial Genes
-
-![](`r file.path(seuratdir, "PostFilter_UMAP_percent.mito.png")`)
-
-### Ribosomal Protein (Large) Genes
-
-![](`r file.path(seuratdir, "PostFilter_UMAP_percent.rpl.png")`)
-
-### Ribosomal Protein (Small) Genes
-
-![](`r file.path(seuratdir, "PostFilter_UMAP_percent.rps.png")`)
-
-### Clusters {.tabset}
+### Clusters {.tabset .tabset-pills}
 
 The following are the UMAP plots for the sample that was generated after filtering out the potential low quality and multiplet cells.
 
@@ -302,6 +299,28 @@ for (resolution in resolutions) {
 }
 
 ```
+
+### Feature Plots {.tabset .tabset-pills}
+
+#### Number of Genes {-}
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_nFeature_RNA.png")`)
+
+#### Number of Molecules {-}
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_nCount_RNA.png")`)
+
+#### Mitochondrial Genes {-}
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_percent.mito.png")`)
+
+#### Ribosomal Protein (Large) Genes {-}
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_percent.rpl.png")`)
+
+#### Ribosomal Protein (Small) Genes {-}
+
+![](`r file.path(seuratdir, "PostFilter_UMAP_percent.rps.png")`)
 
 
 ```{r, results='asis', eval=length(Sys.glob(file.path(seuratdir, "ADT", "*.png"))) > 0}
