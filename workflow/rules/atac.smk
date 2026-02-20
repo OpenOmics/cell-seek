@@ -163,7 +163,7 @@ rule prelim_analysis_one:
             --genome {params.genome} \\
             --project "{params.project}" \\
             -o {params.outdir}
-        R -e "rmarkdown::render('/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQCReport.Rmd',
+        R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQC_output',
                             thresholds='{output.filter_info}',
                             sample='{wildcards.sample}',
