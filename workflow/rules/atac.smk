@@ -162,13 +162,14 @@ rule prelim_analysis_one:
             --genes {params.genes} \\
             --genome {params.genome} \\
             --project "{params.project}" \\
-            -o {params.outdir}
+            --output {params.outdir}
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
                             thresholds='{output.filter_info}',
                             sample='{wildcards.sample}',
                             defaultfilter=TRUE),
-                            output_file='{params.outdir}/{wildcards.sample}/{wildcards.sample}.QC_Report.html')"
+                output_file='{params.outdir}/{wildcards.sample}.QC_Report.html',
+                intermediates_dir='{params.outdir}')"
         """)
 
 
@@ -184,7 +185,7 @@ rule prelim_analysis_all:
     params:
         rname = "prelim_analysis_all",
         script = join("/opt", "scripts", "signacMultiSampleQC.R"),
-        scriptrmd = join("/opt", "scripts", "signacMultiSampleQC.Rmd"),
+        scriptrmd = join("/opt", "scripts", "signacMultiSampleQCreport.Rmd"),
         genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
         genome = genome,
         sids = ','.join(samples),
@@ -201,11 +202,12 @@ rule prelim_analysis_all:
             --genes {params.genes} \\
             --genome {params.genome} \\
             --project "{params.project}" \\
-            -o {params.outdir} 
+            --output {params.outdir}
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
                             thresholds='{output.filter_info}',
                             sample='{params.sids}',
                             defaultfilter=TRUE),
-                            output_file='{params.outdir}/Cohort_QC_Report.html')"
+                output_file='{params.outdir}/Cohort_QC_Report.html',
+                intermediates_dir='{params.outdir}')"
         """)
