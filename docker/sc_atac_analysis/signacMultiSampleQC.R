@@ -1166,7 +1166,7 @@ figures$ElbowPlot_LSI <- ElbowPlot(seur, reduction = "lsi")
 ## ----UMAP Plots----
 for (resolution in grep("_res.", colnames(seur@meta.data), value = T)) {
   png(
-    paste0("UMAP_", gsub("_snn", "", resolution), ".png"),
+    file.path(opt$output, paste0("UMAP_", gsub("_snn", "", resolution), ".png")),
     width = 1800,
     height = 1600,
     res = 300
