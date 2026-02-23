@@ -146,7 +146,7 @@ rule prelim_analysis_one:
     params:
         rname = "prelim_analysis_one",
         script = join("/opt", "scripts", "signacSampleQC.R"),
-        scriptrmd = join("/opt", "scripts", "signacSampleQC.Rmd"),
+        scriptrmd = join("/opt", "scripts", "signacSampleQCReport.Rmd"),
         genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
         genome = genome,
         outdir = lambda wc: join(workpath, "scATAC_analysis", wc.sample),
@@ -164,7 +164,7 @@ rule prelim_analysis_one:
             --project "{params.project}" \\
             -o {params.outdir}
         R -e "rmarkdown::render('{params.scriptrmd}',
-                params=list(signacdir='/data/OpenOmics/dev/datasets/input_artifacts/test_cellseek_atac/new_scripts/signacSampleQC_output',
+                params=list(signacdir='{params.outdir}',
                             thresholds='{output.filter_info}',
                             sample='{wildcards.sample}',
                             defaultfilter=TRUE),
@@ -184,10 +184,10 @@ rule prelim_analysis_all:
     params:
         rname = "prelim_analysis_all",
         script = join("/opt", "scripts", "signacMultiSampleQC.R"),
+        scriptrmd = join("/opt", "scripts", "signacMultiSampleQC.Rmd"),
         genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
         genome = genome,
         sids = ','.join(samples),
-        scriptrmd = join("/opt", "scripts", "signacMultiSampleQC.Rmd"),
         outdir = join(workpath, "scATAC_analysis", "cohort"),
         project = "Preliminary QC Report for Cell-seek Multi-Sample Analysis"
     container: config["images"]["signac_base"]
