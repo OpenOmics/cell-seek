@@ -205,8 +205,7 @@ rule prelim_analysis_all:
             --output {params.outdir}
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
-                            thresholds='{output.filter_info}',
-                            sample='{params.sids}',
+                            samples='{params.sids}',
                             defaultfilter=TRUE),
                 output_file='{params.outdir}/Cohort_QC_Report.html',
                 intermediates_dir='{params.outdir}')"
