@@ -338,11 +338,15 @@ cat(paste(head(genome_region, 3), collapse = "\n"), "\n")
 cat("Calculating QC metrics...\n")
 seur <- NucleosomeSignal(object = seur)
 seur <- TSSEnrichment(object = seur, fast = FALSE)
-seur$blacklist_ratio <- seur$blacklist_region_fragments /
-  seur$peak_region_fragments
-seur$pct_reads_in_peaks <- seur$peak_region_fragments /
-  seur$passed_filters *
-  100
+if (opt$genome == "hg38" || opt$genome == "hg2024") {
+  seur$blacklist_ratio <- (seur$blacklist_region_fragments / seur$peak_region_fragments) * 100
+} else if (opt$genome == "mm10" || opt$genome == "mm2024") {
+  seur$blacklist_ratio <- (seur$blacklist_region_fragments / seur$peak_region_fragments) * 100
+} else {
+  warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to NA.")
+  seur$blacklist_ratio <- NA
+}
+
 
 ## ----Pre-Filter Feature Plot----
 for (sample in samples) {
