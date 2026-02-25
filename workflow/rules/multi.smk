@@ -405,7 +405,7 @@ rule seuratQCSummaryReport:
         unset R_LIBS_USER
 
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}', skipped={params.test}), output_file='{output.report}')"
-        if [[ '{params.test}' != "c('')" ]]; then
+        if [[ "{params.test}" != "c('')" ]]; then
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{params.cleanreport}')"
         fi
         """
