@@ -189,9 +189,9 @@ rule prelim_analysis_all:
         genes                   = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
         genome                  = genome,
         sids                    = ','.join(samples),
-        matricies               = ','.join(input.matrix),
-        fragments               = ','.join(input.fragments),
-        filterfiles             = ','.join(input.filterfile),
+        matricies               = lambda wc, _in:','.join(_in.matrix),
+        fragments               = lambda wc, _in:','.join(_in.fragments),
+        filterfiles             = lambda wc, _in:','.join(_in.filterfile),
         outdir                  = join(workpath, "scATAC_analysis", "cohort"),
         project                 = "Preliminary QC Report for Cell-seek Multi-Sample Analysis"
     container: config["images"]["signac_base"]
