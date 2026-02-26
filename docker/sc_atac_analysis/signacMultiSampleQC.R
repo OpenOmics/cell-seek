@@ -28,23 +28,22 @@ option_list <- list(
   make_option(
     "--matrix",
     type = "character",
-    action = "store",
     default = NA,
-    help = "Path to the matrix file"
+    help = "Comma-separated paths to the matrix file(s) (one per sample)"
   ),
   make_option(
     "--fragments",
     type = "character",
     action = "store",
     default = NA,
-    help = "Path to the fragments file"
+    help = "Comma-separated paths to the fragments file(s) (one per sample)"
   ),
   make_option(
     "--barcodes",
     type = "character",
     action = "store",
     default = NA,
-    help = "Path to the barcodes file"
+    help = "Comma-separated paths to the barcodes file(s) (one per sample)"
   ),
   make_option(
     c("-o", "--output"),
@@ -117,12 +116,45 @@ if (grepl(",", opt$samples)) {
   samples <- trimws(opt$samples)
 }
 
+## ----Parse Comma-Separated Input Paths----
+parse_csv_arg <- function(arg) {
+  if (grepl(",", arg)) {
+    strsplit(arg, ",")[[1]] %>% trimws()
+  } else {
+    trimws(arg)
+  }
+}
+
+matrix_paths   <- parse_csv_arg(opt$matrix)
+fragment_paths <- parse_csv_arg(opt$fragments)
+barcode_paths  <- parse_csv_arg(opt$barcodes)
+
+# Validate that the number of paths matches the number of samples
+if (length(matrix_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --matrix paths (", length(matrix_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+if (length(fragment_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --fragments paths (", length(fragment_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+if (length(barcode_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --barcodes paths (", length(barcode_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+
 ## ----Load Reference Annotations----
 if (is.na(opt$genes)) {
   stop("GTF annotation file path is required (use -r/--reference)")
 }
 
-cat(paste0("Loading annotations from ", opt$reference, "...\n"))
+cat(paste0("Loading annotations from ", opt$genes, "...\n"))
 annotations <- import(opt$genes)
 seqlevelsStyle(annotations) <- "UCSC"
 genome(annotations) <- opt$genome
@@ -154,9 +186,9 @@ all_peaks <- GRangesList()
 for (i in 1:length(samples)) {
   cat(paste0("Loading sample ", samples[i], "...\n"))
 
-  counts <- Read10X_h5(file.path(opt$matrix))
+  counts <- Read10X_h5(matrix_paths[i])
   cellranger_metrics <- read.csv(
-    file = file.path(opt$barcodes),
+    file = barcode_paths[i],
     header = TRUE,
     row.names = 1
   )
@@ -190,7 +222,7 @@ for (i in 1:length(samples)) {
     counts = counts,
     sep = c(":", "-"),
     genome = genome(annotations)[1],
-    fragments = file.path(opt$fragments),
+    fragments = fragment_paths[i],
     min.cells = 1,
     min.features = 1
   )
@@ -250,7 +282,7 @@ for (i in 1:length(samples)) {
   cat(paste0("Requantifying sample ", samples[i], "...\n"))
 
   # Get fragment path
-  fragment_path <- file.path(opt$fragments)
+  fragment_path <- fragment_paths[i]
 
   # Create Fragment object
   frags <- CreateFragmentObject(
