@@ -137,20 +137,20 @@ rule sampleCleanup:
 
 rule prelim_analysis_one:
     input:
-        matrix = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"),
-        fragments = join(workpath, "{sample}", "outs", "fragments.tsv.gz"),
-        filterfile = join(workpath, "{sample}", "outs", "singlecell.csv")
+        matrix                  = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"),
+        fragments               = join(workpath, "{sample}", "outs", "fragments.tsv.gz"),
+        filterfile              = join(workpath, "{sample}", "outs", "singlecell.csv")
     output:
-        filter_info = join(workpath, "scATAC_analysis", "{sample}", "cell_filter_info.csv"),
-        report = join(workpath, "scATAC_analysis", "{sample}", "{sample}.QC_Report.html")
+        filter_info             = join(workpath, "scATAC_analysis", "{sample}", "cell_filter_info.csv"),
+        report                  = join(workpath, "scATAC_analysis", "{sample}", "{sample}.QC_Report.html")
     params:
-        rname = "prelim_analysis_one",
-        script = join("/opt", "scripts", "signacSampleQC.R"),
-        scriptrmd = join("/opt", "scripts", "signacSampleQCReport.Rmd"),
-        genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
-        genome = genome,
-        outdir = lambda wc: join(workpath, "scATAC_analysis", wc.sample),
-        project = lambda wc: f"Preliminary QC Report for Cell-seek Sample {wc.sample} Analysis"
+        rname                   = "prelim_analysis_one",
+        script                  = join("/opt", "scripts", "signacSampleQC.R"),
+        scriptrmd               = join("/opt", "scripts", "signacSampleQCReport.Rmd"),
+        genes                   = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
+        genome                  = genome,
+        outdir                  = lambda wc: join(workpath, "scATAC_analysis", wc.sample),
+        project                 = lambda wc: f"Preliminary QC Report for Cell-seek Sample {wc.sample} Analysis"
     container: config["images"]["signac_base"]
     shell:
         dedent("""
@@ -176,29 +176,32 @@ rule prelim_analysis_one:
 
 rule prelim_analysis_all:
     input:
-        matrix = expand(join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"), sample=samples),
-        fragments = expand(join(workpath, "{sample}", "outs", "fragments.tsv.gz"), sample=samples),
-        filterfile = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples)
+        matrix                  = expand(join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"), sample=samples),
+        fragments               = expand(join(workpath, "{sample}", "outs", "fragments.tsv.gz"), sample=samples),
+        filterfile              = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples)
     output:
-        filter_info = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
-        report = join(workpath, "scATAC_analysis", "cohort", "Cohort_QC_Report.html")
+        filter_info             = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
+        report                  = join(workpath, "scATAC_analysis", "cohort", "Cohort_QC_Report.html")
     params:
-        rname = "prelim_analysis_all",
-        script = join("/opt", "scripts", "signacMultiSampleQC.R"),
-        scriptrmd = join("/opt", "scripts", "signacMultiSampleQCreport.Rmd"),
-        genes = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
-        genome = genome,
-        sids = ','.join(samples),
-        outdir = join(workpath, "scATAC_analysis", "cohort"),
-        project = "Preliminary QC Report for Cell-seek Multi-Sample Analysis"
+        rname                   = "prelim_analysis_all",
+        script                  = join("/opt", "scripts", "signacMultiSampleQC.R"),
+        scriptrmd               = join("/opt", "scripts", "signacMultiSampleQCreport.Rmd"),
+        genes                   = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
+        genome                  = genome,
+        sids                    = ','.join(samples),
+        matricies               = ','.join(input.matrix),
+        fragments               = ','.join(input.fragments),
+        filterfiles             = ','.join(input.filterfile),
+        outdir                  = join(workpath, "scATAC_analysis", "cohort"),
+        project                 = "Preliminary QC Report for Cell-seek Multi-Sample Analysis"
     container: config["images"]["signac_base"]
     shell:
         dedent("""
         Rscript {params.script} \\
             --sample {params.sids} \\
-            --matrix {input.matrix} \\
-            --fragments {input.fragments} \\
-            --barcodes {input.filterfile} \\
+            --matrix {params.matricies} \\
+            --fragments {params.fragments} \\
+            --barcodes {params.filterfiles} \\
             --genes {params.genes} \\
             --genome {params.genome} \\
             --project "{params.project}" \\
