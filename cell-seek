@@ -517,11 +517,15 @@ def parsed_arguments(name, description):
                                 options: hg38, mm10, hg2024, mm2024.
                                   Example: --genome hg38
         {3}{4}Analysis options:{5}
-          --cellranger {{7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0}}
-                                The version of CellRanger to run. This option specifies
-                                which version of CellRanger to use when running GEX,
-                                CITE, or MULTI. Please select one of the following
-                                options: 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0
+          --cellranger {{2.0.1, 2.1.0, 2.2.0, 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0}}
+                                The version of CellRanger, CellRanger ATAC, or CellRanger 
+                                ARC to run. This option specifies which version of 
+                                the corresponding CellRanger software to use when running 
+                                ATAC, ARC, GEX, CITE, or MULTI. 
+                                Please select one of the following options:
+                                GEX, CITE, MULTI: 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0
+                                ARC: 2.0.1, 2.1.0
+                                ATAC: 2.1.0, 2.2.0
                                   Example: --cellranger 7.1.0
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
@@ -1080,9 +1084,9 @@ def parsed_arguments(name, description):
     subparser_run.add_argument(
         "--cellranger",
         type=str.lower,
-        required=False,
+        required=True,
         default="",
-        choices=["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        choices=["2.0.1", "2.1.0", "2.2.0", "7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
         help=argparse.SUPPRESS,
     )
 

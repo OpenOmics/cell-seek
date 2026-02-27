@@ -62,7 +62,7 @@ rule count:
         reference = config["references"][genome]["atac_ref"],
         fastqs = filterFastq,
         forcecells = force_cells
-    envmodules: config["tools"]["cellranger-atac"]
+    envmodules: config["tools"]["cellranger-atac"][CELLRANGER]
     shell:
         """
         # Remove output directory

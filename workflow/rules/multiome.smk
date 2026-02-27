@@ -43,14 +43,20 @@ def count_introns(wildcards):
 
 def count_bam(wildcards):
     """
-    Wrapper to decide whether to create BAM files during Cell Ranger alignment - currently unused
+    Wrapper to decide whether to create BAM files during Cell Ranger alignment
+    Does not provide any flags prior to version 2.2.0, because 
     See config['options']['create_bam'] for the encoded value.
     """
     if create_bam:
-        return('')
+        if CELLRANGER in ['2.0.1']:
+            return('')
+        else:
+            return('--create-bam true')
     else:
-        return('--no-bam')
-
+        if CELLRANGER in ['2.0.1']:
+            return('--no-bam')
+        else:
+            return('--create-bam false')
 
 # Rule definitions
 rule librariesCSV:
@@ -82,8 +88,9 @@ rule count:
         rname = "count",
         prefix = "{sample}",
         reference = config["references"][genome]["arc_ref"],
-        introns = count_introns
-    envmodules: config["tools"]["cellranger-arc"]
+        introns = count_introns,
+        createbam = count_bam
+    envmodules: config["tools"]["cellranger-arc"][CELLRANGER]
     shell:
         """
         # Remove output directory
@@ -94,14 +101,14 @@ rule count:
                 cellranger-arc count \\
                     --id={params.prefix} \\
                     --reference={params.reference} \\
-                    --libraries={input.lib} {params.introns} \\
+                    --libraries={input.lib} {params.introns} {params.createbam} \\
                 2>{log.err} 1>{log.log}
             fi
         else
             cellranger-arc count \\
                 --id={params.prefix} \\
                 --reference={params.reference} \\
-                --libraries={input.lib} {params.introns} \\
+                --libraries={input.lib} {params.introns} {params.createbam} \\
             2>{log.err} 1>{log.log}
         fi
         """

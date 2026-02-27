@@ -1,8 +1,8 @@
 {
     "tools": {
         "cellranger": {"7.1.0": "cellranger/7.1.0", "7.2.0": "cellranger/7.2.0", "8.0.0": "cellranger/8.0.0", "9.0.0": "cellranger/9.0.0", "10.0.0": "cellranger/10.0.0"},
-	"cellranger-atac": "cellranger-atac/2.1.0",
-	"cellranger-arc": "cellranger-arc/2.0.1",
+	"cellranger-atac": {"2.1.0": "cellranger-atac/2.1.0", "2.2.0": "cellranger-atac/2.2.0"},
+	"cellranger-arc": {"2.0.1": "cellranger-arc/2.0.1", "2.1.0": "cellranger-arc/2.1.0"},
         "python2": "python/2.7",
         "python3": "python/3.8",
 	"rversion": "R/4.4.0"

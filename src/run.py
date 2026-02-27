@@ -893,15 +893,36 @@ def check_conditional_parameters(config):
     """
     errorMessage = []
     input_folders = folder_inputs(config['options']['input'])
+
+    # List supported versions for each pipeline
+    supported_versions = {
+        'gex': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
+        'cite': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
+        'multi': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
+        'vdj': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
+        'atac': ['2.1.0', '2.2.0'],
+        'multiome': ['2.0.1', '2.1.0']
+    }
+
+
     #Check if cellranger version is provided when required
-    if config['options']['pipeline'] in ['gex', 'cite', 'multi'] and config['options']['cellranger'] == '':
+    if config['options']['cellranger'] not in supported_versions.get(config['options']['pipeline'], []):
         errorMessage += [
-            "Error: Version of cellranger to use is required for {} pipeline\n \
-            └── Please use the --cellranger flag to select one of the available versions: {}".format(
+            "Error: Version of cellranger provided is not compatible with {} pipeline\n \
+            └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
                 config['options']['pipeline'],
-                ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'])
+                ', '.join(supported_versions.get(config['options']['pipeline'], []))
             )
         ]
+    # if config['options']['pipeline'] in ['gex', 'cite', 'multi'] and config['options']['cellranger'] == '':
+    #     errorMessage += [
+    #         "Error: Version of cellranger to use is required for {} pipeline\n \
+    #         └── Please use the --cellranger flag to select one of the available versions: {}".format(
+    #             config['options']['pipeline'],
+    #             ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'])
+    #         )
+    #     ]
+
 
     #Check if Cell Ranger version 9 or newer is used when running OCM or HTO, and Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)
     if any([config['options'][i] != 'None' for i in ['hto_sample', 'ocm_sample']]):
@@ -922,6 +943,7 @@ def check_conditional_parameters(config):
                     ', '.join(['9.0.0', '10.0.0'])
                 )
             ]
+    # Check if Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)
     if any([config['options'][i] != 'None' for i in ['probe_sample', 'probe_set']]):
         if config['options']['cellranger'] != '':
             if int(config['options']['cellranger'].split('.')[0]) < 8:
