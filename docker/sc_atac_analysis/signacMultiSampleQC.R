@@ -370,13 +370,46 @@ cat(paste(head(genome_region, 3), collapse = "\n"), "\n")
 cat("Calculating QC metrics...\n")
 seur <- NucleosomeSignal(object = seur)
 seur <- TSSEnrichment(object = seur, fast = FALSE)
-if (opt$genome == "hg38" || opt$genome == "hg2024") {
-  seur$blacklist_ratio <- (seur$blacklist_region_fragments / seur$peak_region_fragments) * 100
-} else if (opt$genome == "mm10" || opt$genome == "mm2024") {
-  seur$blacklist_ratio <- (seur$blacklist_region_fragments / seur$peak_region_fragments) * 100
+
+# Calculate blacklist ratio using Signac's FractionCountsInRegion
+# This computes the fraction directly from fragments overlapping blacklist regions,
+# rather than relying on Cell Ranger singlecell.csv columns (blacklist_region_fragments,
+# peak_region_fragments) which may not exist after requantification with union peaks.
+if (opt$genome %in% c("hg38", "hg2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_hg38_unified
+  )
+} else if (opt$genome %in% c("mm10", "mm2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_mm10
+  )
 } else {
   warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to NA.")
   seur$blacklist_ratio <- NA
+}
+
+# Calculate pct_reads_in_peaks from Cell Ranger singlecell.csv metadata
+# These columns are preserved in metadata from the initial load
+if (
+  "peak_region_fragments" %in% colnames(seur@meta.data) &&
+    "passed_filters" %in% colnames(seur@meta.data)
+) {
+  seur$pct_reads_in_peaks <- seur$peak_region_fragments /
+    seur$passed_filters *
+    100
+  cat("Calculated pct_reads_in_peaks from Cell Ranger metadata.\n")
+} else {
+  # Fallback: compute fraction of counts in peaks from the assay
+  warning(
+    "peak_region_fragments and/or passed_filters columns not found in metadata. ",
+    "Computing pct_reads_in_peaks as fraction of counts in peak regions."
+  )
+  total_counts <- Matrix::colSums(GetAssayData(seur, assay = "peaks", slot = "counts"))
+  seur$pct_reads_in_peaks <- (total_counts / seur$nCount_peaks) * 100
 }
 
 

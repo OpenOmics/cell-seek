@@ -232,11 +232,21 @@ seur <- NucleosomeSignal(object = seur)
 # Compute TSS enrichment score per cell
 seur <- TSSEnrichment(object = seur, fast = FALSE)
 
-# Add blacklist ratio
-if (opt$genome == "hg38" || opt$genome == "hg2024") {
-  seur$blacklist_ratio <- (seur$blacklist_region_fragments / seur$peak_region_fragments) * 100
-} else if (opt$genome == "mm10" || opt$genome == "mm2024") {
-  seur$blacklist_ratio <- (seur$blacklist_region_fragments / seur$peak_region_fragments) * 100
+# Add blacklist ratio using Signac's FractionCountsInRegion
+# This computes the fraction directly from counts overlapping blacklist regions,
+# rather than relying on Cell Ranger singlecell.csv columns which may be stale.
+if (opt$genome %in% c("hg38", "hg2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_hg38_unified
+  )
+} else if (opt$genome %in% c("mm10", "mm2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_mm10
+  )
 } else {
   warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to NA.")
   seur$blacklist_ratio <- NA
