@@ -121,6 +121,12 @@ if (is.na(opt$sample)) {
   stop("Sample name must be provided with -s/--sample")
 }
 
+if (opt$genome == "hg2024") {
+  opt$genome <- "hg38"
+} else if (opt$genome == "mm2024") {
+  opt$genome <- "mm10"
+}
+
 ## ----Load Reference Annotations----
 
 cat(paste0("Loading annotations from ", opt$genes, "...\n"))

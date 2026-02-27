@@ -109,6 +109,13 @@ if (!is.na(opt$output)) {
   opt$output <- normalizePath(opt$output, mustWork = FALSE)
 }
 
+# convert genome to uscs/
+if (opt$genome == "hg2024") {
+  opt$genome <- "hg38"
+} else if (opt$genome == "mm2024") {
+  opt$genome <- "mm10"
+}
+
 ## ----Parse Sample Information----
 if (grepl(",", opt$samples)) {
   samples <- strsplit(opt$samples, ",")[[1]] %>% trimws()
