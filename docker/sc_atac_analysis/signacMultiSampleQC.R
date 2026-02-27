@@ -113,7 +113,7 @@ if (!is.na(opt$output)) {
 if (opt$genome == "hg2024") {
   opt$genome <- "hg38"
 } else if (opt$genome == "mm2024") {
-  opt$genome <- "mm10"
+  opt$genome <- "mm39"
 }
 
 ## ----Parse Sample Information----
