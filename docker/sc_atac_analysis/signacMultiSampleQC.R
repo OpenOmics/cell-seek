@@ -17,6 +17,7 @@ library(Seurat)
 library(ggplot2)
 library(gridExtra)
 library(GenomicRanges)
+library(GenomeInfoDb)
 library(rtracklayer)
 library(optparse)
 library(dplyr)
@@ -27,23 +28,22 @@ option_list <- list(
   make_option(
     "--matrix",
     type = "character",
-    action = "store",
     default = NA,
-    help = "Path to the matrix file"
+    help = "Comma-separated paths to the matrix file(s) (one per sample)"
   ),
   make_option(
     "--fragments",
     type = "character",
     action = "store",
     default = NA,
-    help = "Path to the fragments file"
+    help = "Comma-separated paths to the fragments file(s) (one per sample)"
   ),
   make_option(
     "--barcodes",
     type = "character",
     action = "store",
     default = NA,
-    help = "Path to the barcodes file"
+    help = "Comma-separated paths to the barcodes file(s) (one per sample)"
   ),
   make_option(
     c("-o", "--output"),
@@ -109,6 +109,13 @@ if (!is.na(opt$output)) {
   opt$output <- normalizePath(opt$output, mustWork = FALSE)
 }
 
+# convert genome to uscs/
+if (opt$genome == "hg2024") {
+  opt$genome <- "hg38"
+} else if (opt$genome == "mm2024") {
+  opt$genome <- "mm39"
+}
+
 ## ----Parse Sample Information----
 if (grepl(",", opt$samples)) {
   samples <- strsplit(opt$samples, ",")[[1]] %>% trimws()
@@ -116,12 +123,45 @@ if (grepl(",", opt$samples)) {
   samples <- trimws(opt$samples)
 }
 
+## ----Parse Comma-Separated Input Paths----
+parse_csv_arg <- function(arg) {
+  if (grepl(",", arg)) {
+    strsplit(arg, ",")[[1]] %>% trimws()
+  } else {
+    trimws(arg)
+  }
+}
+
+matrix_paths   <- parse_csv_arg(opt$matrix)
+fragment_paths <- parse_csv_arg(opt$fragments)
+barcode_paths  <- parse_csv_arg(opt$barcodes)
+
+# Validate that the number of paths matches the number of samples
+if (length(matrix_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --matrix paths (", length(matrix_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+if (length(fragment_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --fragments paths (", length(fragment_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+if (length(barcode_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --barcodes paths (", length(barcode_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+
 ## ----Load Reference Annotations----
 if (is.na(opt$genes)) {
   stop("GTF annotation file path is required (use -r/--reference)")
 }
 
-cat(paste0("Loading annotations from ", opt$reference, "...\n"))
+cat(paste0("Loading annotations from ", opt$genes, "...\n"))
 annotations <- import(opt$genes)
 seqlevelsStyle(annotations) <- "UCSC"
 genome(annotations) <- opt$genome
@@ -153,9 +193,9 @@ all_peaks <- GRangesList()
 for (i in 1:length(samples)) {
   cat(paste0("Loading sample ", samples[i], "...\n"))
 
-  counts <- Read10X_h5(file.path(opt$matrix))
+  counts <- Read10X_h5(matrix_paths[i])
   cellranger_metrics <- read.csv(
-    file = file.path(opt$barcodes),
+    file = barcode_paths[i],
     header = TRUE,
     row.names = 1
   )
@@ -189,7 +229,7 @@ for (i in 1:length(samples)) {
     counts = counts,
     sep = c(":", "-"),
     genome = genome(annotations)[1],
-    fragments = file.path(opt$fragments),
+    fragments = fragment_paths[i],
     min.cells = 1,
     min.features = 1
   )
@@ -249,7 +289,7 @@ for (i in 1:length(samples)) {
   cat(paste0("Requantifying sample ", samples[i], "...\n"))
 
   # Get fragment path
-  fragment_path <- file.path(opt$fragments)
+  fragment_path <- fragment_paths[i]
 
   # Create Fragment object
   frags <- CreateFragmentObject(
@@ -337,11 +377,48 @@ cat(paste(head(genome_region, 3), collapse = "\n"), "\n")
 cat("Calculating QC metrics...\n")
 seur <- NucleosomeSignal(object = seur)
 seur <- TSSEnrichment(object = seur, fast = FALSE)
-seur$blacklist_ratio <- seur$blacklist_region_fragments /
-  seur$peak_region_fragments
-seur$pct_reads_in_peaks <- seur$peak_region_fragments /
-  seur$passed_filters *
-  100
+
+# Calculate blacklist ratio using Signac's FractionCountsInRegion
+# This computes the fraction directly from fragments overlapping blacklist regions,
+# rather than relying on Cell Ranger singlecell.csv columns (blacklist_region_fragments,
+# peak_region_fragments) which may not exist after requantification with union peaks.
+if (opt$genome %in% c("hg38", "hg2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_hg38_unified
+  )
+} else if (opt$genome %in% c("mm10", "mm2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_mm10
+  )
+} else {
+  warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to NA.")
+  seur$blacklist_ratio <- NA
+}
+
+# Calculate pct_reads_in_peaks from Cell Ranger singlecell.csv metadata
+# These columns are preserved in metadata from the initial load
+if (
+  "peak_region_fragments" %in% colnames(seur@meta.data) &&
+    "passed_filters" %in% colnames(seur@meta.data)
+) {
+  seur$pct_reads_in_peaks <- seur$peak_region_fragments /
+    seur$passed_filters *
+    100
+  cat("Calculated pct_reads_in_peaks from Cell Ranger metadata.\n")
+} else {
+  # Fallback: compute fraction of counts in peaks from the assay
+  warning(
+    "peak_region_fragments and/or passed_filters columns not found in metadata. ",
+    "Computing pct_reads_in_peaks as fraction of counts in peak regions."
+  )
+  total_counts <- Matrix::colSums(GetAssayData(seur, assay = "peaks", slot = "counts"))
+  seur$pct_reads_in_peaks <- (total_counts / seur$nCount_peaks) * 100
+}
+
 
 ## ----Pre-Filter Feature Plot----
 for (sample in samples) {
@@ -564,6 +641,19 @@ write.csv(thresh_df, file.path(opt$output, "cell_filter_info.csv"), row.names = 
 ## ----Pre-Filter ATAC Violin Plot-------
 doVlnPlot <- function(aspect, seur, thresh, sample_name) {
   seur_subset <- subset(seur, subset = Sample == sample_name)
+
+  # Skip features that are all NA (e.g., blacklist_ratio when genome is unsupported)
+  feature_data <- seur_subset[[aspect]]
+  if (is.null(feature_data) || all(is.na(feature_data[, 1]))) {
+    cat(paste0("  Skipping VlnPlot for '", aspect, "' (all NA values).\n"))
+    return(
+      ggplot() +
+        annotate("text", x = 0.5, y = 0.5, label = paste0(aspect, "\n(not available)")) +
+        theme_void() +
+        ggtitle(sample_name)
+    )
+  }
+
   # Only use group.by if there are multiple samples
   if (length(unique(seur$Sample)) > 1) {
     temp_plot <- VlnPlot(seur_subset, group.by = "Sample", features = aspect) +
@@ -792,8 +882,24 @@ figures$PreFilter_UMAP_ATAC <- DimPlot(
   theme(plot.title = element_text(hjust = 0.5))
 
 ## ----Pre-Filter QC Feature Plots----
+# Helper: filter out features that are all NA in the Seurat object (e.g., blacklist_ratio)
+get_plottable_features <- function(seur_obj, features) {
+  features[sapply(features, function(f) {
+    vals <- seur_obj[[f]]
+    !is.null(vals) && !all(is.na(vals[, 1]))
+  })]
+}
+
+qc_features_all <- c(
+  "TSS.enrichment",
+  "nucleosome_signal",
+  "pct_reads_in_peaks",
+  "blacklist_ratio"
+)
+
 for (sample in samples) {
   seur_subset <- subset(seur, subset = Sample == sample)
+  qc_features <- get_plottable_features(seur_subset, qc_features_all)
 
   png(
     file.path(opt$output, paste0("PreFilter_FeaturePlot_Counts_", sample, ".png")),
@@ -809,24 +915,21 @@ for (sample in samples) {
   ))
   dev.off()
 
-  png(
-    file.path(opt$output, paste0("PreFilter_FeaturePlot_QC_", sample, ".png")),
-    width = 1800,
-    height = 1600,
-    res = 300
-  )
-  print(FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  ))
-  dev.off()
+  if (length(qc_features) > 0) {
+    png(
+      file.path(opt$output, paste0("PreFilter_FeaturePlot_QC_", sample, ".png")),
+      width = 1800,
+      height = 1600,
+      res = 300
+    )
+    print(FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    ))
+    dev.off()
+  }
 
   figures[[paste0("PreFilter_FeaturePlot_Counts_", sample)]] <- FeaturePlot(
     seur_subset,
@@ -834,17 +937,14 @@ for (sample in samples) {
     features = c("nCount_peaks", "nFeature_peaks"),
     ncol = 2
   )
-  figures[[paste0("PreFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  )
+  if (length(qc_features) > 0) {
+    figures[[paste0("PreFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    )
+  }
 }
 
 ## ----Depth vs TSS enrichment plot----
@@ -1072,6 +1172,7 @@ for (sample in samples) {
   }
 
   seur_subset <- subset(seur, subset = Sample == sample)
+  qc_features <- get_plottable_features(seur_subset, qc_features_all)
 
   png(
     file.path(opt$output, paste0("PostFilter_FeaturePlot_Counts_", sample, ".png")),
@@ -1087,24 +1188,21 @@ for (sample in samples) {
   ))
   dev.off()
 
-  png(
-    file.path(opt$output, paste0("PostFilter_FeaturePlot_QC_", sample, ".png")),
-    width = 1800,
-    height = 1600,
-    res = 300
-  )
-  print(FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  ))
-  dev.off()
+  if (length(qc_features) > 0) {
+    png(
+      file.path(opt$output, paste0("PostFilter_FeaturePlot_QC_", sample, ".png")),
+      width = 1800,
+      height = 1600,
+      res = 300
+    )
+    print(FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    ))
+    dev.off()
+  }
 
   figures[[paste0("PostFilter_FeaturePlot_Counts_", sample)]] <- FeaturePlot(
     seur_subset,
@@ -1112,17 +1210,14 @@ for (sample in samples) {
     features = c("nCount_peaks", "nFeature_peaks"),
     ncol = 2
   )
-  figures[[paste0("PostFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  )
+  if (length(qc_features) > 0) {
+    figures[[paste0("PostFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    )
+  }
 }
 
 coord <- Embeddings(seur, reduction = "lsi")[, 2:30]
@@ -1165,7 +1260,7 @@ figures$ElbowPlot_LSI <- ElbowPlot(seur, reduction = "lsi")
 ## ----UMAP Plots----
 for (resolution in grep("_res.", colnames(seur@meta.data), value = T)) {
   png(
-    paste0("UMAP_", gsub("_snn", "", resolution), ".png"),
+    file.path(opt$output, paste0("UMAP_", gsub("_snn", "", resolution), ".png")),
     width = 1800,
     height = 1600,
     res = 300

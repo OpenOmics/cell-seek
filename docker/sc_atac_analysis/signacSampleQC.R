@@ -5,6 +5,7 @@ library(ggplot2)
 library(gridExtra)
 library(cluster)
 library(GenomicRanges)
+library(GenomeInfoDb)
 library(rtracklayer)
 library(optparse)
 library(dplyr)
@@ -62,7 +63,7 @@ option_list <- list(
   make_option(
     c("--barcodes"),
     type = "character",
-    help = "Barcode file path from cell/space ranger outputs (singlecell.csv)"
+    help = "Barcode file path from cellranger outputs (singlecell.csv)"
   ),
   # Example **fragments** file format: BED5
   #   > chr1    10081   10267   GCTCCTAAGGGTTCCC-1      1
@@ -75,7 +76,7 @@ option_list <- list(
   make_option(
     c("--fragments"),
     type = "character",
-    help = "Fragments file path (BED5/6) from cell/space ranger outputs (fragments.tsv.gz)"
+    help = "Fragments file path (BED5/6) from cellranger outputs (fragments.tsv.gz)"
   ),
 
   ###### GENOMIC REFERENCES ######
@@ -93,12 +94,12 @@ option_list <- list(
     default = "hg38",
     help = "Genome name (e.g., hg38, mm10) - used for seqlevels style"
   ),
-  ###### filtered_peak_bc_matrix.h5 cell/space ranger output ######
+  ###### filtered_peak_bc_matrix.h5 cellranger output ######
   make_option(
     c("-f", "--featurematrix"),
     type = 'character',
     default = NA,
-    help = "Path to the 10X feature matrix (from [cell|space] ranger)"
+    help = "Path to the 10X feature matrix (from cellranger)"
   ),
 
   ###### OUTPUT DESIGNATION ######
@@ -118,6 +119,12 @@ if (file.exists(opt$output) == FALSE) {
 
 if (is.na(opt$sample)) {
   stop("Sample name must be provided with -s/--sample")
+}
+
+if (opt$genome == "hg2024") {
+  opt$genome <- "hg38"
+} else if (opt$genome == "mm2024") {
+  opt$genome <- "mm39"
 }
 
 ## ----Load Reference Annotations----
@@ -231,13 +238,24 @@ seur <- NucleosomeSignal(object = seur)
 # Compute TSS enrichment score per cell
 seur <- TSSEnrichment(object = seur, fast = FALSE)
 
-# Add blacklist ratio
-if (opt$genome == "hg38" || opt$genome == "hg2024") {
-  seur$blacklist_ratio <- seur$blacklist_region_fragments /
-    seur$peak_region_fragments
-} else if (opt$genome == "mm10" || opt$genome == "mm2024") {
-  seur$blacklist_ratio <- seur$blacklist_region_fragments /
-    seur$peak_region_fragments
+# Add blacklist ratio using Signac's FractionCountsInRegion
+# This computes the fraction directly from counts overlapping blacklist regions,
+# rather than relying on Cell Ranger singlecell.csv columns which may be stale.
+if (opt$genome %in% c("hg38", "hg2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_hg38_unified
+  )
+} else if (opt$genome %in% c("mm10", "mm2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_mm10
+  )
+} else {
+  warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to NA.")
+  seur$blacklist_ratio <- NA
 }
 
 # Calculate fraction of reads in peaks (FRiP)

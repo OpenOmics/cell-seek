@@ -1,17 +1,17 @@
 ---
-title: "Preliminary QC Report for Sample `r params$sample`"
+title: "`r paste0('Preliminary QC Report for Sample ', params$sample)`"
 subtitle: "Initial Sample Preprocessing - scATAC-seq"
-date: '`r Sys.Date()`'
+date: "`r Sys.Date()`"
 output:
-    html_document:
-        toc: true
-        toc_float:
-            collapsed: false
-        number_sections: true
-        code-fold: true
-        toc_depth: 3
-        fig_height: 5
-        fig_width: 6
+  html_document:
+    toc: true
+    toc_float:
+        collapsed: false
+    number_sections: true
+    code-fold: true
+    toc_depth: 3
+    fig_height: 5
+    fig_width: 6
 params:
   thresholds: NULL
   signacdir: NULL
