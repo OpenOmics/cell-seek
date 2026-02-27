@@ -641,6 +641,19 @@ write.csv(thresh_df, file.path(opt$output, "cell_filter_info.csv"), row.names = 
 ## ----Pre-Filter ATAC Violin Plot-------
 doVlnPlot <- function(aspect, seur, thresh, sample_name) {
   seur_subset <- subset(seur, subset = Sample == sample_name)
+
+  # Skip features that are all NA (e.g., blacklist_ratio when genome is unsupported)
+  feature_data <- seur_subset[[aspect]]
+  if (is.null(feature_data) || all(is.na(feature_data[, 1]))) {
+    cat(paste0("  Skipping VlnPlot for '", aspect, "' (all NA values).\n"))
+    return(
+      ggplot() +
+        annotate("text", x = 0.5, y = 0.5, label = paste0(aspect, "\n(not available)")) +
+        theme_void() +
+        ggtitle(sample_name)
+    )
+  }
+
   # Only use group.by if there are multiple samples
   if (length(unique(seur$Sample)) > 1) {
     temp_plot <- VlnPlot(seur_subset, group.by = "Sample", features = aspect) +
@@ -869,8 +882,24 @@ figures$PreFilter_UMAP_ATAC <- DimPlot(
   theme(plot.title = element_text(hjust = 0.5))
 
 ## ----Pre-Filter QC Feature Plots----
+# Helper: filter out features that are all NA in the Seurat object (e.g., blacklist_ratio)
+get_plottable_features <- function(seur_obj, features) {
+  features[sapply(features, function(f) {
+    vals <- seur_obj[[f]]
+    !is.null(vals) && !all(is.na(vals[, 1]))
+  })]
+}
+
+qc_features_all <- c(
+  "TSS.enrichment",
+  "nucleosome_signal",
+  "pct_reads_in_peaks",
+  "blacklist_ratio"
+)
+
 for (sample in samples) {
   seur_subset <- subset(seur, subset = Sample == sample)
+  qc_features <- get_plottable_features(seur_subset, qc_features_all)
 
   png(
     file.path(opt$output, paste0("PreFilter_FeaturePlot_Counts_", sample, ".png")),
@@ -886,24 +915,21 @@ for (sample in samples) {
   ))
   dev.off()
 
-  png(
-    file.path(opt$output, paste0("PreFilter_FeaturePlot_QC_", sample, ".png")),
-    width = 1800,
-    height = 1600,
-    res = 300
-  )
-  print(FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  ))
-  dev.off()
+  if (length(qc_features) > 0) {
+    png(
+      file.path(opt$output, paste0("PreFilter_FeaturePlot_QC_", sample, ".png")),
+      width = 1800,
+      height = 1600,
+      res = 300
+    )
+    print(FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    ))
+    dev.off()
+  }
 
   figures[[paste0("PreFilter_FeaturePlot_Counts_", sample)]] <- FeaturePlot(
     seur_subset,
@@ -911,17 +937,14 @@ for (sample in samples) {
     features = c("nCount_peaks", "nFeature_peaks"),
     ncol = 2
   )
-  figures[[paste0("PreFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  )
+  if (length(qc_features) > 0) {
+    figures[[paste0("PreFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    )
+  }
 }
 
 ## ----Depth vs TSS enrichment plot----
@@ -1149,6 +1172,7 @@ for (sample in samples) {
   }
 
   seur_subset <- subset(seur, subset = Sample == sample)
+  qc_features <- get_plottable_features(seur_subset, qc_features_all)
 
   png(
     file.path(opt$output, paste0("PostFilter_FeaturePlot_Counts_", sample, ".png")),
@@ -1164,24 +1188,21 @@ for (sample in samples) {
   ))
   dev.off()
 
-  png(
-    file.path(opt$output, paste0("PostFilter_FeaturePlot_QC_", sample, ".png")),
-    width = 1800,
-    height = 1600,
-    res = 300
-  )
-  print(FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  ))
-  dev.off()
+  if (length(qc_features) > 0) {
+    png(
+      file.path(opt$output, paste0("PostFilter_FeaturePlot_QC_", sample, ".png")),
+      width = 1800,
+      height = 1600,
+      res = 300
+    )
+    print(FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    ))
+    dev.off()
+  }
 
   figures[[paste0("PostFilter_FeaturePlot_Counts_", sample)]] <- FeaturePlot(
     seur_subset,
@@ -1189,17 +1210,14 @@ for (sample in samples) {
     features = c("nCount_peaks", "nFeature_peaks"),
     ncol = 2
   )
-  figures[[paste0("PostFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
-    seur_subset,
-    reduction = "umap",
-    features = c(
-      "TSS.enrichment",
-      "nucleosome_signal",
-      "pct_reads_in_peaks",
-      "blacklist_ratio"
-    ),
-    ncol = 2
-  )
+  if (length(qc_features) > 0) {
+    figures[[paste0("PostFilter_FeaturePlot_QC_", sample)]] <- FeaturePlot(
+      seur_subset,
+      reduction = "umap",
+      features = qc_features,
+      ncol = 2
+    )
+  }
 }
 
 coord <- Embeddings(seur, reduction = "lsi")[, 2:30]
