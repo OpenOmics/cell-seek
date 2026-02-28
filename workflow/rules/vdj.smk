@@ -53,7 +53,8 @@ rule count:
         id = "{sample}",
         sample = sample_rename,
         reference = config["references"][genome]["vdj_ref"],
-        fastqs = filterFastq
+        fastqs = filterFastq,
+        chain = CHAIN
     envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
@@ -67,6 +68,7 @@ rule count:
                     --sample {params.sample} \\
                     --reference {params.reference} \\
                     --fastqs {params.fastqs} \\
+                    --chain {params.chain} \\
                 2>{log.err} 1>{log.log}
             fi
         else
@@ -75,6 +77,7 @@ rule count:
                 --sample {params.sample} \\
                 --reference {params.reference} \\
                 --fastqs {params.fastqs} \\
+                --chain {params.chain} \\
             2>{log.err} 1>{log.log}
         fi
         """

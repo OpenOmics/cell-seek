@@ -33,7 +33,8 @@ OCM_SAMPLE = config['options']['ocm_sample']     # OCM Sample files for cellrang
 PROBE_SAMPLE = config['options']['probe_sample']     # Probe Sample files for cellranger (only used in multi pipelines)
 PROBE_SET = config['options']['probe_set']     # Probe Set file for cellranger (only used in multi pipelines)
 RENAME = config['options']['rename']            # File containing how to rename samples when running Cell Ranger analysis
-FORCECELLS = config['options']['forcecells']                # File containing the cell counts to use f
+FORCECELLS = config['options']['forcecells']                # File containing the cell counts to use for running Cell Ranger analysis
+CHAIN = config['options']['chain']                # Chain type for cellranger (only used in vdj pipeline)
 exclude_introns = str_bool(                           # Use introns for pre mRNA,
     config['options']['exclude_introns']              # default: False
 )

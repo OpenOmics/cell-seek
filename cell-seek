@@ -516,7 +516,6 @@ def parsed_arguments(name, description):
                                 prebuilt references, please select one of the following
                                 options: hg38, mm10, hg2024, mm2024.
                                   Example: --genome hg38
-        {3}{4}Analysis options:{5}
           --cellranger {{2.0.1, 2.1.0, 2.2.0, 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0}}
                                 The version of CellRanger, CellRanger ATAC, or CellRanger 
                                 ARC to run. This option specifies which version of 
@@ -527,6 +526,7 @@ def parsed_arguments(name, description):
                                 ARC: 2.0.1, 2.1.0
                                 ATAC: 2.1.0, 2.2.0
                                   Example: --cellranger 7.1.0
+        {3}{4}Analysis options:{5}
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
                                 normalization mode that should be used. Mapped is what
@@ -645,6 +645,11 @@ def parsed_arguments(name, description):
                                       with. Must match either entries in cmo_reference.csv file
                                       or 10x CMO IDs.
                                   Example: --cmo-sample cmo_sample.csv
+          --chain
+                                Chain type for cellranger to run the analysis for. Default 
+                                is set to auto. Other options are 'TR' for T cell receptors, 
+                                and 'IG' for B cell receptors.
+                                  Example: --chain TR
           --exclude-introns
                                 Exclude introns from the count alignment. This flag is
                                 only applicable when dealing with gene expression related
@@ -1034,6 +1039,17 @@ def parsed_arguments(name, description):
         required = False,
         help = argparse.SUPPRESS
     )
+
+    # Chain type for cellranger to run the analysis for
+    subparser_run.add_argument(
+        "--chain",
+        type=str,
+        required=False,
+        default="auto",
+        choices=["auto", "TR", "IG"],
+        help=argparse.SUPPRESS
+    )
+
     # Exclude introns from count
     subparser_run.add_argument(
         "--exclude-introns",
