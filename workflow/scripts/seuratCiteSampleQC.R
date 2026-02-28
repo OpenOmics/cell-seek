@@ -32,16 +32,23 @@ opt <- parse_args(OptionParser(option_list=option_list))
 dir.create(opt$workdir, recursive=TRUE)
 setwd(opt$workdir)
 
+adt = FALSE
+hashtag = FALSE
 
-rdata <- Read10X(opt$datapath)
+tryCatch({
+  rdata <- Read10X(opt$datapath)
+}, error=function(e) {
+  print(paste("Caught an error:", e$message))
+  q()
+})
 
+if (is.list(rdata)) {
 seur <- CreateSeuratObject(counts=rdata$`Gene Expression`, project = opt$project)
 
 # Add in ADT assay (trying to filter out potential hashtags by grepping for HTO)
 filtered_cite <- list()
 adt_thresh <- opt$adtthresh
 
-adt = FALSE
 if (length(grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE, invert=TRUE), value=TRUE, ignore.case=TRUE, invert=TRUE)) > 0) {
   adt_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE, invert=TRUE), value=TRUE, ignore.case=TRUE, invert=TRUE),])
   filtered_cite[['ADT']] <- names(which(apply(GetAssayData(adt_assay, slot='counts'), 1, max) <= adt_thresh))
@@ -53,7 +60,6 @@ if (length(grep('^HTO[-_]', grep('hashtag', rownames(rdata$`Antibody Capture`), 
 }
 
 # Add in HTO assay if features with HTO was found
-hashtag = FALSE
 if (length(as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE), grep('^HTO[-_]', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE)))) > 0) {
   hto_assay <- CreateAssayObject(counts=rdata$`Antibody Capture`[unique(as.character(c(grep('hashtag', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE), grep('^HTO[-_]', rownames(rdata$`Antibody Capture`), value=TRUE, ignore.case=TRUE)))),])
   filtered_cite[['HTO']] <- names(which(apply(GetAssayData(hto_assay, slot='counts'), 1, max) <= adt_thresh))
@@ -68,7 +74,9 @@ write.table(adt_thresh, 'CITE_threshold.txt', col.names = FALSE, row.names=FALSE
 
 ddd <- data.frame(a=I(unlist(lapply(filtered_cite,paste,collapse=","))))
 write.table(ddd,file="CITE_excluded.csv", sep=',', quote=FALSE, col.names=FALSE)
-
+} else {
+  seur <- CreateSeuratObject(counts=rdata, project = opt$project)
+}
 seur$Sample <- opt$sample
 
 if (!is.na(opt$metadata)) {
@@ -134,9 +142,10 @@ defaultThreshold <- function(seur) {
     cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nCount_HTO > thresh['nCount_HTO_high'])])
   }
   
-  
+  thresh['initialCellCount'] <- dim(seur)[2]
   thresh['numCellsRemove'] <- length(cellsToRemove)
   thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
+  thresh['finalCellCount'] <- thresh[['initialCellCount']] - thresh[['numCellsRemove']]
   return(list(threshold=thresh, filter=cellsToRemove))
 }
 
@@ -156,17 +165,19 @@ if (!is.na(opt$filterfile)){
           direction <- (i %>% strsplit(split='_'))[[1]] %>% tail(n=1) %>% str_to_lower
           if(direction == "low") {
             cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] < thresh_orig[[i]])])
-            thresh[i] <- thresh_orig[i]
+            thresh[i] <- thresh_orig[[i]]
           }
           if (direction == "high") {
             cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] > thresh_orig[[i]])])
-            thresh[i] <- thresh_orig[i]
+            thresh[i] <- thresh_orig[[i]]
           }
         }
       })
     }
+    thresh['initialCellCount'] <- dim(seur)[2]
     thresh['numCellsRemove'] <- length(cellsToRemove)
     thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
+    thresh['finalCellCount'] <- thresh[['initialCellCount']] - thresh[['numCellsRemove']]
   } else {
     result <- defaultThreshold(seur)
     thresh <- result$threshold
@@ -181,7 +192,7 @@ if (!is.na(opt$filterfile)){
 write.csv(thresh, 'cell_filter_info.csv', row.names=FALSE)
 
 ## ----Pre-Filter RNA Violin Plot-------
-doVlnPlot <- function(aspect, seur, thresh) {
+doVlnPlot <- function(aspect, seur, thresh=c(), group='Sample') {
   temp_plot <- VlnPlot(seur, group.by='Sample', features=aspect) + NoLegend()
   if (length(grep(paste0('^', aspect, '_low$'), names(thresh), ignore.case=T)) > 0) {
     try(
@@ -250,12 +261,18 @@ DimPlot(seur, reduction='umap', label = TRUE) + ggtitle("Pre-Filter UMAP") + the
 dev.off()
 
 png("PreFilter_UMAP_RNA_Filter.png", width=1800, height=1600, res = 300)
-DimPlot(seur, reduction='umap', label = TRUE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5)) + scale_color_manual(labels = c("Kept Cells", "Filtered Cells"), values = c("grey", "#DE2D26"))
+DimPlot(seur, reduction='umap', label = FALSE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5)) + scale_color_manual(labels = c("Kept Cells", "Filtered Cells"), values = c("grey", "#DE2D26"))
 dev.off()
 
 figures$PreFilter_UMAP_RNA <- DimPlot(seur, reduction='umap', label = TRUE) + ggtitle("Pre-Filter UMAP") + theme(plot.title = element_text(hjust=0.5))
-figures$PreFilter_UMAP_RNA_Filter <- DimPlot(seur, reduction='umap', label = TRUE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5))
+figures$PreFilter_UMAP_RNA_Filter <- DimPlot(seur, reduction='umap', label = FALSE, cells.highlight=list("Filtered Cells"=cellsToRemove)) + ggtitle("Pre-Filter UMAP - Filtered Cells") + theme(plot.title = element_text(hjust = 0.5))
 
+
+ggsave("PreFilter_UMAP_nCount_RNA.png", FeaturePlot(seur, features='nCount_RNA') + ggtitle("Pre-Filter UMAP - nCount_RNA") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PreFilter_UMAP_nFeature_RNA.png", FeaturePlot(seur, features='nFeature_RNA') + ggtitle("Pre-Filter UMAP - nFeature_RNA") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PreFilter_UMAP_percent.mito.png", FeaturePlot(seur, features='percent.mito') + ggtitle("Pre-Filter UMAP - percent.mito") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PreFilter_UMAP_percent.rpl.png", FeaturePlot(seur, features='percent.rpl') + ggtitle("Pre-Filter UMAP - percent.rpl") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PreFilter_UMAP_percent.rps.png", FeaturePlot(seur, features='percent.rps') + ggtitle("Pre-Filter UMAP - percent.rps") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
 
 seur <- subset(seur, cells = cellsToRemove, invert=T)
 
@@ -272,14 +289,15 @@ figures$PostFilter_Gene_Plot <- plot1+plot2
 
 
 ## ----Post-Filter RNA Violin Plot-------
+plots <- sapply(c("nFeature_RNA", "nCount_RNA", "percent.mito"), function(x) doVlnPlot(aspect=x, seur=seur, group='Sample'))
 png("PostFilter_VlnPlot_RNA.png", height=7, width=7, units='in', res=300)
-VlnPlot(seur, group.by='Sample', features = c("nFeature_RNA", "nCount_RNA", "percent.mito"), ncol = 3)
+do.call("grid.arrange", c(plots, nrow=1))
 dev.off()
 
 figures$PostFilter_VlnPlot_RNA <- VlnPlot(seur, features = c("nFeature_RNA", "nCount_RNA", "percent.mito"), ncol = 3)
 
 
-plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, thresh=thresh))
+plots <- sapply(c("percent.rpl", "percent.rps"), function(x) doVlnPlot(aspect=x, seur=seur, group='Sample'))
 
 png("PostFilter_VlnPlot_Ribo.png", height=7, width=5, units='in', res=300)
 do.call("grid.arrange", c(plots, nrow=1))
@@ -288,8 +306,10 @@ dev.off()
 
 ## ----Post-Filter ADT Violin Plot
 if (adt) {
+  plots <- sapply(c("nFeature_ADT", "nCount_ADT"), function(x) doVlnPlot(aspect=x, seur=seur, group='Sample'))
   png("PostFilter_VlnPlot_ADT.png", height=7, width=5, units='in', res=300)
-  print(VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2))
+  do.call("grid.arrange", c(plots, nrow=1))
+  #print(VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2))
   dev.off()
 
   figures$PostFilter_VlnPlot_ADT <- VlnPlot(seur, group.by='Sample', features=c("nFeature_ADT", "nCount_ADT"), ncol=2)
@@ -297,9 +317,10 @@ if (adt) {
 
 ## ----Post-Filter HTO Violin Plot
 if (hashtag) {
-  
+  plots <- sapply(c("nFeature_HTO", "nCount_HTO"), function(x) doVlnPlot(aspect=x, seur=seur, group='Sample')) 
   png("PostFilter_VlnPlot_HTO.png", height=7, width=5, units='in', res=300)
-  print(VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2))
+  do.call("grid.arrange", c(plots, nrow=1))
+  #print(VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2))
   dev.off()
   
   figures$PostFilter_VlnPlot_HTO <- VlnPlot(seur, group.by='Sample', features=c("nFeature_HTO", "nCount_HTO"), ncol=2)
@@ -308,7 +329,7 @@ if (hashtag) {
 ## ----Normalize HTO Data----
 if (hashtag) {
   hto_quantile <- 0.99
-  seur <- NormalizeData(seur, assay = "HTO", normalization.method = "CLR")
+  seur <- NormalizeData(seur, assay = "HTO", normalization.method = "CLR", margin=1)
   seur <- ScaleData(seur, assay = "HTO", model.use = "linear")
   result <- tryCatch({
     seur <- HTODemux(seur, assay = "HTO", positive.quantile = hto_quantile)
@@ -345,7 +366,7 @@ if (hashtag) {
 if (adt) {
   DefaultAssay(seur) <- 'ADT'
   VariableFeatures(seur) <- rownames(seur[["ADT"]])
-  seur <- NormalizeData(seur, assay = "ADT", normalization.method = "CLR")
+  seur <- NormalizeData(seur, assay = "ADT", normalization.method = "CLR", margin=2)
   seur <- ScaleData(seur, assay = "ADT", model.use = "linear")
   seur <- RunPCA(seur, assay="ADT", reduction.name = 'apca')
   seur <- FindNeighbors(seur, dims = 1:min(length(rownames(seur[['ADT']]))-1, 20), reduction = "apca")
@@ -368,6 +389,13 @@ seur <- ScaleData(seur, features = all.genes)
 seur <- RunPCA(seur, npcs=50, features = VariableFeatures(object = seur))
 seur <- FindNeighbors(seur, dims = 1:30)
 seur <- RunUMAP(seur, reduction = 'pca', dims = 1:30, assay = 'RNA')
+
+
+ggsave("PostFilter_UMAP_nCount_RNA.png", FeaturePlot(seur, features='nCount_RNA') + ggtitle("Post-Filter UMAP - nCount_RNA") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PostFilter_UMAP_nFeature_RNA.png", FeaturePlot(seur, features='nFeature_RNA') + ggtitle("Post-Filter UMAP - nFeature_RNA") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PostFilter_UMAP_percent.mito.png", FeaturePlot(seur, features='percent.mito') + ggtitle("Post-Filter UMAP - percent.mito") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PostFilter_UMAP_percent.rpl.png", FeaturePlot(seur, features='percent.rpl') + ggtitle("Post-Filter UMAP - percent.rpl") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
+ggsave("PostFilter_UMAP_percent.rps.png", FeaturePlot(seur, features='percent.rps') + ggtitle("Post-Filter UMAP - percent.rps") + theme(plot.title = element_text(hjust=0.5)), width=6, height=5.3, dpi=300)
 
 
 coord <- Embeddings(seur, reduction='pca')[,1:30]

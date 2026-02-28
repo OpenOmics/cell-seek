@@ -26,7 +26,7 @@ def filterFastq(wildcards):
     """
     filter_paths = []
     for sample in sample_rename(wildcards).split(','):
-        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0]
+        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_S[\d]+_[\w]*R2[\w]*.fastq.gz", i)) > 0]
     return(','.join(set(filter_paths)))
     #return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
 
@@ -53,7 +53,8 @@ rule count:
         id = "{sample}",
         sample = sample_rename,
         reference = config["references"][genome]["vdj_ref"],
-        fastqs = filterFastq
+        fastqs = filterFastq,
+        chain = CHAIN
     envmodules: config["tools"]["cellranger"][CELLRANGER]
     shell:
         """
@@ -67,6 +68,7 @@ rule count:
                     --sample {params.sample} \\
                     --reference {params.reference} \\
                     --fastqs {params.fastqs} \\
+                    --chain {params.chain} \\
                 2>{log.err} 1>{log.log}
             fi
         else
@@ -75,6 +77,7 @@ rule count:
                 --sample {params.sample} \\
                 --reference {params.reference} \\
                 --fastqs {params.fastqs} \\
+                --chain {params.chain} \\
             2>{log.err} 1>{log.log}
         fi
         """

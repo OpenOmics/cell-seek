@@ -70,20 +70,26 @@ def createMetricsSummary(arg1):
     samples.sort()
 
     workbook = xlsxwriter.Workbook(metricsPath + arg1+'.xlsx')
+    workbook_clean = xlsxwriter.Workbook(metricsPath + arg1+'_clean.xlsx')
     #if len([i for i in headers if 'Multiplexing Capture' in i]) > 0:
     #    write_sheet(workbook, stats, [i for i in stats['Sample Antibody Capture Cells'] if stats['Sample Antibody Capture Cells'][i] != '0'], headers, "Sample")
     #else:
     write_sheet(workbook, stats, samples, headers, "Cells")
+    write_sheet(workbook_clean, stats, samples, headers, "Cells", clean=True)
     write_sheet(workbook, stats, samples, headers, "Library")
+    write_sheet(workbook_clean, stats, samples, headers, "Library")
     if len([i for i in headers if 'Multiplexing Capture' in i]) > 0:
         write_sheet(workbook, stats, samples, headers, "Multiplexing")
+        write_sheet(workbook_clean, stats, samples, headers, "Multiplexing")
 
     #Pull out the FASTQ file names to provide as sample names
     write_sheet(workbook, stats, sorted(list(set([x for i in stats if 'Fastq' in i for x in stats[i].keys()]))), headers, "Fastq")
+    write_sheet(workbook_clean, stats, sorted(list(set([x for i in stats if 'Fastq' in i for x in stats[i].keys()]))), headers, "Fastq")
 
     workbook.close()
+    workbook_clean.close()
 
-def write_sheet(workbook, stats, samples, headers, filter):
+def write_sheet(workbook, stats, samples, headers, filter, clean=False):
     formatNum = workbook.add_format({'num_format': '#,##0'})
     formatFrac = workbook.add_format({'num_format': '#,##0.##'})
     formatPer = workbook.add_format({'num_format': '0.00%'})
@@ -101,6 +107,9 @@ def write_sheet(workbook, stats, samples, headers, filter):
     row = 1
     printed = list()
     for sample in samples:
+        if clean:
+            if stats['Cells Gene Expression Cells'][sample] == '0':
+                continue
         if '|' in sample:
             if filter in ['Library', 'Multiplexing']:
                 if sample.split('|')[0] in printed:
