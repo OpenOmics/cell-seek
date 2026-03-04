@@ -905,7 +905,7 @@ def check_conditional_parameters(config):
     }
 
 
-    #Check if cellranger version is provided when required
+    #Check if compatible cellranger version is provided when required
     if config['options']['cellranger'] not in supported_versions.get(config['options']['pipeline'], []):
         errorMessage += [
             "Error: Version of cellranger provided is not compatible with {} pipeline\n \
@@ -914,14 +914,6 @@ def check_conditional_parameters(config):
                 ', '.join(supported_versions.get(config['options']['pipeline'], []))
             )
         ]
-    # if config['options']['pipeline'] in ['gex', 'cite', 'multi'] and config['options']['cellranger'] == '':
-    #     errorMessage += [
-    #         "Error: Version of cellranger to use is required for {} pipeline\n \
-    #         └── Please use the --cellranger flag to select one of the available versions: {}".format(
-    #             config['options']['pipeline'],
-    #             ', '.join(['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'])
-    #         )
-    #     ]
 
 
     #Check if Cell Ranger version 9 or newer is used when running OCM or HTO, and Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)

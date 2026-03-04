@@ -645,9 +645,9 @@ def parsed_arguments(name, description):
                                       with. Must match either entries in cmo_reference.csv file
                                       or 10x CMO IDs.
                                   Example: --cmo-sample cmo_sample.csv
-          --chain
+          --chain  {{auto,TR,IG}}
                                 Chain type for cellranger to run the analysis for. Default 
-                                is set to auto. Other options are 'TR' for T cell receptors, 
+                                is set to 'auto'. Other options are 'TR' for T cell receptors, 
                                 and 'IG' for B cell receptors.
                                   Example: --chain TR
           --exclude-introns
