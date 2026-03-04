@@ -162,14 +162,24 @@ cat("HTO Read Count Thresholds:", paste0("(", get_value(thresh, "nCount_HTO_low"
 }
 
 if (length(grep(colnames(thresh), pattern='percent.mito') > 0)) {
-cat("Mitochondrial Percentage Thresholds:", paste0("(", get_value(thresh, "percent.mito_low"), ", ", get_value(thresh, "percent.mito_high"), ")"), "\n\n")
+  if (as.numeric(get_value(thresh, "percent.mito_high")) > 20) {
+    format <- '**'
+  } else{
+    format <- ''
+  }
+  cat(sprintf('%sMitochondrial Percentage Thresholds: (%s, %s)%s\n\n', format, get_value(thresh, "percent.mito_low"), get_value(thresh, "percent.mito_high"), format))
 }
 
 cat("Initial cell count:", get_value(thresh, "initialCellCount"), "\n\n")
 
 cat("Total cells filtered:", get_value(thresh, "numCellsRemove"), "\n\n")
 
-cat("Percentage cells filtered:", get_value(thresh, "pctCellsRemove"), "\n\n")
+if (as.numeric(get_value(thresh, "pctCellsRemove")) > 15){
+  format <- '**'
+} else {
+  format <- ''
+}
+cat(sprintf('%sPercentage cells filtered: %s%s\n\n', format, get_value(thresh, "pctCellsRemove"), format))
 
 cat("Final cell count:", get_value(thresh, "finalCellCount"), "\n\n")
 

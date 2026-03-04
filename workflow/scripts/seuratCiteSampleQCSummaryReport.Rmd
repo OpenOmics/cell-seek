@@ -2,11 +2,11 @@
 title: "`r params$project`"
 subtitle: "Single Cell RNA-seq - QC"
 date: "`r Sys.Date()`"
-output: 
+output:
   html_document:
     lightbox: true
     toc: false
-    toc_float: 
+    toc_float:
         collapsed: false
     toc_depth: 3
     fig_width: 8
@@ -117,13 +117,47 @@ data %>% kable(format='html') %>%
 
 ```{r  echo=F ,results='asis'}
 data <- read.csv(params$cellfilter)
+
+# Convert numeric columns and round them
+for(col in colnames(data)) {
+  suppressWarnings({
+    potential_numeric <- as.numeric(data[[col]])
+    # If conversion produces no NAs, the column is numeric-compatible
+    if(sum(is.na(potential_numeric)) == 0) {
+      data[[col]] <- round(potential_numeric, 2)
+    }
+  })
+}
+
 colnames(data) <- gsub('_low', ' - Lower', colnames(data))
 colnames(data) <- gsub('_high', ' - Upper', colnames(data))
 colnames(data) <- gsub('initialCellCount', 'Initial Cell Count', colnames(data))
 colnames(data) <- gsub('finalCellCount', 'Final Cell Count', colnames(data))
 colnames(data) <- gsub('numCellsRemove', 'Number of Cells Removed', colnames(data))
 colnames(data) <- gsub('pctCellsRemove', 'Percentage of Cells Removed', colnames(data))
-kable(data, format='html') %>%
+
+# Apply conditional formatting
+data_formatted <- data
+
+# Bold Percentage of Cells Removed if > 15
+pct_removed_col <- which(colnames(data) == "Percentage of Cells Removed")
+if(length(pct_removed_col) > 0) {
+  data_formatted[[pct_removed_col]] <- cell_spec(
+    data[[pct_removed_col]], 
+    bold = as.numeric(data[[pct_removed_col]]) > 15
+  )
+}
+
+# Bold Percent Mito - Upper if > 20 or < 5
+mito_upper_col <- which(colnames(data) == "percent.mito - Upper")
+if(length(mito_upper_col) > 0) {
+  data_formatted[[mito_upper_col]] <- cell_spec(
+    data[[mito_upper_col]], 
+    bold = as.numeric(data[[mito_upper_col]]) > 20 | as.numeric(data[[mito_upper_col]]) < 5
+  )
+}
+
+kable(data_formatted, format='html', escape=F) %>%
         column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
         row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
         row_spec(row=0,bold=TRUE, align='c', extra_css = "border: 1px solid gray")
