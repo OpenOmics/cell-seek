@@ -247,21 +247,28 @@ if (opt$genome %in% c("hg38", "hg2024")) {
     assay = "peaks",
     regions = blacklist_hg38_unified
   )
-} else if (opt$genome %in% c("mm10", "mm2024")) {
+} else if (opt$genome %in% c("mm10")) {
   seur$blacklist_ratio <- FractionCountsInRegion(
     object = seur,
     assay = "peaks",
     regions = blacklist_mm10
   )
 } else {
-  warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to NA.")
-  seur$blacklist_ratio <- NA
+  warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to 0.")
+  seur$blacklist_ratio <- 0
 }
+
+# Replace any NA/NaN in blacklist_ratio with 0
+seur$blacklist_ratio[is.na(seur$blacklist_ratio) | is.nan(seur$blacklist_ratio)] <- 0
 
 # Calculate fraction of reads in peaks (FRiP)
 seur$pct_reads_in_peaks <- seur$peak_region_fragments /
   seur$passed_filters *
   100
+# Replace NaN/Inf from division by zero (cells with passed_filters == 0)
+seur$pct_reads_in_peaks[is.na(seur$pct_reads_in_peaks) |
+  is.nan(seur$pct_reads_in_peaks) |
+  is.infinite(seur$pct_reads_in_peaks)] <- 0
 
 ## ----Pre-Filter Gene Plot----
 plot1 <- FeatureScatter(
