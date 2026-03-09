@@ -271,7 +271,9 @@ rule sampleCleanup:
 
 rule seuratQC:
     input:
-        data = join(workpath, "{sample}", "outs", "per_sample_outs", "{count_sample}", "sample_filtered_feature_bc_matrix") if int(CELLRANGER.split('.')[0]) >= 10 else join(workpath, "{sample}", "outs", "per_sample_outs", "{count_sample}", "count", "sample_filtered_feature_bc_matrix")
+        data = join(workpath, "{sample}", "outs", "per_sample_outs", "{count_sample}", "sample_filtered_feature_bc_matrix") \
+        if int(CELLRANGER.split('.')[0]) >= 10 else \
+        join(workpath, "{sample}", "outs", "per_sample_outs", "{count_sample}", "count", "sample_filtered_feature_bc_matrix")
     output:
         complete = touch(join(workpath, "seurat", "{sample}", "{count_sample}", "seuratQC.complete"))
 #        rds = join(workpath, "seurat", "{sample}", "{count_sample}", "seur_cluster.rds"),
