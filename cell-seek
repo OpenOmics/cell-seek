@@ -463,7 +463,10 @@ def parsed_arguments(name, description):
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
                 [--aggregate {{mapped, none}}][--libraries LIBRARIES] \\
                 [--features FEATURES] [--cmo-reference CMOREFERENCE] \\
-                [--cmo-sample CMOSAMPLE] [--exclude-introns] [--filter FILTER] \\
+                [--cmo-sample CMOSAMPLE] [--hto-sample HTOSAMPLE] \\ 
+                [--ocm-sample OCMSAMPLE] [--probe-set PROBESET] \\
+                [--probe-sample PROBESAMPLE] [--chain  {{auto,TR,IG}}] \\
+                [--exclude-introns] [--filter FILTER] \\
                 [--create-bam] [--rename RENAMEFILE] [--forcecells FORCECELLS]\\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
@@ -638,13 +641,88 @@ def parsed_arguments(name, description):
                                     sample1,CMO301
                                     sample2,CMO302|CMO303
                                   where:
-                                    • sample_id: Unique sample ID for this hashtagged sample.
+                                    • sample_id: Unique sample ID for this tagged sample.
                                       Must not contain, whitespace, quote or comma characters.
                                       Each sample ID must be unique.
-                                    • cmo_ids: Unique CMO ID(s) that the sample is hashtagged
+                                    • cmo_ids: Unique CMO ID(s) that the sample is tagged
                                       with. Must match either entries in cmo_reference.csv file
                                       or 10x CMO IDs.
                                   Example: --cmo-sample cmo_sample.csv
+          --hto-sample HTOSAMPLE
+                                 A HTO sample CSV file containing sample to hashtag information 
+                                 used for multi analysis. This should always be used in 
+                                 conjunction with the feature file provided using the feature 
+                                 flag.
+                                 HTO IDs should match the ones used in the feature reference 
+                                 file. The same HTO sample will be used on all multi libraries. 
+                                 This file should contain a unique sample ID for the sample, 
+                                 and the HTO ID(s) associated with that sample. If more than one 
+                                 HTO ID is associated with a sample then a | should be used to 
+                                 separate the tags. 
+                                  Here is an example hto_sample.csv file:
+                                    sample_id,hashtag_ids
+                                    sample1,HTO1
+                                    sample2,HTO2|HTO3
+                                  where:
+                                    • sample_id: Unique sample ID for this hashtagged sample.
+                                      Must not contain, whitespace, quote or comma characters.
+                                      Each sample ID must be unique.
+                                    • hashtag_ids: Unique HTO ID(s) that the sample is hashtagged
+                                      with. Must match entries in the features.csv file.
+                                  Example: --hto-sample hto_sample.csv
+          --ocm-sample OCMSAMPLE
+                                 An OCM sample CSV file containing sample to OCM barcode used 
+                                 for multi analysis. The same OCM sample will be used on all 
+                                 multi libraries. This file should contain a unique sample ID for 
+                                 the sample, and the OCM ID(s) associated with that sample. If 
+                                 more than one OCM ID is associated with a sample then a | should 
+                                 be used to separate the tags.
+                                  Here is an example ocm_sample.csv file:
+                                    sample_id,ocm_barcode_ids
+                                    sample1,OB1
+                                    sample2,OB2
+                                    sample3,OB3|OB4
+                                  where:
+                                    • sample_id: Unique sample ID for this tagged sample.
+                                      Must not contain, whitespace, quote or comma characters.
+                                      Each sample ID must be unique.
+                                    • ocm_barcode_ids: Unique OCM ID(s) that the sample is tagged
+                                      with. 
+                                  Example: --ocm-sample ocm_sample.csv
+          --probe-set PROBESET`
+                                 The probe set reference CSV file that matches the probes that 
+                                 were used in the capture. These are provided by 10x and can be 
+                                 found at their downloads page.
+                                 For those running the pipeline on the NIH's Biowulf, these 
+                                 references can also be found in the cell-seek references section 
+                                 in OpenOmics. The probe set reference files currently available 
+                                 in OpenOmics are:
+                                  - Human
+                                    - Chromium_Human_Transcriptome_Probe_Set_v1.0_GRCh38-2020-A.csv
+                                    - Chromium_Human_Transcriptome_Probe_Set_v1.0.1_GRCh38-2020-A.csv
+                                    - Chromium_Human_Transcriptome_Probe_Set_v1.1.0_GRCh38-2024-A.csv
+                                  - Mouse
+                                    - Chromium_Mouse_Transcriptome_Probe_Set_v1.0.1_mm10-2020-A.csv
+                                    - Chromium_Mouse_Transcriptome_Probe_Set_v1.1.1_GRCm39-2024-A.csv
+                                  Example: --probe-set Chromium_Human_Transcriptome_Probe_Set_v1.1.0_GRCh38-2024-A.csv
+          --probe-sample PROBESAMPLE
+                                 A probe sample CSV file containing sample to probe barcode 
+                                 information used for multi analysis. This file should be used if 
+                                 multiplexing was performed. This file should contain a unique 
+                                 sample ID for the sample, and the probe barcode(s) associated 
+                                 with that sample. If more than one probe barcode is associated 
+                                 with a sample then a | should be used to separate the tags. 
+                                  Here is an example probe_sample.csv file:
+                                    sample_id,probe_barcode_ids
+                                    sample1,BC001
+                                    sample2,BC002|BC003
+                                  where:
+                                    • sample_id: Unique sample ID for this tagged sample.
+                                      Must not contain, whitespace, quote or comma characters.
+                                      Each sample ID must be unique.
+                                    • probe_barcode_ids: Unique probe barcode(s) that the sample 
+                                      is tagged with. 
+                                  Example: --probe-sample probe_sample.csv
           --chain  {{auto,TR,IG}}
                                 Chain type for cellranger to run the analysis for. Default 
                                 is set to 'auto'. Other options are 'TR' for T cell receptors, 
