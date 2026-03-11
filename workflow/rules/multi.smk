@@ -165,6 +165,15 @@ def seuratQCReportCopy_output(wildcards):
       SMP = glob_wildcards(os.path.join(checkpoint_output, "{count_sample}", "count", "sample_filtered_feature_bc_matrix")).count_sample
     return expand(join(workpath, "seurat", "{sample}", "{count_sample}", "copySeuratQCReport.complete"), **wildcards, count_sample=SMP)
 
+def getReportSampleName(wildcards):
+    """
+    Wrapper to get sample name for report title
+    """
+    if wildcards.sample == wildcards.count_sample:
+      return(wildcards.sample)
+    else:
+      return(f"{wildcards.sample} - {wildcards.count_sample}")
+
 # Rule definitions
 rule librariesCSV:
     output:
@@ -316,7 +325,7 @@ rule seuratQCReport:
         complete = touch(join(workpath, "seurat", "{sample}", "{count_sample}", "seuratQCReport.complete"))
     params:
         rname = "seuratQCReport",
-        sample = "{sample} - {count_sample}",
+        sample = getReportSampleName,
         seuratdir = join(workpath, "seurat", "{sample}", "{count_sample}"),
         rds = join(workpath, "seurat", "{sample}", "{count_sample}", "seur_cluster.rds"),
         filter = filterFileBool,
