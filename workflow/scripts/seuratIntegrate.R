@@ -26,7 +26,8 @@ temp <- obj
 
 obj <- NormalizeData(obj)
 obj <- FindVariableFeatures(obj)
-obj <- ScaleData(obj)
+all.genes <- rownames(obj)
+obj <- ScaleData(obj, features = all.genes)
 obj <- RunPCA(obj)
 obj <- FindNeighbors(obj, dims = 1:30, reduction = "pca")
 obj <- FindClusters(obj, resolution = 0.2, cluster.name = "merged_clusters")

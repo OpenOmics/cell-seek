@@ -39,12 +39,24 @@ def main(raw_args=None):
     parser.add_argument("--cmosample", metavar="cmo_sample.csv",
         nargs='?', action = "store", type=str,
         help="Path to cmo file defining sample per hashtag if applicable. If not included but cmoref provided will use CMO names from cmoref")
+    parser.add_argument("--htosample", metavar="hto_sample.csv",
+        nargs='?', action = "store", type=str,
+        help="Path to hto file defining sample per hashtag if applicable. HTO sequence information should be included as part of feature.csv")
+    parser.add_argument("--ocmsample",  metavar="ocm_sample.csv", 
+        nargs='?', action = "store", type=str,
+        help="Path to ocm file defining sample per on-chip hashtag if applicable.")
+    parser.add_argument("--probesample",  metavar="probe_sample.csv",
+        nargs='?', action = "store", type=str,
+        help="Path to probe barcode file defining sample per probe barcode if applicable.")
     parser.add_argument("--feature", metavar="feature.csv",
         nargs='?', action = "store", type=str,
         help="Path to feature barcode reference file if applicable")
     parser.add_argument("--vdjref", metavar="refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0",
         nargs='?', action = "store", type=str,
         help="Path to vdj reference")
+    parser.add_argument("--probeset", metavar="Chromium_Human_Transcriptome_Probe_Set_v1.0.1_GRCh38-2020-A.csv",
+        nargs='?', action = "store", type=str,
+        help="Path to probe barcode reference")
     parser.add_argument("--innerprimer", metavar="enrichment_primers.txt",
         nargs='?', action = "store", type=str,
         help="Text file containing one primer per line if non-10x inner enrichment primers were used")
@@ -63,10 +75,12 @@ def main(raw_args=None):
         spamwriter = csv.writer(csvfile, delimiter=',')
         spamwriter.writerow(['[gene-expression]'])
         spamwriter.writerow(['reference', args.ref])
-        if args.force != None:
+        if args.forcecells != None:
             spamwriter.writerow(['force-cells', args.forcecells])
 #        else:
 #            spamwriter.writerow(['expect-cells', args.cell])
+        if args.probeset != None:
+            spamwriter.writerow(['probe-set', args.probeset])
         if args.cmoref != None:
             spamwriter.writerow(['cmo-set', args.cmoref])
         if args.exclude_introns:
@@ -103,14 +117,21 @@ def main(raw_args=None):
                 line = line.strip().split(',')
                 spamwriter.writerow([line[1], line[0], 'Any', line[2]])
 
-        if args.cmoref != None or args.cmosample != None:
+        if args.cmoref != None or args.cmosample != None or args.htosample != None or args.ocmsample != None or args.probesample != None:
             spamwriter.writerow([])
             spamwriter.writerow(['[samples]'])
-            if args.multiplexforcecells != None:
-                spamwriter.writerow(['sample_id', 'cmo_ids', 'description','force_cells'])
+            if args.htosample != None:
+                headers = ['sample_id', 'hashtag_ids', 'description']
+            elif args.ocmsample != None:
+                headers = ['sample_id', 'ocm_barcode_ids', 'description']
+            elif args.probesample != None:
+                headers = ['sample_id', 'probe_barcode_ids', 'description']
             else:
-                spamwriter.writerow(['sample_id', 'cmo_ids', 'description'])
-            if args.cmosample == None:
+                headers = ['sample_id', 'cmo_ids', 'description']
+            if args.multiplexforcecells != None:
+                headers += ['force_cells']
+            spamwriter.writerow(headers)
+            if args.cmosample == None and args.cmoref != None:
                 with open(args.cmoref, 'r') as lib:
                     line = next(lib)
                     index = 1
@@ -125,18 +146,21 @@ def main(raw_args=None):
                         spamwriter.writerow(row)
                         index += 1
             else:
-                with (open(args.cmosample, 'r')) as lib:
-                    line = next(lib)
-                    for line in lib:
-                        if len(line.strip().split(',')) == 3:
-                            row = line.strip().split(',')
-                        else:
-                            row = line.strip().split(',') + ['']
-                        if args.multiplexforcecells != None:
-                            if any([row[0] in i for i in args.multiplexforcecells]) == 1:
-                                row.append([i[1] for i in args.multiplexforcecells if row[0] in i][0])
-                        spamwriter.writerow(row)
-
+                notempty = [i for i in [args.cmosample, args.htosample, args.ocmsample, args.probesample] if i != None]
+                if len(notempty) == 1:
+                    with open(notempty[0], 'r') as lib:
+                        line = next(lib)
+                        for line in lib:
+                            if len(line.strip().split(',')) == 3:
+                                row = line.strip().split(',')
+                            else:
+                                row = line.strip().split(',') + ['']
+                            if args.multiplexforcecells != None:
+                                if any([row[0] in i for i in args.multiplexforcecells]) == 1:
+                                    row.append([i[1] for i in args.multiplexforcecells if row[0] in i][0])
+                            spamwriter.writerow(row)
+                else:
+                    raise RuntimeError('More than one demultiplexing sample flag used when calling function. Only one can be processed in one run')
 
 
 

@@ -105,6 +105,13 @@ nav:
     - cell-seek unlock: usage/unlock.md
     - cell-seek shinycell: usage/shinycell.md
     - cell-seek cache: usage/cache.md
+  - Pipelines:
+    - GEX: usage/gex.md
+    - VDJ: usage/vdj.md
+    - CITE: usage/cite.md
+    - MULTI: usage/multi.md
+    - ATAC: usage/atac.md
+    - Multiome: usage/multiome.md
   - FAQ:
     - General Questions: faq/questions.md
   - License: license.md
