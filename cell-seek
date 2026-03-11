@@ -468,6 +468,7 @@ def parsed_arguments(name, description):
                 [--probe-sample PROBESAMPLE] [--chain  {{auto,TR,IG}}] \\
                 [--exclude-introns] [--filter FILTER] \\
                 [--create-bam] [--rename RENAMEFILE] [--forcecells FORCECELLS]\\
+                --cellranger VERSION \\
                 --input INPUT [INPUT ...] \\
                 --output OUTPUT \\
                 --pipeline {{gex, ...}} \\
