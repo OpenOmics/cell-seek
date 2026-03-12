@@ -35,7 +35,7 @@ def filterFastq(wildcards):
     """
     filter_paths = []
     for sample in sample_rename(wildcards).split(','):
-        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0]
+        filter_paths += [os.path.dirname(i) for i in input_fastq if len(re.findall(f"{sample}_S[\d]+_[\w]*R2[\w]*.fastq.gz", i)) > 0]
     return(','.join(set(filter_paths)))
     #return(','.join(set([os.path.dirname(i) for i in input_fastq if len(re.findall(f"{wildcards.sample}_[\w]*R2[\w]*.fastq.gz", i)) > 0])))
 
@@ -75,8 +75,8 @@ rule count:
         reference = config["references"][genome]["atac_ref"],
         fastqs = filterFastq,
         forcecells = force_cells
-    envmodules: config["tools"]["cellranger-atac"]
     threads: 24
+    envmodules: config["tools"]["cellranger-atac"][CELLRANGER]
     shell:
         dedent("""
         # Remove output directory

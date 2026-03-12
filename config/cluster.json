@@ -18,7 +18,7 @@
     },
     "seuratQC": {
         "threads": "8",
-        "mem": "150g",
+        "mem": "250g",
         "time": "1-00:00:00"
     },
     "aggregate": {
