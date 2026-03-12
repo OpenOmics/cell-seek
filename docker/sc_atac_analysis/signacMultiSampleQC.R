@@ -17,6 +17,7 @@ library(Seurat)
 library(ggplot2)
 library(gridExtra)
 library(GenomicRanges)
+library(GenomeInfoDb)
 library(rtracklayer)
 library(optparse)
 library(dplyr)
@@ -27,23 +28,22 @@ option_list <- list(
   make_option(
     "--matrix",
     type = "character",
-    action = "store",
     default = NA,
-    help = "Path to the matrix file"
+    help = "Comma-separated paths to the matrix file(s) (one per sample)"
   ),
   make_option(
     "--fragments",
     type = "character",
     action = "store",
     default = NA,
-    help = "Path to the fragments file"
+    help = "Comma-separated paths to the fragments file(s) (one per sample)"
   ),
   make_option(
     "--barcodes",
     type = "character",
     action = "store",
     default = NA,
-    help = "Path to the barcodes file"
+    help = "Comma-separated paths to the barcodes file(s) (one per sample)"
   ),
   make_option(
     c("-o", "--output"),
@@ -109,6 +109,13 @@ if (!is.na(opt$output)) {
   opt$output <- normalizePath(opt$output, mustWork = FALSE)
 }
 
+# convert genome to uscs
+if (opt$genome == "hg2024") {
+  opt$genome <- "hg38"
+} else if (opt$genome == "mm2024") {
+  opt$genome <- "mm39"
+}
+
 ## ----Parse Sample Information----
 if (grepl(",", opt$samples)) {
   samples <- strsplit(opt$samples, ",")[[1]] %>% trimws()
@@ -116,12 +123,45 @@ if (grepl(",", opt$samples)) {
   samples <- trimws(opt$samples)
 }
 
+## ----Parse Comma-Separated Input Paths----
+parse_csv_arg <- function(arg) {
+  if (grepl(",", arg)) {
+    strsplit(arg, ",")[[1]] %>% trimws()
+  } else {
+    trimws(arg)
+  }
+}
+
+matrix_paths   <- parse_csv_arg(opt$matrix)
+fragment_paths <- parse_csv_arg(opt$fragments)
+barcode_paths  <- parse_csv_arg(opt$barcodes)
+
+# Validate that the number of paths matches the number of samples
+if (length(matrix_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --matrix paths (", length(matrix_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+if (length(fragment_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --fragments paths (", length(fragment_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+if (length(barcode_paths) != length(samples)) {
+  stop(paste0(
+    "Number of --barcodes paths (", length(barcode_paths),
+    ") does not match the number of --samples (", length(samples), ")"
+  ))
+}
+
 ## ----Load Reference Annotations----
 if (is.na(opt$genes)) {
   stop("GTF annotation file path is required (use -r/--reference)")
 }
 
-cat(paste0("Loading annotations from ", opt$reference, "...\n"))
+cat(paste0("Loading annotations from ", opt$genes, "...\n"))
 annotations <- import(opt$genes)
 seqlevelsStyle(annotations) <- "UCSC"
 genome(annotations) <- opt$genome
@@ -153,9 +193,9 @@ all_peaks <- GRangesList()
 for (i in 1:length(samples)) {
   cat(paste0("Loading sample ", samples[i], "...\n"))
 
-  counts <- Read10X_h5(file.path(opt$matrix))
+  counts <- Read10X_h5(matrix_paths[i])
   cellranger_metrics <- read.csv(
-    file = file.path(opt$barcodes),
+    file = barcode_paths[i],
     header = TRUE,
     row.names = 1
   )
@@ -189,7 +229,7 @@ for (i in 1:length(samples)) {
     counts = counts,
     sep = c(":", "-"),
     genome = genome(annotations)[1],
-    fragments = file.path(opt$fragments),
+    fragments = fragment_paths[i],
     min.cells = 1,
     min.features = 1
   )
@@ -249,7 +289,7 @@ for (i in 1:length(samples)) {
   cat(paste0("Requantifying sample ", samples[i], "...\n"))
 
   # Get fragment path
-  fragment_path <- file.path(opt$fragments)
+  fragment_path <- fragment_paths[i]
 
   # Create Fragment object
   frags <- CreateFragmentObject(
@@ -337,11 +377,58 @@ cat(paste(head(genome_region, 3), collapse = "\n"), "\n")
 cat("Calculating QC metrics...\n")
 seur <- NucleosomeSignal(object = seur)
 seur <- TSSEnrichment(object = seur, fast = FALSE)
-seur$blacklist_ratio <- seur$blacklist_region_fragments /
-  seur$peak_region_fragments
-seur$pct_reads_in_peaks <- seur$peak_region_fragments /
-  seur$passed_filters *
-  100
+
+# Calculate blacklist ratio using Signac's FractionCountsInRegion
+# This computes the fraction directly from fragments overlapping blacklist regions,
+# rather than relying on Cell Ranger singlecell.csv columns (blacklist_region_fragments,
+# peak_region_fragments) which may not exist after requantification with union peaks.
+if (opt$genome %in% c("hg38", "hg2024")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_hg38_unified
+  )
+} else if (opt$genome %in% c("mm10")) {
+  seur$blacklist_ratio <- FractionCountsInRegion(
+    object = seur,
+    assay = "peaks",
+    regions = blacklist_mm10
+  )
+} else {
+  warning("Genome not recognized for blacklist ratio calculation. Setting blacklist_ratio to 0.")
+  seur$blacklist_ratio <- 0
+}
+
+# Replace any NA/NaN in blacklist_ratio with 0
+seur$blacklist_ratio[is.na(seur$blacklist_ratio) | is.nan(seur$blacklist_ratio)] <- 0
+
+# Calculate pct_reads_in_peaks from Cell Ranger singlecell.csv metadata
+# These columns are preserved in metadata from the initial load
+if (
+  "peak_region_fragments" %in% colnames(seur@meta.data) &&
+    "passed_filters" %in% colnames(seur@meta.data)
+) {
+  seur$pct_reads_in_peaks <- seur$peak_region_fragments /
+    seur$passed_filters *
+    100
+  # Replace NaN/Inf from division by zero (cells with passed_filters == 0)
+  seur$pct_reads_in_peaks[is.na(seur$pct_reads_in_peaks) |
+    is.nan(seur$pct_reads_in_peaks) |
+    is.infinite(seur$pct_reads_in_peaks)] <- 0
+  cat("Calculated pct_reads_in_peaks from Cell Ranger metadata.\n")
+} else {
+  # Fallback: compute fraction of counts in peaks from the assay
+  warning(
+    "peak_region_fragments and/or passed_filters columns not found in metadata. ",
+    "Computing pct_reads_in_peaks as fraction of counts in peak regions."
+  )
+  total_counts <- Matrix::colSums(GetAssayData(seur, assay = "peaks", slot = "counts"))
+  seur$pct_reads_in_peaks <- (total_counts / seur$nCount_peaks) * 100
+  seur$pct_reads_in_peaks[is.na(seur$pct_reads_in_peaks) |
+    is.nan(seur$pct_reads_in_peaks) |
+    is.infinite(seur$pct_reads_in_peaks)] <- 0
+}
+
 
 ## ----Pre-Filter Feature Plot----
 for (sample in samples) {
@@ -1165,7 +1252,7 @@ figures$ElbowPlot_LSI <- ElbowPlot(seur, reduction = "lsi")
 ## ----UMAP Plots----
 for (resolution in grep("_res.", colnames(seur@meta.data), value = T)) {
   png(
-    paste0("UMAP_", gsub("_snn", "", resolution), ".png"),
+    file.path(opt$output, paste0("UMAP_", gsub("_snn", "", resolution), ".png")),
     width = 1800,
     height = 1600,
     res = 300

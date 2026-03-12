@@ -52,5 +52,19 @@
         "partition": "norm",
         "time": "0-08:00:00",
         "gres": "lscratch:100"
-    }
+    },
+    "prelim_analysis_one": {
+        "threads": "16",
+        "mem": "64g",
+        "partition": "norm",
+        "time": "1-00:00:00",
+        "gres": "lscratch:100"
+    },
+    "prelim_analysis_all": {
+        "threads": "16",
+        "mem": "64g",
+        "partition": "norm",
+        "time": "1-00:00:00",
+        "gres": "lscratch:100"
+    }   
 }
