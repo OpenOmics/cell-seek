@@ -108,8 +108,9 @@ def write_sheet(workbook, stats, samples, headers, filter, clean=False):
     printed = list()
     for sample in samples:
         if clean:
-            if stats['Cells Gene Expression Cells'][sample] == '0':
-                continue
+            if 'Cells Gene Expression Cells' in stats:
+                if stats['Cells Gene Expression Cells'][sample] == '0':
+                    continue
         if '|' in sample:
             if filter in ['Library', 'Multiplexing']:
                 if sample.split('|')[0] in printed:
