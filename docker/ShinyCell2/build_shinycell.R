@@ -244,10 +244,12 @@ if (!is.null(rmmeta)) {
 }
 
 # Add any metadata columns related to unsupported assays to remove_metas
+# Only remove assay-specific meta columns (nCount_*, nFeature_*), not clustering columns
 all_meta_cols <- colnames(seurat_obj@meta.data)
 for (meta_col in all_meta_cols) {
   for (assay in unsupported_assays) {
-    if (grepl(assay, meta_col, fixed = TRUE)) {
+    pattern <- paste0("^(nCount_|nFeature_)", assay)
+    if (grepl(pattern, meta_col)) {
       remove_metas <- c(remove_metas, meta_col)
     }
   }
@@ -255,6 +257,11 @@ for (meta_col in all_meta_cols) {
 
 # Remove duplicates from remove_metas
 remove_metas <- unique(remove_metas)
+
+# Never remove the cluster_labels column if specified
+if (!is.null(args$cluster_labels)) {
+  remove_metas <- setdiff(remove_metas, args$cluster_labels)
+}
 
 # Create meta.to.include: all metadata columns NOT in remove_metas
 meta_to_include <- setdiff(all_meta_cols, remove_metas)
