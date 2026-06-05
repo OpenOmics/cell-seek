@@ -37,6 +37,7 @@ rule shinycodes:
         marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else ""
     shell:
         dedent("""
+        seurat_inspector.R {input.seurat_object}
         build_shinycell.R \\
             -j {input.seurat_object} {params.marker_flag} \\
             --proj {params.title} {params.cluster_flag} \\
