@@ -259,7 +259,7 @@ if (!is.null(assaytouse)) {
 active_assays <- names(seurat_obj@assays)
 assay_ncells  <- vapply(active_assays,
                         function(a) ncol(seurat_obj@assays[[a]]),
-                        integer(1))
+                        numeric(1))
 if (length(unique(assay_ncells)) > 1) {
   cell_report <- paste(
     paste0("    '", names(assay_ncells), "': ", assay_ncells, " cells"),
