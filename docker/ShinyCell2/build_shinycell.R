@@ -159,7 +159,7 @@ if (!is.null(args$cluster_labels)) {
 if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" || args$meta.to.rm == "NA" || tolower(args$meta.to.rm) == "none") {
   rmmeta <- NULL
 } else {
-  if ("," %in% args$meta.to.rm) {
+  if (grepl(",", args$meta.to.rm, fixed = TRUE)) {
     rmmeta <- unlist(strsplit(args$meta.to.rm, ",", fixed = TRUE))
   } else {
     rmmeta <- c(trimws(gsub("[\r\n]", "", args$meta.to.rm)))
@@ -168,7 +168,7 @@ if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" 
 if (is.null(args$assaytouse) || is.na(args$assaytouse) || args$assaytouse == "" || args$assaytouse == "NA" || tolower(args$assaytouse) == "none") {
   assaytouse <- NULL
 } else {
-  if ("," %in% args$assaytouse) {
+  if (grepl(",", args$assaytouse, fixed = TRUE)) {
     assaytouse <- unlist(strsplit(args$assaytouse, ",", fixed = TRUE))
   } else {
     assaytouse <- c(trimws(gsub("[\r\n]", "", args$assaytouse)))
@@ -226,7 +226,7 @@ for (assay in Assays(seurat_obj)) {
 unsupported_assays <- c("HTO", "sketch")
 for (assay in unsupported_assays) {
   if (assay %in% names(seurat_obj@assays)) {
-    cat(paste0(assay, "unsupported assay removed!", sep = " "))
+    cat(paste(assay, " unsupported assay removed!"))
     seurat_obj[[assay]] <- NULL
   }
 }
