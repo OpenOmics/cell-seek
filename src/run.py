@@ -7,17 +7,18 @@ from shutil import copytree
 import os, re, json, sys, subprocess
 
 # Local imports
-from utils import (git_commit_hash,
-    join_jsons,
-    fatal,
-    which,
-    exists,
-    err)
+from utils import git_commit_hash, join_jsons, fatal, which, exists, err
 
 from . import version as __version__
 
 
-def init(repo_path, output_path, links=[], required=['workflow', 'resources', 'config'], sym_link = True):
+def init(
+    repo_path,
+    output_path,
+    links=[],
+    required=["workflow", "resources", "config"],
+    sym_link=True,
+):
     """Initialize the output directory. If user provides a output
     directory path that already exists on the filesystem as a file
     (small chance of happening but possible), a OSError is raised. If the
@@ -39,23 +40,24 @@ def init(repo_path, output_path, links=[], required=['workflow', 'resources', 'c
     elif exists(output_path) and os.path.isfile(output_path):
         # Provided Path for pipeline
         # output directory exists as file
-        raise OSError("""\n\tFatal: Failed to create provided pipeline output directory!
+        raise OSError(
+            """\n\tFatal: Failed to create provided pipeline output directory!
         User provided --output PATH already exists on the filesystem as a file.
         Please run {} again with a different --output PATH.
         """.format(sys.argv[0])
         )
 
     # Copy over templates are other required resources
-    copy_safe(source = repo_path, target = output_path, resources = required)
+    copy_safe(source=repo_path, target=output_path, resources=required)
 
     # Create renamed symlinks for each rawdata
     # file provided as input to the pipeline
-    inputs = sym_safe(input_data = links, target = output_path, link = sym_link)
+    inputs = sym_safe(input_data=links, target=output_path, link=sym_link)
 
     return inputs
 
 
-def copy_safe(source, target, resources = []):
+def copy_safe(source, target, resources=[]):
     """Private function: Given a list paths it will recursively copy each to the
     target location. If a target path already exists, it will NOT over-write the
     existing paths data.
@@ -87,21 +89,24 @@ def sym_safe(input_data, target, link):
     @return input_fastqs list[<str>]:
         List of renamed input FastQs
     """
-    input_fastqs = [] # store renamed fastq file names
+    input_fastqs = []  # store renamed fastq file names
     for file in input_data:
-        if os.path.isdir(file): #Checking if provided file is a directory. If so, assumes it is a cellranger outs folder
-            if os.path.exists(os.path.join(file, 'outs')):
-                #filename = os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))
+        if os.path.isdir(
+            file
+        ):  # Checking if provided file is a directory. If so, assumes it is a cellranger outs folder
+            if os.path.exists(os.path.join(file, "outs")):
+                # filename = os.path.join(os.path.basename(os.path.dirname(file)), os.path.basename(file))
                 filename = os.path.basename(file)
                 link = True
             else:
-                raise NameError("""\n\tFatal: Provided input '{}' does not match expected format!
+                raise NameError(
+                    """\n\tFatal: Provided input '{}' does not match expected format!
                 Cannot determine if existing folder is a cellranger output folder. 
                 Please check the folder name and structure before trying again.
                 Here is example of expected cellranger output folder structure:
                   input: sampleName     structure: sampleName/outs
                 """.format(file, sys.argv[0])
-                ) 
+                )
         else:
             filename = os.path.basename(file)
         try:
@@ -113,8 +118,8 @@ def sym_safe(input_data, target, link):
         except NameError as e:
             if not link:
                 # Don't care about creating the symlinks
-                err('Warning: Skipping over provided input {} file.'.format(filename))
-                continue # goto next file
+                err("Warning: Skipping over provided input {} file.".format(filename))
+                continue  # goto next file
             else:
                 raise e
 
@@ -124,7 +129,11 @@ def sym_safe(input_data, target, link):
         if not exists(renamed) and link:
             # Create a symlink if it does not already exist
             # Follow source symlinks to resolve any binding issues
-            os.symlink(os.path.abspath(os.path.realpath(file)), renamed, target_is_directory=True)
+            os.symlink(
+                os.path.abspath(os.path.realpath(file)),
+                renamed,
+                target_is_directory=True,
+            )
 
     return input_fastqs
 
@@ -152,11 +161,10 @@ def rename(filename):
         # Matches: _[12].fastq.gz, _[12].fq.gz, _[12]_fastq_gz, etc.
         "_1.f(ast)?q.gz$": ".R1.fastq.gz",
         "_2.f(ast)?q.gz$": ".R2.fastq.gz",
-        f"{os.path.sep}outs": ""
+        f"{os.path.sep}outs": "",
     }
 
-    if (filename.endswith('.R1.fastq.gz') or
-        filename.endswith('.R2.fastq.gz')):
+    if filename.endswith(".R1.fastq.gz") or filename.endswith(".R2.fastq.gz"):
         # Filename is already in the correct format
         return filename
 
@@ -167,10 +175,11 @@ def rename(filename):
             # regex matches with a pattern in extensions
             converted = True
             filename = re.sub(regex, new_ext, filename)
-            break # only rename once
+            break  # only rename once
 
     if not converted:
-        raise NameError("""\n\tFatal: Failed to rename provided input '{}'!
+        raise NameError(
+            """\n\tFatal: Failed to rename provided input '{}'!
         Cannot determine the extension of the user provided input file.
         Please rename the file list above before trying again.
         Here is example of acceptable input file extensions:
@@ -208,28 +217,28 @@ def setup(sub_args, ifiles, repo_path, output_path):
     # template or a user generated
     # reference genome built via build
     # subcommand
-    genome_config = os.path.join(repo_path,'config','genome.json')
-    if sub_args.genome.endswith('.json'):
+    genome_config = os.path.join(repo_path, "config", "genome.json")
+    if sub_args.genome.endswith(".json"):
         # Provided a custom reference genome generated by build pipline
         genome_config = os.path.abspath(sub_args.genome)
-        sub_args.genome = list(json.load(open(sub_args.genome))['references'].keys())[0]
+        sub_args.genome = list(json.load(open(sub_args.genome))["references"].keys())[0]
 
     required = {
         # Base configuration file
-        "base": os.path.join(repo_path,'config','config.json'),
+        "base": os.path.join(repo_path, "config", "config.json"),
         # Template for project-level information
-        "project": os.path.join(repo_path,'config','containers.json'),
+        "project": os.path.join(repo_path, "config", "containers.json"),
         # Template for genomic reference files
         # User provided argument --genome is used to select the template
         "genome": genome_config,
         # Template for tool information
-        "tools": os.path.join(repo_path,'config', 'modules.json'),
+        "tools": os.path.join(repo_path, "config", "modules.json"),
     }
 
     # Create the global or master config
     # file for pipeline, config.json
-    config = join_jsons(required.values()) # uses templates in config/*.json
-    config['project'] = {}
+    config = join_jsons(required.values())  # uses templates in config/*.json
+    config["project"] = {}
     config = add_user_information(config)
     config = add_rawdata_information(sub_args, config, ifiles)
 
@@ -238,28 +247,28 @@ def setup(sub_args, ifiles, repo_path, output_path):
     config = image_cache(sub_args, config, repo_path)
 
     # Add other runtime info for debugging
-    config['project']['version'] = __version__
-    config['project']['workpath'] = os.path.abspath(sub_args.output)
+    config["project"]["version"] = __version__
+    config["project"]["workpath"] = os.path.abspath(sub_args.output)
     git_hash = git_commit_hash(repo_path)
-    config['project']['git_commit_hash'] = git_hash   # Add latest git commit hash
-    config['project']['pipeline_path'] = repo_path    # Add path to installation
+    config["project"]["git_commit_hash"] = git_hash  # Add latest git commit hash
+    config["project"]["pipeline_path"] = repo_path  # Add path to installation
 
     # Add all cli options for data provenance
     for opt, v in vars(sub_args).items():
-        if opt == 'func':
+        if opt == "func":
             # Pass over sub command's handler
             continue
         elif not isinstance(v, (list, dict)):
             # CLI value can be converted to a string
             v = str(v)
-        config['options'][opt] = v
+        config["options"][opt] = v
 
     # Run a check for conditional parameters with all metadata full compiled
     check_conditional_parameters(config)
 
     # Save config to output directory
-    with open(os.path.join(output_path, 'config.json'), 'w') as fh:
-        json.dump(config, fh, indent = 4, sort_keys = True)
+    with open(os.path.join(output_path, "config.json"), "w") as fh:
+        json.dump(config, fh, indent=4, sort_keys=True)
 
     return config
 
@@ -285,7 +294,7 @@ def unpacked(nested_dict):
             yield value
 
 
-def get_fastq_screen_paths(fastq_screen_confs, match = 'DATABASE', file_index = -1):
+def get_fastq_screen_paths(fastq_screen_confs, match="DATABASE", file_index=-1):
     """Parses fastq_screen.conf files to get the paths of each fastq_screen database.
     This path contains bowtie2 indices for reference genome to screen against.
     The paths are added as singularity bind points.
@@ -300,11 +309,11 @@ def get_fastq_screen_paths(fastq_screen_confs, match = 'DATABASE', file_index = 
     """
     databases = []
     for file in fastq_screen_confs:
-        with open(file, 'r') as fh:
+        with open(file, "r") as fh:
             for line in fh:
                 if line.startswith(match):
-                        db_path = line.strip().split()[file_index]
-                        databases.append(db_path)
+                    db_path = line.strip().split()[file_index]
+                    databases.append(db_path)
     return databases
 
 
@@ -327,20 +336,22 @@ def resolve_additional_bind_paths(search_paths):
         # Skip over resources with remote URI and
         # skip over strings that are not file PATHS as
         # build command creates absolute resource PATHS
-        if ref.lower().startswith('sftp://') or \
-        ref.lower().startswith('s3://') or \
-        ref.lower().startswith('gs://') or \
-        not ref.lower().startswith(os.sep):
+        if (
+            ref.lower().startswith("sftp://")
+            or ref.lower().startswith("s3://")
+            or ref.lower().startswith("gs://")
+            or not ref.lower().startswith(os.sep)
+        ):
             continue
 
         # Break up path into directory tokens
         path_list = os.path.abspath(ref).split(os.sep)
-        try: # Create composite index from first two directories
+        try:  # Create composite index from first two directories
             # Avoids issues created by shared /gpfs/ PATHS
             index = path_list[1:3]
             index = tuple(index)
         except IndexError:
-            index = path_list[1] # ref startswith /
+            index = path_list[1]  # ref startswith /
         if index not in indexed_paths:
             indexed_paths[index] = []
         # Create an INDEX to find common PATHS for each root
@@ -383,10 +394,12 @@ def bind(sub_args, config):
     # Bind input file paths, working
     # directory, and other reference
     # genome paths
-    rawdata_bind_paths = [os.path.realpath(p) for p in config['project']['datapath'].split(',')]
-    working_directory =  os.path.realpath(config['project']['workpath'])
+    rawdata_bind_paths = [
+        os.path.realpath(p) for p in config["project"]["datapath"].split(",")
+    ]
+    working_directory = os.path.realpath(config["project"]["workpath"])
     genome_bind_paths = resolve_additional_bind_paths(bindpaths)
-    bindpaths = [working_directory] + rawdata_bind_paths +  genome_bind_paths
+    bindpaths = [working_directory] + rawdata_bind_paths + genome_bind_paths
     bindpaths = list(set([p for p in bindpaths if p != os.sep]))
 
     return bindpaths
@@ -403,16 +416,17 @@ def mixed_inputs(ifiles):
     fastqs = False
     bams = False
     for file in ifiles:
-        if file.endswith('.R1.fastq.gz') or file.endswith('.R2.fastq.gz'):
+        if file.endswith(".R1.fastq.gz") or file.endswith(".R2.fastq.gz"):
             fastqs = True
             fq_files.append(file)
-        elif file.endswith('.bam'):
+        elif file.endswith(".bam"):
             bams = True
             bam_files.append(file)
 
     if fastqs and bams:
         # User provided a mix of FastQs and BAMs
-        raise TypeError("""\n\tFatal: Detected a mixture of --input data types.
+        raise TypeError(
+            """\n\tFatal: Detected a mixture of --input data types.
             A mixture of BAM and FastQ files were provided; however, the pipeline
             does NOT support processing a mixture of input FastQ and BAM files.
             Input FastQ Files:
@@ -428,8 +442,9 @@ def mixed_inputs(ifiles):
             """.format(" ".join(fq_files), " ".join(bam_files), sys.argv[0])
         )
 
+
 def folder_inputs(ifiles):
-    """Check if a user has provided directories as input. 
+    """Check if a user has provided directories as input.
     @params ifiles list[<str>]:
         List containing pipeline input files (renamed symlinks)
     """
@@ -446,7 +461,8 @@ def folder_inputs(ifiles):
 
     if folders and files:
         # User provided a mix of folders and files
-        raise TypeError("""\n\tFatal: Detected a mixture of --input data types.
+        raise TypeError(
+            """\n\tFatal: Detected a mixture of --input data types.
             A mixture of folders and files were provided; however, the pipeline
             does NOT support processing a mixture of input FastQ files and 
             cellranger outputs.
@@ -459,7 +475,8 @@ def folder_inputs(ifiles):
             this functionality should exist, feel free to open an issue on Github.
             """.format(" ".join(folder_files), " ".join(file_files), sys.argv[0])
         )
-    return(folders)
+    return folders
+
 
 def add_user_information(config):
     """Adds username and user's home directory to config.
@@ -478,8 +495,8 @@ def add_user_information(config):
 
     # Update config with home directory and
     # username
-    config['project']['userhome'] = home
-    config['project']['username'] = username
+    config["project"]["userhome"] = home
+    config["project"]["username"] = username
 
     return config
 
@@ -502,27 +519,33 @@ def add_sample_metadata(input_files, config, group=None):
     # TODO: Add functionality for basecase
     # when user has samplesheet
     added = []
-    config['samples'] = []
+    config["samples"] = []
     input_folders = folder_inputs(input_files)
     for file in input_files:
         if not input_folders:
             # Split sample name on file extension
-            sample = re.split(r"(_S[0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file))[0]
+            sample = re.split(
+                r"(_S[0-9]+)(_L[0-9]{3})?\.R[12]\.f(ast)?q.gz", os.path.basename(file)
+            )[0]
             if os.path.basename(file) == sample:
                 # Sample has a non-standard name, print warning message
-                err("Warning: Sample '{0}' has a file name that is not compatible with cellranger! Skipping over input file...".format(os.path.basename(file)))
+                err(
+                    "Warning: Sample '{0}' has a file name that is not compatible with cellranger! Skipping over input file...".format(
+                        os.path.basename(file)
+                    )
+                )
                 continue
         else:
             sample = os.path.basename(file)
         if sample not in added:
             # Only add PE sample information once
             added.append(sample)
-            config['samples'].append(sample)
+            config["samples"].append(sample)
 
     return config
 
 
-def parse_libraries(config, libraries_file, delimeter = ','):
+def parse_libraries(config, libraries_file, delimeter=","):
     """Adds sample information from the libraries
     file. The libraries file is a CSV file containing
     information about each library. It contains each
@@ -541,6 +564,7 @@ def parse_libraries(config, libraries_file, delimeter = ','):
          Updated config dictionary containing library file information
          (Name, Flowcell)
     """
+
     def _require(fields, d, lib):
         """Private function that checks to see if all required fields
         are provided in the libraries file. If nan item in fields does
@@ -557,20 +581,19 @@ def parse_libraries(config, libraries_file, delimeter = ','):
             fatal(
                 "Error: Missing required fields in --libraries {} file!\n \
                 └── Please add information for the following field(s): {}".format(
-                    lib,
-                    ','.join([f.title() for f in missing])
+                    lib, ",".join([f.title() for f in missing])
                 )
             )
 
         return
 
-    config['libraries'] = {}
+    config["libraries"] = {}
     # Get file extension to determine
     # the appropriate file delimeter
     extension = os.path.splitext(libraries_file)[-1].lower()
-    if extension in ['.tsv', '.txt', '.text', '.tab']:
+    if extension in [".tsv", ".txt", ".text", ".tab"]:
         # file is tab seperated
-        delimeter = '\t'
+        delimeter = "\t"
     # Find index of file dynamically,
     # makes it so the order of the
     # columns does not matter
@@ -581,29 +604,31 @@ def parse_libraries(config, libraries_file, delimeter = ','):
             header = next(fh).strip().split(delimeter)
         except StopIteration:
             fatal(
-                'Error: --libraries {} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(libraries_file)
+                "Error: --libraries {} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.".format(
+                    libraries_file
+                )
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
             indices[colname] = i
-        _require(['name', 'flowcell', 'sample', 'type'], indices, libraries_file)
+        _require(["name", "flowcell", "sample", "type"], indices, libraries_file)
         for line in fh:
             linelist = line.strip().split(delimeter)
             # Get indices of fields and
             # parse value in file
-            i_name = indices['name']
+            i_name = indices["name"]
             name = linelist[i_name]
-            i_flowcell = indices['flowcell']
+            i_flowcell = indices["flowcell"]
             flowcell = linelist[i_flowcell]
-            if name not in config['libraries']:
-                config['libraries'][name] = []
-            config['libraries'][name].append(flowcell)
+            if name not in config["libraries"]:
+                config["libraries"][name] = []
+            config["libraries"][name].append(flowcell)
 
     return config
 
 
-def check_reference_file(reference_file, flag, delimeter = ','):
+def check_reference_file(reference_file, flag, delimeter=","):
     """Check reference information from the features
     or cmo reference file. The reference file is a CSV
     file containing information about each feature or
@@ -617,6 +642,7 @@ def check_reference_file(reference_file, flag, delimeter = ','):
         Config flag that was used to provide the reference file
 
     """
+
     def _require(fields, d, lib, flag):
         """Private function that checks to see if all required fields
         are provided in the reference file. If nan item in fields does
@@ -633,8 +659,7 @@ def check_reference_file(reference_file, flag, delimeter = ','):
             fatal(
                 f"Error: Missing required fields in --{flag} {{}} file!\n \
                 └── Please add information for the following field(s): {{}}".format(
-                    lib,
-                    ','.join([f.lower() for f in missing])
+                    lib, ",".join([f.lower() for f in missing])
                 )
             )
 
@@ -643,9 +668,9 @@ def check_reference_file(reference_file, flag, delimeter = ','):
     # Get file extension to determine
     # the appropriate file delimeter
     extension = os.path.splitext(reference_file)[-1].lower()
-    if extension in ['.tsv', '.txt', '.text', '.tab']:
+    if extension in [".tsv", ".txt", ".text", ".tab"]:
         # file is tab seperated
-        delimeter = '\t'
+        delimeter = "\t"
     # Find index of file dynamically,
     # makes it so the order of the
     # columns does not matter
@@ -655,17 +680,23 @@ def check_reference_file(reference_file, flag, delimeter = ','):
             header = next(fh).strip().split(delimeter)
         except StopIteration:
             fatal(
-                f'Error: --{flag} {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(reference_file)
+                f"Error: --{flag} {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.".format(
+                    reference_file
+                )
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
             indices[colname] = i
-        _require(['id', 'name', 'read', 'pattern', 'sequence', 'feature_type'], indices, reference_file, flag)
+        _require(
+            ["id", "name", "read", "pattern", "sequence", "feature_type"],
+            indices,
+            reference_file,
+            flag,
+        )
 
 
-
-def check_rename_file(config, rename_file, delimeter = ','):
+def check_rename_file(config, rename_file, delimeter=","):
     """Check sample information from the rename file.
     The rename file is a CSV file containing information
     about each sample. It contains each sample's name
@@ -681,6 +712,7 @@ def check_rename_file(config, rename_file, delimeter = ','):
         rename file containing information about each sample
 
     """
+
     def _require(fields, d, lib):
         """Private function that checks to see if all required fields
         are provided in the reference file. If nan item in fields does
@@ -697,8 +729,7 @@ def check_rename_file(config, rename_file, delimeter = ','):
             fatal(
                 f"Error: Missing required fields in --rename {{}} file!\n \
                 └── Please add information for the following field(s): {{}}".format(
-                    lib,
-                    ','.join([f.lower() for f in missing])
+                    lib, ",".join([f.lower() for f in missing])
                 )
             )
 
@@ -707,9 +738,9 @@ def check_rename_file(config, rename_file, delimeter = ','):
     # Get file extension to determine
     # the appropriate file delimeter
     extension = os.path.splitext(rename_file)[-1].lower()
-    if extension in ['.tsv', '.txt', '.text', '.tab']:
+    if extension in [".tsv", ".txt", ".text", ".tab"]:
         # file is tab seperated
-        delimeter = '\t'
+        delimeter = "\t"
     # Find index of file dynamically,
     # makes it so the order of the
     # columns does not matter
@@ -719,15 +750,18 @@ def check_rename_file(config, rename_file, delimeter = ','):
             header = next(fh).strip().split(delimeter)
         except StopIteration:
             fatal(
-                f'Error: --rename {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(rename_file)
+                f"Error: --rename {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.".format(
+                    rename_file
+                )
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
             indices[colname] = i
-        _require(['fastq', 'name'], indices, rename_file)
+        _require(["fastq", "name"], indices, rename_file)
 
-def check_forcecells_file(config, forcecells_file, delimeter = ','):
+
+def check_forcecells_file(config, forcecells_file, delimeter=","):
     """Check sample information from the force cells file.
     The force cells file is a CSV file containing information
     about the samples that required the force cells flag to be
@@ -743,6 +777,7 @@ def check_forcecells_file(config, forcecells_file, delimeter = ','):
         Config flag that was used to provide the rename file
 
     """
+
     def _require(fields, d, lib):
         """Private function that checks to see if all required fields
         are provided in the reference file. If nan item in fields does
@@ -759,8 +794,7 @@ def check_forcecells_file(config, forcecells_file, delimeter = ','):
             fatal(
                 f"Error: Missing required fields in --rename {{}} file!\n \
                 └── Please add information for the following field(s): {{}}".format(
-                    lib,
-                    ','.join([f.lower() for f in missing])
+                    lib, ",".join([f.lower() for f in missing])
                 )
             )
         return
@@ -768,9 +802,9 @@ def check_forcecells_file(config, forcecells_file, delimeter = ','):
     # Get file extension to determine
     # the appropriate file delimeter
     extension = os.path.splitext(forcecells_file)[-1].lower()
-    if extension in ['.tsv', '.txt', '.text', '.tab']:
+    if extension in [".tsv", ".txt", ".text", ".tab"]:
         # file is tab seperated
-        delimeter = '\t'
+        delimeter = "\t"
     # Find index of file dynamically,
     # makes it so the order of the
     # columns does not matter
@@ -780,15 +814,18 @@ def check_forcecells_file(config, forcecells_file, delimeter = ','):
             header = next(fh).strip().split(delimeter)
         except StopIteration:
             fatal(
-                f'Error: --forcecells {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(forcecells_file)
+                f"Error: --forcecells {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.".format(
+                    forcecells_file
+                )
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
             indices[colname] = i
-        _require(['sample', 'cells'], indices, forcecells_file)
+        _require(["sample", "cells"], indices, forcecells_file)
 
-def finalcheck(config, flag, delimeter=','):
+
+def finalcheck(config, flag, delimeter=","):
     """Check the contents of the rename or libraries
     file against input. This function checks to see if
     the input files are not used in the rename/libraries
@@ -800,12 +837,12 @@ def finalcheck(config, flag, delimeter=','):
     @params flag <string>:
         Config flag that was used to provide the input file
     """
-    filename = config['options'][flag]
+    filename = config["options"][flag]
 
     extension = os.path.splitext(filename)[-1].lower()
-    if extension in ['.tsv', '.txt', '.text', '.tab']:
+    if extension in [".tsv", ".txt", ".text", ".tab"]:
         # file is tab seperated
-        delimeter = '\t'
+        delimeter = "\t"
 
     # Find index of file dynamically,
     # makes it so the order of the
@@ -820,8 +857,10 @@ def finalcheck(config, flag, delimeter=','):
             header = next(fh).strip().split(delimeter)
         except StopIteration:
             fatal(
-                f'Error: --rename {{}} cannot be empty!\n \
-            └── Please ensure the file is not empty before proceeding again.'.format(filename)
+                f"Error: --rename {{}} cannot be empty!\n \
+            └── Please ensure the file is not empty before proceeding again.".format(
+                    filename
+                )
             )
         for i in range(len(header)):
             colname = header[i].strip().lower()
@@ -832,55 +871,83 @@ def finalcheck(config, flag, delimeter=','):
                 values = contents.get(i, set())
                 values.add(linelist[indices[i]])
                 contents[i] = values
-            if 'type' in indices:
-                value = name_type.get(linelist[indices['name']], set())
-                value.add(linelist[indices['type']])
-                name_type[linelist[indices['name']]] = value
+            if "type" in indices:
+                value = name_type.get(linelist[indices["name"]], set())
+                value.add(linelist[indices["type"]])
+                name_type[linelist[indices["name"]]] = value
 
     # Compiles the sample names and fastq paths from the input (config)
-    samples  = set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config['samples']])
-    fastq_paths = set([os.path.dirname(i) for i in config['options']['input']])
+    samples = set([re.sub("_S[0-9]+_L00[0-9]", "", i) for i in config["samples"]])
+    fastq_paths = set([os.path.dirname(i) for i in config["options"]["input"]])
 
     for index_name in indices:
         comparison = contents[index_name]
 
-        #Check the FASTQ names against the sample (fastq) names provided in the input files
-        if index_name in ['sample', 'fastq']:
+        # Check the FASTQ names against the sample (fastq) names provided in the input files
+        if index_name in ["sample", "fastq"]:
             if samples != comparison:
-                if len(samples-comparison) > 0:
-                    print(f"\nWarning: Some FASTQs will be skipped! \nWarning: --{{}} {{}} does not contain values for all provided FASTQ files.\n \
+                if len(samples - comparison) > 0:
+                    print(
+                        f"\nWarning: Some FASTQs will be skipped! \nWarning: --{{}} {{}} does not contain values for all provided FASTQ files.\n \
             └── Please note that no sample names have been provided for FASTQ files with the following id(s): {{}} \n \
-            These FASTQ files will be skipped when running the pipeline.".format(flag, filename, ','.join(samples-comparison)))
-                if len(comparison-samples) > 0:
+            These FASTQ files will be skipped when running the pipeline.".format(
+                            flag, filename, ",".join(samples - comparison)
+                        )
+                    )
+                if len(comparison - samples) > 0:
                     fatal(
-                        f'\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
-            └── Please note that the followed listed FASTQ names are not found in the input files: {{}} '.format(flag, filename, ','.join(comparison-samples))
+                        f"\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
+            └── Please note that the followed listed FASTQ names are not found in the input files: {{}} ".format(
+                            flag, filename, ",".join(comparison - samples)
+                        )
                     )
 
-        if index_name == 'flowcell':
+        if index_name == "flowcell":
             # Check to see which values in file are not found in fastq_paths
-            missing_file = set([i for i in comparison if sum([i in fastq_path for fastq_path in fastq_paths]) == 0])
+            missing_file = set(
+                [
+                    i
+                    for i in comparison
+                    if sum([i in fastq_path for fastq_path in fastq_paths]) == 0
+                ]
+            )
 
             # Check to see which fastq_paths from input are not found in the flowcell values in file
-            missing_path = set([fastq_path for fastq_path in fastq_paths if sum([i in fastq_path for i in comparison]) == 0])
+            missing_path = set(
+                [
+                    fastq_path
+                    for fastq_path in fastq_paths
+                    if sum([i in fastq_path for i in comparison]) == 0
+                ]
+            )
 
             if len(missing_path) > 0:
-                print(f"\nWarning: Some FASTQs will be skipped! \nWarning: --{{}} {{}} does not contain values for all provided FASTQ paths.\n \
+                print(
+                    f"\nWarning: Some FASTQs will be skipped! \nWarning: --{{}} {{}} does not contain values for all provided FASTQ paths.\n \
             └── Please note that no samples contain flowcells that are on the following path(s): \n \
             {{}} \n \
-            Any FASTQ files in these paths will be skipped when running the pipeline.".format(flag, filename, ','.join(missing_path)))
+            Any FASTQ files in these paths will be skipped when running the pipeline.".format(
+                        flag, filename, ",".join(missing_path)
+                    )
+                )
             if len(missing_file) > 0:
                 fatal(
-                    f'\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
-            └── Please note that the followed listed FASTQ names are not found in the input files: {{}} '.format(flag, filename, ','.join(missing_file))
+                    f"\nError: --{{}} {{}} contains values in FASTQ column that is not in the provided FASTQ files!\n \
+            └── Please note that the followed listed FASTQ names are not found in the input files: {{}} ".format(
+                        flag, filename, ",".join(missing_file)
+                    )
                 )
 
     names = [name for name in name_type if (len(name_type[name]) <= 1)]
     if len(names) > 0:
-        print(f"\nWarning: Some samples only have one feature type associated with them! \nWarning: --{{}} {{}} only contains one feature type for some of the samples.\n \
+        print(
+            f"\nWarning: Some samples only have one feature type associated with them! \nWarning: --{{}} {{}} only contains one feature type for some of the samples.\n \
             └── Please note that only one feature type was provided for the following sample(s): {{}} \n \
             Flex and OCM captures may contain only one feature type. \n \
-            If these samples are not those captures, they may not need to be run using cellranger multi.".format(flag, filename, ','.join(names)))
+            If these samples are not those captures, they may not need to be run using cellranger multi.".format(
+                flag, filename, ",".join(names)
+            )
+        )
 
 
 def check_conditional_parameters(config):
@@ -892,120 +959,165 @@ def check_conditional_parameters(config):
         Config dictionary containing metadata to run pipeline
     """
     errorMessage = []
-    input_folders = folder_inputs(config['options']['input'])
+    input_folders = folder_inputs(config["options"]["input"])
 
     # List supported versions for each pipeline
     supported_versions = {
-        'gex': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
-        'cite': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
-        'multi': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
-        'vdj': ['7.1.0', '7.2.0', '8.0.0', '9.0.0', '10.0.0'],
-        'atac': ['2.1.0', '2.2.0'],
-        'multiome': ['2.0.1', '2.1.0']
+        "gex": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        "cite": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        "multi": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        "vdj": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        "atac": ["2.1.0", "2.2.0"],
+        "multiome": ["2.0.1", "2.1.0"],
     }
 
-
-    #Check if compatible cellranger version is provided when required
-    if config['options']['cellranger'] not in supported_versions.get(config['options']['pipeline'], []):
+    # Check if compatible cellranger version is provided when required
+    if config["options"]["cellranger"] not in supported_versions.get(
+        config["options"]["pipeline"], []
+    ):
         errorMessage += [
             "Error: Version of cellranger provided is not compatible with {} pipeline\n \
             └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                config['options']['pipeline'],
-                ', '.join(supported_versions.get(config['options']['pipeline'], []))
+                config["options"]["pipeline"],
+                ", ".join(supported_versions.get(config["options"]["pipeline"], [])),
             )
         ]
 
-
-    #Check if Cell Ranger version 9 or newer is used when running OCM or HTO, and Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)
-    if any([config['options'][i] != 'None' for i in ['hto_sample', 'ocm_sample']]):
-        if config['options']['cellranger'] != '':
-            if int(config['options']['cellranger'].split('.')[0]) < 9:
+    # Check if Cell Ranger version 9 or newer is used when running OCM or HTO, and Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)
+    if any([config["options"][i] != "None" for i in ["hto_sample", "ocm_sample"]]):
+        if config["options"]["cellranger"] != "":
+            if int(config["options"]["cellranger"].split(".")[0]) < 9:
                 errorMessage += [
                     "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
                     └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                        [i for i in ['hto_sample', 'ocm_sample'] if config['options'].get(i, 'None') != 'None'][0].replace('_', '-'),
-                        ', '.join(['9.0.0', '10.0.0'])
+                        [
+                            i
+                            for i in ["hto_sample", "ocm_sample"]
+                            if config["options"].get(i, "None") != "None"
+                        ][0].replace("_", "-"),
+                        ", ".join(["9.0.0", "10.0.0"]),
                     )
                 ]
         else:
             errorMessage += [
                 "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
                 └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                    [i for i in ['hto_sample', 'ocm_sample'] if config['options'].get(i, 'None') != 'None'][0].replace('_', '-'),
-                    ', '.join(['9.0.0', '10.0.0'])
+                    [
+                        i
+                        for i in ["hto_sample", "ocm_sample"]
+                        if config["options"].get(i, "None") != "None"
+                    ][0].replace("_", "-"),
+                    ", ".join(["9.0.0", "10.0.0"]),
                 )
             ]
 
     # Check if Cell Ranger version 8 or newer is used when running Flex (Fixed RNA / probe)
-    if any([config['options'].get(i, 'None') != 'None' for i in ['probe_sample', 'probe_set']]):
-        if config['options']['cellranger'] != '':
-            if int(config['options']['cellranger'].split('.')[0]) < 8:
+    if any(
+        [
+            config["options"].get(i, "None") != "None"
+            for i in ["probe_sample", "probe_set"]
+        ]
+    ):
+        if config["options"]["cellranger"] != "":
+            if int(config["options"]["cellranger"].split(".")[0]) < 8:
                 errorMessage += [
                     "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
                     └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                        ', '.join(['8.0.0', '9.0.0', '10.0.0'])
+                        ", ".join(["8.0.0", "9.0.0", "10.0.0"])
                     )
                 ]
         else:
             errorMessage += [
                 "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
                 └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                    ', '.join(['8.0.0', '9.0.0', '10.0.0'])
+                    ", ".join(["8.0.0", "9.0.0", "10.0.0"])
                 )
             ]
-        
-    #Check if libraries file is provided when required
-    if config['options']['pipeline'] in ['cite', 'multi', 'multiome'] and config['options'].get('libraries', 'None') == 'None' and not input_folders:
+
+    # Check if libraries file is provided when required
+    if (
+        config["options"]["pipeline"] in ["cite", "multi", "multiome"]
+        and config["options"].get("libraries", "None") == "None"
+        and not input_folders
+    ):
         errorMessage += [
             "Error: Libraries file is required for {} pipeline\n \
             └── Please use the --libraries flag to provide the CSV file with the columns: {}".format(
-                config['options']['pipeline'],
-                ','.join(['Name', 'Flowcell', 'Sample', 'Type'])
+                config["options"]["pipeline"],
+                ",".join(["Name", "Flowcell", "Sample", "Type"]),
             )
         ]
 
-    #Check if features file is provided when required
-    if config['options']['pipeline'] in ['cite'] and config['options'].get('features', 'None') == 'None' and not input_folders:
+    # Check if features file is provided when required
+    if (
+        config["options"]["pipeline"] in ["cite"]
+        and config["options"].get("features", "None") == "None"
+        and not input_folders
+    ):
         errorMessage += [
             "Error: Features file is required for {} pipeline\n \
             └── Please use the --features flag to provide the CSV file with the columns: {}".format(
-                config['options']['pipeline'],
-                ','.join(['id', 'name', 'sequence', 'feature_type', 'read', 'pattern'])
+                config["options"]["pipeline"],
+                ",".join(["id", "name", "sequence", "feature_type", "read", "pattern"]),
             )
         ]
 
-    #Check reference
-    if config['options']['genome'] in ['hg2024', 'mm2024']:
-        if config['options']['pipeline'] in []:
+    # Check reference
+    if config["options"]["genome"] in ["hg2024", "mm2024"]:
+        if config["options"]["pipeline"] in []:
             errorMessage += [
                 "Error: The {} reference is not available for the {} pipeline\n \
                 └── Please use the --genome flag to select one of the available references: {}".format(
-                    config['options']['genome'], config['options']['pipeline'],
-                    ', '.join(['hg38', 'mm10'])
+                    config["options"]["genome"],
+                    config["options"]["pipeline"],
+                    ", ".join(["hg38", "mm10"]),
                 )
             ]
 
-    #Check to make sure both probe-set and probe-sample flags are set when one is used
-    if config['options'].get('probe_sample', 'None') != 'None' and config['options'].get('probe_set', 'None') == 'None':
+    # Check to make sure both probe-set and probe-sample flags are set when one is used
+    if (
+        config["options"].get("probe_sample", "None") != "None"
+        and config["options"].get("probe_set", "None") == "None"
+    ):
         errorMessage += [
             "Error: Probe set reference has to be provided to process Flex (Fixed RNA) samples \n \
             └── Please use the --probe-set flag to provide the probe set reference"
         ]
 
-    #Check to make sure only one multiplexing flag is used
-    if sum([config['options'].get(i, 'None') != 'None' for i in ['cmo_sample', 'hto_sample', 'ocm_sample', 'probe_sample']]) > 1:
+    # Check to make sure only one multiplexing flag is used
+    if (
+        sum(
+            [
+                config["options"].get(i, "None") != "None"
+                for i in ["cmo_sample", "hto_sample", "ocm_sample", "probe_sample"]
+            ]
+        )
+        > 1
+    ):
         errorMessage += [
             "Error: Only one cell demultiplexing flag can be provided in one run of the pipeline, and more than one has been provided\n \
-                    └── Please limit the flag selection to only one of the following: {}". format(
-                ','.join([i.replace('_', '-') for i in ['hto_sample', 'ocm_sample'] if config['options'][i] != 'None'])
+                    └── Please limit the flag selection to only one of the following: {}".format(
+                ",".join(
+                    [
+                        i.replace("_", "-")
+                        for i in ["hto_sample", "ocm_sample"]
+                        if config["options"][i] != "None"
+                    ]
+                )
             )
         ]
 
-        [i.replace('_', '-') for i in ['hto_sample', 'ocm_sample'] if config['options'].get(i, 'None') != 'None']
+        [
+            i.replace("_", "-")
+            for i in ["hto_sample", "ocm_sample"]
+            if config["options"].get(i, "None") != "None"
+        ]
 
     if len(errorMessage) > 0:
-        errorMessage += ["\nAdditional information about flags can be found via cell-seek run --help or at https://openomics.github.io/cell-seek/usage/run/"]
-        fatal('\n'.join(errorMessage))
+        errorMessage += [
+            "\nAdditional information about flags can be found via cell-seek run --help or at https://openomics.github.io/cell-seek/usage/run/"
+        ]
+        fatal("\n".join(errorMessage))
 
 
 def add_rawdata_information(sub_args, config, ifiles):
@@ -1027,48 +1139,48 @@ def add_rawdata_information(sub_args, config, ifiles):
     # or single-end
     # Updates config['project']['nends'] where
     # 1 = single-end, 2 = paired-end, -1 = bams
-    convert = {1: 'single-end', 2: 'paired-end', -1: 'bam', -2: 'cellranger'}
+    convert = {1: "single-end", 2: "paired-end", -1: "bam", -2: "cellranger"}
     nends = get_nends(ifiles)  # Checks PE data for both mates (R1 and R2)
-    config['project']['nends'] = nends
-    config['project']['filetype'] = convert[nends]
+    config["project"]["nends"] = nends
+    config["project"]["filetype"] = convert[nends]
 
     # Finds the set of rawdata directories to bind
-    rawdata_paths = get_rawdata_bind_paths(input_files = sub_args.input)
-    config['project']['datapath'] = ','.join(rawdata_paths)
+    rawdata_paths = get_rawdata_bind_paths(input_files=sub_args.input)
+    config["project"]["datapath"] = ",".join(rawdata_paths)
 
     # Add each sample's basename
     # from the list of supplied
     # FastQ files provided via
     # the --input option
-    config = add_sample_metadata(input_files = ifiles, config = config)
+    config = add_sample_metadata(input_files=ifiles, config=config)
     # Add the list of samples
     # provided in the libraries
     # file, i.e. libraries.csv
     if sub_args.libraries != None:
         libraries = sub_args.libraries
-        config = parse_libraries(config = config, libraries_file = libraries)
+        config = parse_libraries(config=config, libraries_file=libraries)
 
     # Check to see if submitted
     # features reference file has
     # required columns
     if sub_args.features != None:
         reference = sub_args.features
-        check_reference_file(reference_file = reference, flag = "features")
+        check_reference_file(reference_file=reference, flag="features")
 
     # Check to see if submitted
     # HTO reference file has
     # required columns
     if sub_args.cmo_reference != None:
         reference = sub_args.cmo_reference
-        check_reference_file(reference_file = reference, flag = "cmo_reference")
+        check_reference_file(reference_file=reference, flag="cmo_reference")
 
     if sub_args.rename != None:
         rename = sub_args.rename
-        check_rename_file(rename_file = rename, config=config)
+        check_rename_file(rename_file=rename, config=config)
 
     if sub_args.forcecells != None:
         forcecells = sub_args.forcecells
-        check_forcecells_file(forcecells_file = forcecells, config=config)
+        check_forcecells_file(forcecells_file=forcecells, config=config)
 
     return config
 
@@ -1086,24 +1198,32 @@ def image_cache(sub_args, config, repo_path):
     @return config <dict>:
          Updated config dictionary containing user information (username and home directory)
     """
-    images = os.path.join(repo_path, 'config','containers.json')
+    images = os.path.join(repo_path, "config", "containers.json")
 
     # Read in config for docker image uris
-    with open(images, 'r') as fh:
+    with open(images, "r") as fh:
         data = json.load(fh)
     # Check if local sif exists
-    for image, uri in data['images'].items():
+    for image, uri in data["images"].items():
         if sub_args.sif_cache:
-            sif = os.path.join(sub_args.sif_cache, '{}.sif'.format(os.path.basename(uri).replace(':', '_')))
+            sif = os.path.join(
+                sub_args.sif_cache,
+                "{}.sif".format(os.path.basename(uri).replace(":", "_")),
+            )
             if not exists(sif):
                 # If local sif does not exist on in cache,
                 # print warning and default to pulling from
                 # URI in config/containers.json
-                print('Warning: Local image "{}" does not exist in singularity cache'.format(sif), file=sys.stderr)
+                print(
+                    'Warning: Local image "{}" does not exist in singularity cache'.format(
+                        sif
+                    ),
+                    file=sys.stderr,
+                )
             else:
                 # Change pointer to image from Registry URI
                 # to local SIF
-                data['images'][image] = sif
+                data["images"][image] = sif
 
     config.update(data)
 
@@ -1126,14 +1246,14 @@ def get_nends(ifiles):
     nends_status = 1
 
     for file in ifiles:
-        if file.endswith('.bam'):
+        if file.endswith(".bam"):
             bam_files = True
             nends_status = -1
             break
-        elif file.endswith('.R2.fastq.gz'):
+        elif file.endswith(".R2.fastq.gz"):
             paired_end = True
             nends_status = 2
-            break # dataset is paired-end
+            break  # dataset is paired-end
         elif os.path.isdir(file):
             cellranger = True
             nends_status = -2
@@ -1141,10 +1261,10 @@ def get_nends(ifiles):
     # Check to see if both mates (R1 and R2)
     # are present paired-end data
     if paired_end:
-        nends = {} # keep count of R1 and R2 for each sample
+        nends = {}  # keep count of R1 and R2 for each sample
         for file in ifiles:
             # Split sample name on file extension
-            sample = re.split('\.R[12]\.fastq\.gz', os.path.basename(file))[0]
+            sample = re.split("\.R[12]\.fastq\.gz", os.path.basename(file))[0]
             if sample not in nends:
                 nends[sample] = 0
 
@@ -1154,7 +1274,8 @@ def get_nends(ifiles):
         missing_mates = [sample for sample, count in nends.items() if count == 1]
         if missing_mates:
             # Missing an R1 or R2 for a provided input sample
-            raise NameError("""\n\tFatal: Detected pair-end data but user failed to provide
+            raise NameError(
+                """\n\tFatal: Detected pair-end data but user failed to provide
                 both mates (R1 and R2) for the following samples:\n\t\t{}\n
                 Please check that the basename for each sample is consistent across mates.
                 Here is an example of a consistent basename across mates:
@@ -1172,7 +1293,8 @@ def get_nends(ifiles):
     elif not bam_files and not cellranger:
         # Provided only single-end data
         # not supported or recommended
-        raise TypeError("""\n\tFatal: Single-end data detected.
+        raise TypeError(
+            """\n\tFatal: Single-end data detected.
             {} does not support single-end data. Calling variants from single-end
             data is not recommended either. If you feel like this functionality should
             exist, feel free to open an issue on Github.
@@ -1200,7 +1322,9 @@ def get_rawdata_bind_paths(input_files):
     return bindpaths
 
 
-def dryrun(outdir, config='config.json', snakefile=os.path.join('workflow', 'Snakefile')):
+def dryrun(
+    outdir, config="config.json", snakefile=os.path.join("workflow", "Snakefile")
+):
     """Dryruns the pipeline to ensure there are no errors prior to runnning.
     @param outdir <str>:
         Pipeline output PATH
@@ -1208,35 +1332,51 @@ def dryrun(outdir, config='config.json', snakefile=os.path.join('workflow', 'Sna
         Byte string representation of dryrun command
     """
     try:
-        dryrun_output = subprocess.check_output([
-            'snakemake', '-npr',
-            '-s', str(snakefile),
-            '--use-singularity',
-            '--rerun-incomplete',
-            '--cores', str(1),
-            '--configfile={}'.format(config)
-        ], cwd = outdir,
-        stderr=subprocess.STDOUT)
+        dryrun_output = subprocess.check_output(
+            [
+                "snakemake",
+                "-npr",
+                "-s",
+                str(snakefile),
+                "--use-singularity",
+                "--rerun-incomplete",
+                "--cores",
+                str(1),
+                "--configfile={}".format(config),
+            ],
+            cwd=outdir,
+            stderr=subprocess.STDOUT,
+        )
     except OSError as e:
         # Catch: OSError: [Errno 2] No such file or directory
         #  Occurs when command returns a non-zero exit-code
-        if e.errno == 2 and not which('snakemake'):
+        if e.errno == 2 and not which("snakemake"):
             # Failure caused because snakemake is NOT in $PATH
-            err('\n\x1b[6;37;41mError: Are snakemake AND singularity in your $PATH?\x1b[0m')
-            fatal('\x1b[6;37;41mPlease check before proceeding again!\x1b[0m')
+            err(
+                "\n\x1b[6;37;41mError: Are snakemake AND singularity in your $PATH?\x1b[0m"
+            )
+            fatal("\x1b[6;37;41mPlease check before proceeding again!\x1b[0m")
         else:
             # Failure caused by unknown cause, raise error
             raise e
     except subprocess.CalledProcessError as e:
         print(e, e.output.decode("utf-8"))
-        raise(e)
+        raise (e)
 
     return dryrun_output
 
 
-def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
-    threads=2,  jobname='pl:master', submission_script='run.sh',
-    tmp_dir = '/lscratch/$SLURM_JOBID/'):
+def runner(
+    mode,
+    outdir,
+    alt_cache,
+    logger,
+    additional_bind_paths=None,
+    threads=2,
+    jobname="pl:master",
+    submission_script="run.sh",
+    tmp_dir="/lscratch/$SLURM_JOBID/",
+):
     """Runs the pipeline via selected executor: local, slurm, uge.
     If 'local' is selected, the pipeline is executed locally on a compute node/instance.
     If 'slurm' is selected, jobs will be submited to the cluster using SLURM job scheduler.
@@ -1271,25 +1411,26 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
     # Add any default PATHs to bind to
     # the container's filesystem, like
     # tmp directories, /lscratch
-    bindpaths = "{},{}".format(outdir, os.path.dirname(tmp_dir.rstrip('/')))
+    bindpaths = "{},{}".format(outdir, os.path.dirname(tmp_dir.rstrip("/")))
     # Set ENV variable 'SINGULARITY_CACHEDIR'
     # to output directory
-    my_env = {}; my_env.update(os.environ)
+    my_env = {}
+    my_env.update(os.environ)
     cache = os.path.join(outdir, ".singularity")
-    my_env['SINGULARITY_CACHEDIR'] = cache
+    my_env["SINGULARITY_CACHEDIR"] = cache
     if alt_cache:
         # Override the pipeline's default
         # cache location
-        my_env['SINGULARITY_CACHEDIR'] = alt_cache
+        my_env["SINGULARITY_CACHEDIR"] = alt_cache
         cache = alt_cache
 
     if additional_bind_paths:
         # Add Bind PATHs for rawdata directories
-        bindpaths = "{},{}".format(additional_bind_paths,bindpaths)
+        bindpaths = "{},{}".format(additional_bind_paths, bindpaths)
 
-    if not exists(os.path.join(outdir, 'logfiles')):
+    if not exists(os.path.join(outdir, "logfiles")):
         # Create directory for logfiles
-        os.makedirs(os.path.join(outdir, 'logfiles'))
+        os.makedirs(os.path.join(outdir, "logfiles"))
 
     # Create .singularity directory for
     # installations of snakemake without
@@ -1302,24 +1443,48 @@ def runner(mode, outdir, alt_cache, logger, additional_bind_paths = None,
 
     # Run on compute node or instance
     # without submitting jobs to a scheduler
-    if mode == 'local':
+    if mode == "local":
         # Run pipeline's main process
-        masterjob = subprocess.Popen([
-                'snakemake', '-pr', '--rerun-incomplete',
-                '--use-singularity',
-                '--singularity-args', "'-B {}'".format(bindpaths),
-                '--cores', str(threads),
-                '--configfile=config.json'
-            ], cwd = outdir, stderr=subprocess.STDOUT, stdout=logger, env=my_env)
+        masterjob = subprocess.Popen(
+            [
+                "snakemake",
+                "-pr",
+                "--rerun-incomplete",
+                "--use-singularity",
+                "--singularity-args",
+                "'-B {}'".format(list(set(bindpaths))),
+                "--cores",
+                str(threads),
+                "--configfile=config.json",
+            ],
+            cwd=outdir,
+            stderr=subprocess.STDOUT,
+            stdout=logger,
+            env=my_env,
+        )
 
     # Submitting jobs to cluster via a job scheduler
-    elif mode in ['slurm', 'uge']:
+    elif mode in ["slurm", "uge"]:
         # Run pipeline's main process
-        masterjob = subprocess.Popen([
-                str(os.path.join(outdir, 'resources', str(submission_script))), mode,
-                '-j', jobname, '-b', str(bindpaths),
-                '-o', str(outdir), '-c', str(cache),
-                '-t', "'{}'".format(tmp_dir)
-            ], cwd = outdir, stderr=subprocess.STDOUT, stdout=logger, env=my_env)
+        masterjob = subprocess.Popen(
+            [
+                str(os.path.join(outdir, "resources", str(submission_script))),
+                mode,
+                "-j",
+                jobname,
+                "-b",
+                str(bindpaths),
+                "-o",
+                str(outdir),
+                "-c",
+                str(cache),
+                "-t",
+                "'{}'".format(tmp_dir),
+            ],
+            cwd=outdir,
+            stderr=subprocess.STDOUT,
+            stdout=logger,
+            env=my_env,
+        )
 
     return masterjob
