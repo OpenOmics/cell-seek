@@ -156,7 +156,7 @@ if (!is.null(args$cluster_labels)) {
     fatal(paste0("cluster_labels '", args$cluster_labels, "' not found in seurat_obj@meta.data"))
   }
 }
-if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" || args$meta.to.rm == "NA") {
+if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" || args$meta.to.rm == "NA" || tolower(args$meta.to.rm) == "none") {
   rmmeta <- NULL
 } else {
   if ("," %in% args$meta.to.rm) {
@@ -165,7 +165,7 @@ if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" 
     rmmeta <- c(trimws(gsub("[\r\n]", "", args$meta.to.rm)))
   }
 }
-if (is.null(args$assaytouse) || is.na(args$assaytouse) || args$assaytouse == "" || args$assaytouse == "NA") {
+if (is.null(args$assaytouse) || is.na(args$assaytouse) || args$assaytouse == "" || args$assaytouse == "NA" || tolower(args$assaytouse) == "none") {
   assaytouse <- NULL
 } else {
   if ("," %in% args$assaytouse) {
@@ -176,7 +176,7 @@ if (is.null(args$assaytouse) || is.na(args$assaytouse) || args$assaytouse == "" 
 }
 
 
-if (is.null(args$defaultreduction) || is.na(args$defaultreduction) || args$defaultreduction == "" || args$defaultreduction == "NA") {
+if (is.null(args$defaultreduction) || is.na(args$defaultreduction) || args$defaultreduction == "" || args$defaultreduction == "NA" || tolower(args$defaultreduction) == "none") {
   defaultreduction <- NULL
 } else {
   if (args$defaultreduction %in% names(seurat_obj@reductions)) {
