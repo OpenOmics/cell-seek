@@ -265,13 +265,21 @@ if (length(unique(assay_ncells)) > 1) {
     paste0("    '", names(assay_ncells), "': ", assay_ncells, " cells"),
     collapse = "\n"
   )
-  fatal(paste0(
-    "Pre-flight ERROR: assays have inconsistent cell counts:\n",
-    cell_report, "\n",
-    " └── All assays must contain the same set of cells.\n",
-    " └── Fix: re-integrate or subset assays to a common cell set, or use\n",
-    "     --assay to restrict to a single consistent assay (e.g. --assay RNA)."
-  ))
+  if (!is.null(assaytouse)) {
+    fatal(paste0(
+      "Pre-flight ERROR: assays have inconsistent cell counts:\n",
+      cell_report, "\n",
+      " └── All assays must contain the same set of cells.\n",
+      " └── Fix: re-integrate or subset assays to a common cell set, or use\n",
+      "     --assay to restrict to a single consistent assay (e.g. --assay RNA)."
+    ))
+  } else {
+    cat(paste0(
+      "WARN - Pre-flight: assays have inconsistent cell counts:\n",
+      cell_report, "\n",
+      " └── Continuing with all assays since --assay was not specified.\n"
+    ))
+  }
 } else {
   cat(paste0(
     "INFO - Pre-flight: ", length(active_assays), " assay(s) [",

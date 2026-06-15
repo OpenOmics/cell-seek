@@ -1264,7 +1264,7 @@ def get_nends(ifiles):
         nends = {}  # keep count of R1 and R2 for each sample
         for file in ifiles:
             # Split sample name on file extension
-            sample = re.split("\.R[12]\.fastq\.gz", os.path.basename(file))[0]
+            sample = re.split(r"\.R[12]\.fastq\.gz", os.path.basename(file))[0]
             if sample not in nends:
                 nends[sample] = 0
 
@@ -1441,6 +1441,8 @@ def runner(
         # and image layers
         os.makedirs(cache)
 
+    bindpaths = ",".join(list(set(bindpaths.split(","))))
+
     # Run on compute node or instance
     # without submitting jobs to a scheduler
     if mode == "local":
@@ -1452,7 +1454,7 @@ def runner(
                 "--rerun-incomplete",
                 "--use-singularity",
                 "--singularity-args",
-                "'-B {}'".format(list(set(bindpaths))),
+                "'-B {}'".format(bindpaths),
                 "--cores",
                 str(threads),
                 "--configfile=config.json",
