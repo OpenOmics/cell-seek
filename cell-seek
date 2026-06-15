@@ -316,6 +316,8 @@ def genome_options(parser, user_option, prebuilt):
 
 
 def shinycell(args):
+    require(["snakemake", "singularity"], ["snakemake", "singularity"])
+
     if (args.markers is None) != (args.cluster_labels is None):
         fatal("--markers requires --cluster_labels to be set as well (and vice versa)")
 
@@ -329,21 +331,19 @@ def shinycell(args):
         fatal(f"Seurat object not found or not readable: {args.object}")
 
     cfg = {}
-    cfg["seurat_object"] = args.object
+    cfg["seurat_object"] = os.path.abspath(args.object)
     cfg["run_dir"] = os.path.abspath(args.outdir)
     cfg["project_title"] = args.project
-    cfg["marker_file"] = '' if args.markers is None else args.markers
-    cfg["cluster_labels"] = '' if args.cluster_labels is None else args.cluster_labels
+    cfg["marker_file"] = "" if args.markers is None else args.markers
+    cfg["cluster_labels"] = "" if args.cluster_labels is None else args.cluster_labels
     cfg["rmmeta"] = args.meta_to_rm
     cfg["defaultreduction"] = args.defaultreduction
     cfg["max_levels"] = args.max_levels
     cfg["assaytouse"] = args.assaytouse
     cfg["tmpdir"] = args.tmpdir
-    cfg['project'] = {}
-    cfg['project']['datapath'] = os.path.abspath(
-        os.path.dirname(args.object)
-    )
-    cfg['project']['workpath'] = os.path.abspath(args.outdir)
+    cfg["project"] = {}
+    cfg["project"]["datapath"] = os.path.abspath(os.path.dirname(args.object))
+    cfg["project"]["workpath"] = os.path.abspath(args.outdir)
 
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir, mode=0o755)
@@ -401,9 +401,7 @@ def shinycell(args):
                 )
             )
     elif args.mode == "slurm":
-        jobid = (
-            open(os.path.join(args.outdir, "logfiles", "mjobid.log")).read().strip()
-        )
+        jobid = open(os.path.join(args.outdir, "logfiles", "mjobid.log")).read().strip()
         if not args.silent:
             if int(mjob.returncode) == 0:
                 print("Successfully submitted master job: ", end="")
@@ -1085,38 +1083,38 @@ def parsed_arguments(name, description):
 
     # Input HTO Sample files
     subparser_run.add_argument(
-        '--hto-sample',
+        "--hto-sample",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input OCM Sample files
     subparser_run.add_argument(
-        '--ocm-sample',
+        "--ocm-sample",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input Probe Sample files
     subparser_run.add_argument(
-        '--probe-sample',
+        "--probe-sample",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Input Probe Set file
     subparser_run.add_argument(
-        '--probe-set',
+        "--probe-set",
         # Check if the file exists and if it is readable
-        type = lambda file: permissions(parser, file, os.R_OK),
-        required = False,
-        help = argparse.SUPPRESS
+        type=lambda file: permissions(parser, file, os.R_OK),
+        required=False,
+        help=argparse.SUPPRESS,
     )
 
     # Chain type for cellranger to run the analysis for
@@ -1126,7 +1124,7 @@ def parsed_arguments(name, description):
         required=False,
         default="auto",
         choices=["auto", "TR", "IG"],
-        help=argparse.SUPPRESS
+        help=argparse.SUPPRESS,
     )
 
     # Exclude introns from count
@@ -1181,7 +1179,16 @@ def parsed_arguments(name, description):
         type=str.lower,
         required=True,
         default="",
-        choices=["2.0.1", "2.1.0", "2.2.0", "7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
+        choices=[
+            "2.0.1",
+            "2.1.0",
+            "2.2.0",
+            "7.1.0",
+            "7.2.0",
+            "8.0.0",
+            "9.0.0",
+            "10.0.0",
+        ],
         help=argparse.SUPPRESS,
     )
 
@@ -1434,10 +1441,14 @@ def parsed_arguments(name, description):
     # Path to the GEX/CITE reference
     subparser_genome.add_argument(
         "--gex",
-        type=lambda option: os.path.abspath(os.path.expanduser(option))
-        if os.path.isdir(option)
-        else parser.error(
-            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        type=lambda option: (
+            os.path.abspath(os.path.expanduser(option))
+            if os.path.isdir(option)
+            else parser.error(
+                "Path '{}' does not exist! Failed to provide valid input.".format(
+                    option
+                )
+            )
         ),
         required=False,
         help=argparse.SUPPRESS,
@@ -1446,10 +1457,14 @@ def parsed_arguments(name, description):
     # Path to the VDJ reference
     subparser_genome.add_argument(
         "--vdj",
-        type=lambda option: os.path.abspath(os.path.expanduser(option))
-        if os.path.isdir(option)
-        else parser.error(
-            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        type=lambda option: (
+            os.path.abspath(os.path.expanduser(option))
+            if os.path.isdir(option)
+            else parser.error(
+                "Path '{}' does not exist! Failed to provide valid input.".format(
+                    option
+                )
+            )
         ),
         required=False,
         help=argparse.SUPPRESS,
@@ -1458,10 +1473,14 @@ def parsed_arguments(name, description):
     # Path to the ATAC reference
     subparser_genome.add_argument(
         "--atac",
-        type=lambda option: os.path.abspath(os.path.expanduser(option))
-        if os.path.isdir(option)
-        else parser.error(
-            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        type=lambda option: (
+            os.path.abspath(os.path.expanduser(option))
+            if os.path.isdir(option)
+            else parser.error(
+                "Path '{}' does not exist! Failed to provide valid input.".format(
+                    option
+                )
+            )
         ),
         required=False,
         help=argparse.SUPPRESS,
@@ -1470,10 +1489,14 @@ def parsed_arguments(name, description):
     # Path to the ARC reference
     subparser_genome.add_argument(
         "--multiome",
-        type=lambda option: os.path.abspath(os.path.expanduser(option))
-        if os.path.isdir(option)
-        else parser.error(
-            "Path '{}' does not exist! Failed to provide valid input.".format(option)
+        type=lambda option: (
+            os.path.abspath(os.path.expanduser(option))
+            if os.path.isdir(option)
+            else parser.error(
+                "Path '{}' does not exist! Failed to provide valid input.".format(
+                    option
+                )
+            )
         ),
         required=False,
         help=argparse.SUPPRESS,
@@ -1704,7 +1727,7 @@ def parsed_arguments(name, description):
     subparser_shinycell.add_argument(
         "--proj",
         dest="project",
-        help = argparse.SUPPRESS,
+        help=argparse.SUPPRESS,
         required=True,
     )
     subparser_shinycell.add_argument(
@@ -1772,11 +1795,7 @@ def parsed_arguments(name, description):
         help=argparse.SUPPRESS,
     )
     subparser_shinycell.add_argument(
-        "--threads", 
-        type=int,
-        required=False,
-        default=2,
-        help=argparse.SUPPRESS
+        "--threads", type=int, required=False, default=2, help=argparse.SUPPRESS
     )
     subparser_shinycell.add_argument(
         "--job-name",
