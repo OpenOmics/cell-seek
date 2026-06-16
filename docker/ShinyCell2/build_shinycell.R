@@ -454,6 +454,46 @@ if (class(seurat_obj)[1] == "Seurat") {
   }
 }
 
+# Pre-flight check: spatial objects require a "sample" metadata column so that
+# slide display names can be resolved in the Shiny app.  Mirror the same
+# detection logic used by makeShinyFiles / makeShinyFilesSpatial.
+if (class(seurat_obj)[1] == "Seurat" &&
+    .hasSlot(seurat_obj, "images") &&
+    length(seurat_obj@images) > 0) {
+  cat("INFO - Pre-flight: spatial data detected (",
+      length(seurat_obj@images), " slide(s)).\n")
+  if (!"sample" %in% colnames(seurat_obj@meta.data)) {
+    fatal(paste0(
+      "Pre-flight ERROR: spatial Seurat object is missing the required 'sample' ",
+      "metadata column.\n",
+      " └── seurat_obj@meta.data must contain a 'sample' column that maps each\n",
+      "     cell/spot to its sample identifier (e.g. K100066, K24685, ...).\n",
+      " └── Available metadata columns: ",
+      paste(colnames(seurat_obj@meta.data), collapse = ", ")
+    ))
+  }
+  sample_vals <- seurat_obj@meta.data[["sample"]]
+  n_na <- sum(is.na(sample_vals) | sample_vals == "")
+  if (n_na == length(sample_vals)) {
+    fatal(paste0(
+      "Pre-flight ERROR: the 'sample' metadata column exists but is entirely ",
+      "empty (all NA or blank).\n",
+      " └── Every cell/spot must have a non-empty sample identifier."
+    ))
+  }
+  if (n_na > 0) {
+    cat(paste0(
+      "WARN - Pre-flight: ", n_na, " of ", length(sample_vals),
+      " cell(s) have NA or blank 'sample' values.\n"
+    ))
+  } else {
+    cat(paste0(
+      "INFO - Pre-flight: 'sample' metadata column OK (",
+      length(unique(sample_vals)), " unique sample(s)).\n"
+    ))
+  }
+}
+
 
 if (!args$codes.only) {
   start_time <- Sys.time()
