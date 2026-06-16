@@ -156,25 +156,27 @@ if (!is.null(args$cluster_labels)) {
     fatal(paste0("cluster_labels '", args$cluster_labels, "' not found in seurat_obj@meta.data"))
   }
 }
-if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" || args$meta.to.rm == "NA") {
+if (is.null(args$meta.to.rm) || is.na(args$meta.to.rm) || args$meta.to.rm == "" || args$meta.to.rm == "NA" || tolower(args$meta.to.rm) == "none") {
   rmmeta <- NULL
 } else {
-  if ("," %in% args$meta.to.rm) {
+  if (grepl(",", args$meta.to.rm, fixed = TRUE)) {
     rmmeta <- unlist(strsplit(args$meta.to.rm, ",", fixed = TRUE))
   } else {
     rmmeta <- c(trimws(gsub("[\r\n]", "", args$meta.to.rm)))
   }
 }
-if (is.null(args$assaytouse) || is.na(args$assaytouse) || args$assaytouse == "" || args$assaytouse == "NA") {
+if (is.null(args$assaytouse) || is.na(args$assaytouse) || args$assaytouse == "" || args$assaytouse == "NA" || tolower(args$assaytouse) == "none") {
   assaytouse <- NULL
 } else {
-  if ("," %in% args$assaytouse) {
+  if (grepl(",", args$assaytouse, fixed = TRUE)) {
     assaytouse <- unlist(strsplit(args$assaytouse, ",", fixed = TRUE))
   } else {
     assaytouse <- c(trimws(gsub("[\r\n]", "", args$assaytouse)))
   }
 }
-if (is.null(args$defaultreduction) || is.na(args$defaultreduction) || args$defaultreduction == "" || args$defaultreduction == "NA") {
+
+
+if (is.null(args$defaultreduction) || is.na(args$defaultreduction) || args$defaultreduction == "" || args$defaultreduction == "NA" || tolower(args$defaultreduction) == "none") {
   defaultreduction <- NULL
 } else {
   if (args$defaultreduction %in% names(seurat_obj@reductions)) {
@@ -224,9 +226,66 @@ for (assay in Assays(seurat_obj)) {
 unsupported_assays <- c("HTO", "sketch")
 for (assay in unsupported_assays) {
   if (assay %in% names(seurat_obj@assays)) {
-    cat(paste0(assay, "unsupported assay removed!", sep = " "))
+    cat(paste(assay, " unsupported assay removed!"))
     seurat_obj[[assay]] <- NULL
   }
+}
+
+# If --assay was provided, validate the requested assays exist, drop all others,
+# and promote the first listed assay to the default.  This must happen BEFORE
+# createConfig so the config only reflects the retained assays.
+if (!is.null(assaytouse)) {
+  missing_assays <- setdiff(assaytouse, names(seurat_obj@assays))
+  if (length(missing_assays) > 0) {
+    fatal(paste0(
+      "Pre-flight ERROR: requested assay(s) not found in seurat object: ",
+      paste(missing_assays, collapse = ", "), "\n",
+      " └── Available assays: ",
+      paste(names(seurat_obj@assays), collapse = ", ")
+    ))
+  }
+  assays_to_drop <- setdiff(names(seurat_obj@assays), assaytouse)
+  for (a in assays_to_drop) {
+    seurat_obj[[a]] <- NULL
+    cat(paste0("INFO - Assay '", a, "' dropped (not listed in --assay).\n"))
+  }
+  SeuratObject::DefaultAssay(seurat_obj) <- assaytouse[1]
+  cat(paste0("INFO - Default assay set to '", assaytouse[1], "'.\n"))
+}
+
+# Pre-flight check: every assay in the object must cover the same set of cells.
+# A mismatch would corrupt the ShinyCell2 data files, which assume cell ordering
+# is aligned across assays.
+active_assays <- names(seurat_obj@assays)
+assay_ncells  <- vapply(active_assays,
+                        function(a) ncol(seurat_obj@assays[[a]]),
+                        numeric(1))
+if (length(unique(assay_ncells)) > 1) {
+  cell_report <- paste(
+    paste0("    '", names(assay_ncells), "': ", assay_ncells, " cells"),
+    collapse = "\n"
+  )
+  if (!is.null(assaytouse)) {
+    fatal(paste0(
+      "Pre-flight ERROR: assays have inconsistent cell counts:\n",
+      cell_report, "\n",
+      " └── All assays must contain the same set of cells.\n",
+      " └── Fix: re-integrate or subset assays to a common cell set, or use\n",
+      "     --assay to restrict to a single consistent assay (e.g. --assay RNA)."
+    ))
+  } else {
+    cat(paste0(
+      "WARN - Pre-flight: assays have inconsistent cell counts:\n",
+      cell_report, "\n",
+      " └── Continuing with all assays since --assay was not specified.\n"
+    ))
+  }
+} else {
+  cat(paste0(
+    "INFO - Pre-flight: ", length(active_assays), " assay(s) [",
+    paste(active_assays, collapse = ", "), "] each have ",
+    unique(assay_ncells), " cells. OK.\n"
+  ))
 }
 
 # Create ShinyCell config file
@@ -302,6 +361,99 @@ if (!is.null(args$markers) && !is.null(args$cluster_labels)) {
   files_params$precomputed.deg <- args$markers
   files_params$clusters <- args$cluster_labels
 }
+
+# Pre-flight check: detect cell-count mismatch between @meta.data and reductions.
+# The default reduction is treated as required: any missing cells there are a
+# fatal error because the app cannot be rendered without a complete default view.
+# Secondary reductions are non-fatal (cells will be dropped with a warning).
+if (class(seurat_obj)[1] == "Seurat") {
+  # Mirror the same reduction-selection logic used inside makeShinyFilesGEX.
+  # check_reduc[1] is the default reduction; the rest are secondary.
+  check_reduc <- if (!is.null(files_params$dimred.to.use)) {
+    files_params$dimred.to.use
+  } else {
+    dr_all <- setdiff(names(seurat_obj@reductions), c("pca", "ref.pca", "lsi"))
+    c(SeuratObject::DefaultDimReduc(seurat_obj),
+      setdiff(dr_all, SeuratObject::DefaultDimReduc(seurat_obj)))
+  }
+  default_reduc <- check_reduc[1]
+  meta_cells    <- rownames(seurat_obj@meta.data)
+
+  # --- Validate the default reduction first ---
+  if (!default_reduc %in% names(seurat_obj@reductions)) {
+    fatal(paste0(
+      "Pre-flight ERROR: default reduction '", default_reduc,
+      "' not found in seurat object.\n",
+      " └── Available reductions: ",
+      paste(names(seurat_obj@reductions), collapse = ", ")
+    ))
+  }
+  default_emb   <- seurat_obj@reductions[[default_reduc]]@cell.embeddings
+  default_ncols <- ncol(default_emb)
+  default_nrows <- nrow(default_emb)
+
+  if (default_ncols < 2) {
+    fatal(paste0(
+      "Pre-flight ERROR: default reduction '", default_reduc,
+      "' has only ", default_ncols, " dimension(s); at least 2 are required."
+    ))
+  }
+
+  missing_in_default <- setdiff(meta_cells, rownames(default_emb))
+  extra_in_default   <- setdiff(rownames(default_emb), meta_cells)
+
+  if (length(missing_in_default) > 0) {
+    fatal(paste0(
+      "Pre-flight ERROR: ", length(missing_in_default), " of ", length(meta_cells),
+      " cell(s) in @meta.data have no embeddings in the default reduction '",
+      default_reduc, "'.\n",
+      " └── This indicates the Seurat object is inconsistent (e.g. cells were\n",
+      "     added to @meta.data after the reduction was computed, or the object\n",
+      "     was created via reference-based mapping that excludes reference cells).\n",
+      " └── Fix: re-run the reduction on the full object, or subset @meta.data\n",
+      "     to only the cells present in the reduction before calling this script."
+    ))
+  }
+
+  cat(paste0(
+    "INFO - Pre-flight: default reduction '", default_reduc,
+    "' OK (", default_nrows, " cells x ", default_ncols, " dims).\n"
+  ))
+
+  if (length(extra_in_default) > 0) {
+    cat(paste0(
+      "WARN - Pre-flight: ", length(extra_in_default),
+      " cell(s) in '", default_reduc,
+      "' embeddings are absent from @meta.data and will be ignored.\n"
+    ))
+  }
+
+  # --- Check secondary reductions (non-fatal) ---
+  for (dr in check_reduc[-1]) {
+    if (!dr %in% names(seurat_obj@reductions)) {
+      cat(paste0("WARN - Pre-flight: secondary reduction '", dr,
+                 "' not found in seurat object and will be skipped.\n"))
+      next
+    }
+    emb_cells     <- rownames(seurat_obj@reductions[[dr]]@cell.embeddings)
+    missing_cells <- setdiff(meta_cells, emb_cells)
+    extra_cells   <- setdiff(emb_cells, meta_cells)
+    if (length(missing_cells) > 0) {
+      cat(paste0("WARN - Pre-flight: ", length(missing_cells),
+                 " cell(s) in @meta.data have no embeddings in secondary reduction '",
+                 dr, "' and will be dropped from that view.\n"))
+    }
+    if (length(extra_cells) > 0) {
+      cat(paste0("WARN - Pre-flight: ", length(extra_cells),
+                 " cell(s) in '", dr,
+                 "' embeddings are absent from @meta.data and will be ignored.\n"))
+    }
+    if (length(missing_cells) == 0 && length(extra_cells) == 0) {
+      cat(paste0("INFO - Pre-flight: secondary reduction '", dr, "' OK.\n"))
+    }
+  }
+}
+
 
 if (!args$codes.only) {
   start_time <- Sys.time()

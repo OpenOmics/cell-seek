@@ -53,4 +53,5 @@ COPY git_installs.sh /opt2/work/git_installs.sh
 RUN cd /opt2/work; ./git_installs.sh
 RUN Rscript -e 'remotes::install_github("OpenOmics/ShinyCell2")'
 ADD build_shinycell.R /usr/bin/build_shinycell.R
-RUN chmod +x /usr/bin/build_shinycell.R
+ADD seurat_inspector.R /usr/bin/seurat_inspector.R
+RUN chmod +x /usr/bin/build_shinycell.R /usr/bin/seurat_inspector.R
