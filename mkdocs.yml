@@ -112,7 +112,6 @@ nav:
     - MULTI: usage/multi.md
     - ATAC: usage/atac.md
     - Multiome: usage/multiome.md
-  - Instructions for PIs or Stakeholders: usage/PIs.md
   - FAQ:
     - General Questions: faq/questions.md
   - License: license.md
