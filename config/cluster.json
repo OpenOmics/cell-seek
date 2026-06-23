@@ -28,9 +28,9 @@
     },
     "seuratIntegrate": {
         "threads": "8",
-        "mem": "350g",
+        "mem": "1000g",
         "partition": "largemem",
-        "time": "1-00:00:00"
+        "time": "3-00:00:00"
     },
     "shinycodes": {
         "threads": "16",

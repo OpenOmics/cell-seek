@@ -63,6 +63,10 @@ sil_wildcard <- "SilhouetteResult_res*.csv"
 
 sample_list <- params$samples
 sample_list <- str_sort(sample_list, numeric=T)
+sample_paths <- sample_list
+if (sum(sapply(sample_list, function(x) length(strsplit(x, '/')[[1]] |> unique()) == 2)) == 0) {
+  sample_list <- sapply(sample_list, function(x) strsplit(x, '/')[[1]][1])
+}
 
 ```
 
@@ -73,8 +77,9 @@ sample_list <- str_sort(sample_list, numeric=T)
 ```{r  echo=F ,results='asis'}
 
 #colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots', 'UMAP Plots')
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt3) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt1) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
+rownames(data) <- NULL
 data %>% kable(format='html') %>% 
 	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
 	row_spec(row=dim(data)[[1]] %>% seq(), hline_after=T, align='c', extra_css = "border-bottom: 1px solid gray") %>%
@@ -83,7 +88,7 @@ data %>% kable(format='html') %>%
 
 ```{r echo=F, results='asis', eval=length(Sys.glob(file.path(maindir, '*', plt_pre_adt))) > 0}
 cat("## ADT Pre-Filter QC Plots\n\n")
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_adt) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_adt) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots')
 data %>% kable(format='html') %>% 
 	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
@@ -93,7 +98,7 @@ data %>% kable(format='html') %>%
 
 ```{r echo=F, results='asis', eval=length(Sys.glob(file.path(maindir, '*', plt_pre_hto))) > 0}
 cat("## HTO Pre-Filter QC Plots\n\n")
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_hto) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_hto) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots')
 data %>% kable(format='html') %>% 
 	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
@@ -104,7 +109,7 @@ data %>% kable(format='html') %>%
 ## Pre-Filter UMAP
 
 ```{r  echo=F ,results='asis'}
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_feature_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_count_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_mito) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_rpl) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_pre_rps) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt5) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_feature_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_count_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_mito) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_rpl) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_pre_rps) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Pre-Filter UMAP', 'Pre-Filter Number of Molecules', 'Pre-Filter Number of Genes', 'Pre-Filter Percent Mito', 'Pre-Filter Percent Ribosomal Protein (Large)', 'Pre-Filter Percent Ribosomal Protein (Small)')
 data %>% kable(format='html') %>%
         column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
@@ -166,7 +171,7 @@ kable(data_formatted, format='html', escape=F) %>%
 ## RNA Post-Filter QC Plots
 
 ```{r  echo=F ,results='asis'}
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt4) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt2) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt4) %>% pander::pandoc.image.return(), '{height=260px, width=260px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt2) %>% pander::pandoc.image.return(), '{height=260px, width=780px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots', 'Scatter Plots')
 data %>% kable(format='html') %>%
         column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%
@@ -177,7 +182,7 @@ data %>% kable(format='html') %>%
 
 ```{r echo=F, results='asis', eval=length(Sys.glob(file.path(maindir, '*', plt_pre_adt))) > 0}
 cat("## ADT Post-Filter QC Plots\n\n")
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_adt) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_adt) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots')
 data %>% kable(format='html') %>% 
 	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
@@ -187,7 +192,7 @@ data %>% kable(format='html') %>%
 
 ```{r echo=F, results='asis', eval=length(Sys.glob(file.path(maindir, '*', plt_pre_hto))) > 0}
 cat("## HTO Post-Filter QC Plots\n\n")
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_hto) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_hto) %>% pander::pandoc.image.return(), '{height=260px, width=260px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Violin Plots')
 data %>% kable(format='html') %>% 
 	column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>% 
@@ -200,25 +205,25 @@ data %>% kable(format='html') %>%
 
 ```{r  echo=F ,results='asis'}
 #Setting default resolution to 0.8
-resolutions <- sapply(sample_list, function(x) 0.8)
+resolutions <- sapply(sample_paths, function(x) 0.8)
 
 #Trying to extract the resolution with the highest silhouette score for each sample. Error messages are suppressed to prevent them from showing up on the report if this fails.
 try(expr={
 
   #Going through each sample to get the mean silhouette score for each resolution where the silhouette results are found
-  sil_max <- sapply(sample_list, function(x) {
+  sil_max <- sapply(sample_paths, function(x) {
     sil_files <- Sys.glob(file.path(maindir, x, sil_wildcard))
     which.max(sapply(sil_files, function(filename) {data <- read.csv(filename); mean(data$sil_width)}))
   } )
 
   #Extracting resolution from file name and sample name for each resolution
   resolutions <- (sil_max %>% names %>% basename %>% tools::file_path_sans_ext() %>% str_split_fixed(pattern='_res.', n=Inf))[,2]
-  names(resolutions) <- sample_list
+  names(resolutions) <- sample_paths
   cat("The UMAP plot for the resolution with the highest silhouette score was selected for each sample.\n\n")
 }, silent=TRUE)
 
 #Create data table while replacing the 0.8 from the original plt9 file name and replacing it with resolution from resolution list
-data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt9 %>% gsub(pattern='0.8', replacement=resolutions[x])) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_feature_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_count_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_mito) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_rpl) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_list, function(x) paste0(file.path(maindir, x, plt_post_rps) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
+data <- cbind(sample_list |> gsub(pattern='/', replacement=' - '), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt9 %>% gsub(pattern='0.8', replacement=resolutions[x])) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_feature_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_count_rna) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_mito) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_rpl) %>% pander::pandoc.image.return(), '{height=512px, width=576px}')), lapply(sample_paths, function(x) paste0(file.path(maindir, x, plt_post_rps) %>% pander::pandoc.image.return(), '{height=512px, width=576px}'))) %>% as.data.frame()
 colnames(data) <- c('Sample', 'Seurat Clusters', 'Post-Filter Number of Molecules', 'Post-Filter Number of Genes', 'Post-Filter Percent Mito', 'Post-Filter Percent Ribosomal Protein (Large)', 'Post-Filter Percent Ribosomal Protein (Small)')
 data %>% kable(format='html') %>%
         column_spec(column=length(data) %>% seq(), border_left = "1px solid gray", border_right = "1px solid gray") %>%

@@ -46,7 +46,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
-> ***Example:*** `--input .tests/*.R?.fastq.gz`
+> ***Example:*** `--input .tests/*_R?_fastq.gz`
 >
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
@@ -96,11 +96,14 @@ Each of the following arguments are required. Failure to provide a required argu
 ### 2.2 Analysis Options
 
   `--chain {auto, TR, IG}`
-                        Chain type for cellranger to run the analysis for. Default
-                        is set to auto. Other options are 'TR' for T cell receptors,
-                        and 'IG' for B cell receptors.
-                          Example: --chain TR
+> *type: string*
+>  
+> Chain type for cellranger to run the analysis for. Default is set to auto. Other options are 'TR' for T cell receptors, and 'IG' for B cell receptors.
+>
+> ***Example:*** `--chain TR`
 
+
+---  
   `--rename RENAME`
 > **Rename sample file.**  
 > *type: file*
@@ -228,6 +231,8 @@ Each of the following arguments are optional, and do not need to be provided.
 
 ### 3.1 Basic Pipeline Usage
 
+#### 3.1.1 Single Input Folder
+
 ```bash
 # Step 1.) Grab an interactive node,
 # do not run on head node!
@@ -236,7 +241,7 @@ module purge
 module load singularity snakemake
 
 # Step 2A.) Dry-run the pipeline
-./cell-seek run --input .tests/*.R?.fastq.gz \
+./cell-seek run --input .tests/*_R?_fastq.gz \
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
@@ -248,10 +253,103 @@ module load singularity snakemake
 # The slurm mode will submit jobs to
 # the cluster. It is recommended running
 # the pipeline in this mode.
-./cell-seek run --input .tests/*.R?.fastq.gz \
+./cell-seek run --input .tests/*_R?_fastq.gz \
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
                   --cellranger 8.0.0 \
                   --mode slurm
 ```
+
+#### 3.1.2 Multiple Input Folders
+
+FASTQ files from multiple flowcells can be provided as input. The paths to different FASTQ files can be provided in a space separated format.
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*_R?_fastq.gz .tests2/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline vdj \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*_R?_fastq.gz .tests2/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline vdj \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --mode slurm
+```
+
+### 3.2 Renaming Samples
+
+It is possible to rename samples to different names from the ones that are used in the FASTQ files. This function can be used to change the sample names to something more informative, or it could be used if FASTQ files names changed for a specific sample.  
+
+In order to use this option, a CSV file should be created. In the CSV there should be a row for each FASTQ file that will be processed. The first column contains the name of the FASTQ file while the second column contains the output sample name. Only the FASTQ files and samples that are listed within the CSV file will be processed.
+
+Cell Ranger expects the FASTQ file to have a format of
+
+`[Sample Name]_S[Sample Number]_L00[Lane Number]_[Read Type]_001.fastq.gz`
+
+or
+
+`[Sample Name]_S[Sample Number]_[Read Type]_001.fastq.gz`
+
+The FASTQ name that is used in the rename CSV file should match the section in the `[Sample Name]` listed above. An example file could be `Sample_VDJ_S1_L001_R1_001.fastq.gz`. In this file, the sample name would be Sample_VDJ. More information about the FASTQ naming format that Cell Ranger expects can be found at the [10x Genomics website](https://www.10xgenomics.com/support/software/cell-ranger/latest/analysis/inputs/cr-specifying-fastqs).
+
+The following is a potential example of a rename CSV file.
+
+```
+FASTQ,Name
+sample1_run1,sample1
+sample2_run1,sample2
+sample3_run1,sample3
+sample3_run2,sample3
+sample4,sample4
+```
+
+Based on this file, the FASTQ files with the name sample1_run1, sample2_run1, sample3_run1, sample3_run2, and sample4 will be processed, and any FASTQ file that does not match these names will not be run. The outputted sample names would be sample1, sample2, sample3, and sample4. The FASTQ files with the name sample3_run1 and sample3_run2 will be processed as sample3. 
+
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline vdj \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --rename rename.csv
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline vdj \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --rename rename.csv
+                  --mode slurm
+```
+
