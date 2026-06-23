@@ -24,7 +24,7 @@ $ cell-seek run [--help] \
       [--exclude-introns] \
       [--libraries LIBRARIES] [--features FEATURES] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
-      [--rename RENAME] [--forcecells FORCECELLS] \
+      [--forcecells FORCECELLS] \
       --input INPUT [INPUT ...] \
       --output OUTPUT \
       --pipeline cite \
@@ -49,7 +49,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
-> ***Example:*** `--input .tests/*.R?.fastq.gz`
+> ***Example:*** `--input .tests/*_R?_fastq.gz`
 >
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
@@ -119,7 +119,7 @@ The following arguments are only required when FastQ files are used as input. Th
 > *Where:*
 
 > - *Name:* name of the sample passed to Cell Ranger.  
-> - *Flowcell:* The flowcell ID that contains the FASTQ files for this set of data.  
+> - *Flowcell:* A unique identifier in the path that the FASTQ files are located.
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  
 >        * Gene Expression
@@ -169,6 +169,51 @@ The following arguments are only required when FastQ files are used as input. Th
 > Turns off the option of including introns when performing alignment. This flag is only applicable when dealing with gene expression related data.
 >
 > ***Example:*** `--exclude-introns`
+
+
+---  
+  `--filter FILTER`
+> **Filter threshold file.**   
+> *type: file*
+>   
+> Filter threshold file. A CSV file containing the different thresholds to be applied for individual samples within the project during the QC analysis. The file should contain a header row with Sample as the column name for the sample IDs, and the name of each metric that will be filtered along with if it is the high or low threshold for that metric. Each row is then the entries for each sample that the manual thresholds will be applied. If no file is provided then the default thresholds will be used. If a cell is left blank for a sample then that sample would not be filtered based on that criteria. 
+>
+> *Here is an example filter.csv file:*
+> ```
+> Sample,nFeature_RNA_low,nFeature_RNA_high,percent.mito_high
+> sample1,500,6000,15
+> sample2,500,6000,5
+> sample4,500,6000,5
+> ```
+>
+> *Where:*  
+>
+> - *Sample:* Unique sample ID that should match the sample name used for Cell Ranger count.
+> - *nFeature_RNA_low,nFeature_RNA_high,percent.mito_high:* Example entries that can be used for manual thresholding. The column names need to be formatted as metadataname_high/low. Entries that ends with high will be treated as the upper threshold. Entries that ends with low will be treated as the lower threshold. Valid metadata names include nCount_RNA, nFeature_RNA, and percent.mito.
+>
+> ***Example:*** `--filter filter.csv`
+
+---  
+  `--metadata METADATA`
+> **Sample metadata file.**   
+> *type: file*
+>   
+> Sample metadata file. A CSV file containing sample level metadata information that will be included as new metadata columns during QC analysis. The file should contain a header row with Sample as the column name for the sample IDs, and the name of each metadata column that will be added to their associated samples. Each row is then the entries for each sample with the values that will be included as metadata. If no file is provided then no metadata will be added to the samples. If a cell is left blank for a sample then the metadata column for that sample would be an empty string. 
+>
+> *Here is an example metadata.csv file:*
+> ```
+> Sample,Type,batch
+> sample1,tumor,1
+> sample2,normal,1
+> sample4,tumor,2
+> ```
+>
+> *Where:*  
+>
+> - *Sample:* Unique sample ID that should match the sample name used for Cell Ranger count.
+> - *Type,batch:* Example metadata entries that can be applied to the created Seurat object. The column names will be the resulting metadata entries, so it is recommended to use ones that do not overlap with column names that would be created automatically.
+>
+> ***Example:*** `--metadata metadata.csv`
 
 
 ---  
@@ -314,7 +359,7 @@ module purge
 module load singularity snakemake
 
 # Step 2A.) Dry-run the pipeline
-./cell-seek run --input .tests/*.R?.fastq.gz \
+./cell-seek run --input .tests/*_R?_fastq.gz \
                   --output /data/$USER/output \
                   --pipeline cite \
                   --genome hg38 \
@@ -328,12 +373,238 @@ module load singularity snakemake
 # The slurm mode will submit jobs to
 # the cluster. It is recommended running
 # the pipeline in this mode.
-./cell-seek run --input .tests/*.R?.fastq.gz \
+./cell-seek run --input .tests/*_R?_fastq.gz \
                   --output /data/$USER/output \
                   --pipeline cite \
                   --genome hg38 \
                   --cellranger 8.0.0 \
                   --libraries libraries.csv \
                   --features features.csv \
+                  --mode slurm
+```
+
+### 3.2 Run Downstream on Existing Cell Ranger Output
+
+It is possible to use cell-seek to perform the initial downstream analysis on existing Cell Ranger output. The files are expected to be in the Cell Ranger outputted format with the outs folder present.  The sample level folders should be provided as the input for cell-seek.
+
+For example, if sample1 was run in Cell Ranger then sample1/outs/ contains the final pipeline output files, and sample1 should be provided as input to cell-seek.
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*/ \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*/ \
+                  --output /data/$USER/output \
+                  --pipeline gex \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --mode slurm
+```
+
+### 3.3 Run with Custom Filters
+
+In order to use this option, a CSV file should be created. In the CSV there should be a row for each sample that will have custom filters applied. If these custom filters are being applied to a project that was already processed by the cell-seek pipeline, then the created `Project_Cell_Filters.csv` can be used as a template.
+
+The following is an example of a created filter CSV file.
+
+```
+Sample,nFeature_RNA_low,nFeature_RNA_high,percent.mito_high
+sample1,500,6000,15
+sample2,500,6000,5
+sample4,500,6000,
+```
+
+Based on this file, custom filters will only be applied to samples sample1, sample2, and sample4. These samples will have the following filters applied to only keep cells meeting the following criteria:
+
+- sample1:  nFeature_RNA > 500 and nFeature_RNA < 6000 and percent.mito < 15
+- sample2:  nFeature_RNA > 500 and nFeature_RNA < 6000 and percent.mito < 5
+- sample4:  nFeature_RNA > 500 and nFeature_RNA < 6000
+
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --filter filter.csv
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --filter filter.csv
+                  --mode slurm
+```
+
+### 3.3 Adding Sample Level Metadata
+
+Sample level information can be provided in a CSV file, which would be added to the generated Seurat objects. In the CSV file there should be a row for each sample, and a column for each aspect of information that would be added. If a cell is left blank for a sample then the metadata column for that sample would be an empty string.
+
+The following is an example of a created metadata CSV file.
+
+```
+Sample,Type,batch
+sample1,tumor,1
+sample2,normal,1
+sample4,tumor,2
+```
+
+Based on this file, columns named Type, batch, and tissue will be added to the generated Seurat objects for sample1, sample2, and sample4. Any other samples processed in the pipeline would not have metadata columns added. 
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --metadata metadata.csv
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --metadata metadata.csv
+                  --mode slurm
+```
+
+### 3.4 Creating BAM Files
+
+Cell Ranger BAM file generation is turned off by default to save space. However, if the BAM file is required for downstream analysis, then it will need to be turned on.
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --create-bam
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --create-bam
+                  --mode slurm
+```
+
+### 3.5 Running while Forcing Cell Call
+
+
+It is possible to force the number of cells that are called by Cell Ranger. In this situation, Cell Ranger will call the top X cell barcodes with the highest UMI count as cells, where X the number cells that the sample is forced to. This is generally used if the first analysis run appears to do a poor job at estimating the number of cells, and a re-run while adjusting the number of cells in the sample is helpful.
+
+A CSV file needs to be created with the first column containing the name of the sample (the Cell Ranger outputted name) and the second column containing the number of cells to force the sample to. Only the samples included in the CSV file will be run while forcing the cell call. Any other samples that are processed will use the default cell calling algorithm.
+
+The following is an example of a force cells CSV file.
+
+```
+Sample,Cells
+Sample1,3000
+Sample2,5000
+```
+
+Based on this file, Sample1 and Sample 2 will be run while being forced to have 3000 and 5000 cells respectively.
+
+```bash
+# Step 1.) Grab an interactive node,
+# do not run on head node!
+srun -N 1 -n 1 --time=1:00:00 --mem=8gb  --cpus-per-task=2 --pty bash
+module purge
+module load singularity snakemake
+
+# Step 2A.) Dry-run the pipeline
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --forcecells forcecells.csv \
+                  --mode slurm \
+                  --dry-run
+
+# Step 2B.) Run the cell-seek pipeline
+# The slurm mode will submit jobs to
+# the cluster. It is recommended running
+# the pipeline in this mode.
+./cell-seek run --input .tests/*_R?_fastq.gz \
+                  --output /data/$USER/output \
+                  --pipeline cite \
+                  --genome hg38 \
+                  --cellranger 8.0.0 \
+                  --libraries libraries.csv \
+                  --features features.csv \
+                  --forcecells forcecells.csv \
                   --mode slurm
 ```

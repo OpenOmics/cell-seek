@@ -45,7 +45,7 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > FastQ Input: One or more FastQ files can be provided. The pipeline does NOT support single-end data. From the command-line, each input file should separated by a space. Multiple input FastQ files per sample can be provided. Globbing is supported! This makes selecting FastQ files easy. Input FastQ files should always be gzipp-ed.
 >
-> ***Example:*** `--input .tests/*.R?.fastq.gz`
+> ***Example:*** `--input .tests/*_R?_fastq.gz`
 >
 >
 > Cell Ranger Input: Cell Ranger output folders can be provided. It is expected that the outs folder is contained within the Cell Ranger output folders, and keep the normal output folder structure. Globbing is supported!
@@ -112,7 +112,7 @@ The following arguments are only required when FastQ files are used as input. Th
 > *Where:*
 
 > - *Name:* name of the sample passed to Cell Ranger.  
-> - *Flowcell:* The flowcell ID that contains the FASTQ files for this set of data.  
+> - *Flowcell:* A unique identifier in the path that the FASTQ files are located.
 > - *Sample:* Name that was used when demultiplexing, this should match the FASTQ files.  
 > - *Type:* library type for each sample. List of supported options:  
 >        * Gene Expression
@@ -231,7 +231,7 @@ module purge
 module load singularity snakemake
 
 # Step 2A.) Dry-run the pipeline
-./cell-seek run --input .tests/*.R?.fastq.gz \
+./cell-seek run --input .tests/*_R?_fastq.gz \
                   --output /data/$USER/output \
                   --pipeline multiome \
                   --genome hg38 \
