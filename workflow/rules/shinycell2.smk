@@ -23,7 +23,9 @@ rule shinycodes:
         seurat_object       = seurat_object,
         marker_list         = marker_file,
         files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
-    output: join(run_dir, "wd", "server.R")
+    output: 
+        server_out          = join(run_dir, "wd", "server.R")
+        obj_info            = join(run_dir, "wd", "seurat_inspector.info"),
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
         rname = "shinycodes",
@@ -37,7 +39,7 @@ rule shinycodes:
         marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else ""
     shell:
         dedent("""
-        seurat_inspector.R {input.seurat_object}
+        seurat_inspector.R {input.seurat_object} > {output.obj_info}
         build_shinycell.R \\
             -j {input.seurat_object} {params.marker_flag} \\
             --proj {params.title} {params.cluster_flag} \\
