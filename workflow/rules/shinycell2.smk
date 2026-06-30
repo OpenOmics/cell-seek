@@ -24,8 +24,8 @@ rule shinycodes:
         marker_list         = marker_file,
         files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
     output: 
-        server_out          = join(run_dir, "wd", "server.R")
-        obj_info            = join(run_dir, "wd", "seurat_inspector.info"),
+        server_out          = join(run_dir, "wd", "server.R"),
+        obj_info            = join(run_dir, "wd", "seurat_inspector.info")
     container: "docker://rroutsong/shinycell2_builder:latest"
     params:
         rname = "shinycodes",
