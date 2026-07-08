@@ -1,6 +1,7 @@
 {
     "images": {
         "cite_base": "docker://skchronicles/chicyte:v0.1.0",
-        "signac_base": "docker://rroutsong/signac_analysis:0.0.2"
+        "signac_base": "docker://rroutsong/signac_analysis:0.0.2",
+        "shinycell2_builder": "docker://rroutsong/shinycell2_builder:0.0.9"
     }
 }

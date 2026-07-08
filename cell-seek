@@ -331,6 +331,8 @@ def shinycell(args):
         fatal(f"Seurat object not found or not readable: {args.object}")
 
     cfg = {}
+    containers = os.path.join(os.path.dirname(__file__), "config", "containers.json")
+    cfg.update(json.loads(open(containers).read()))
     cfg["seurat_object"] = os.path.abspath(args.object)
     cfg["run_dir"] = os.path.abspath(args.outdir)
     cfg["project_title"] = args.project
@@ -344,6 +346,7 @@ def shinycell(args):
     cfg["project"] = {}
     cfg["project"]["datapath"] = os.path.abspath(os.path.dirname(args.object))
     cfg["project"]["workpath"] = os.path.abspath(args.outdir)
+    import ipdb; ipdb.set_trace()
 
     if not os.path.exists(args.outdir):
         os.makedirs(args.outdir, mode=0o755)

@@ -26,7 +26,7 @@ rule shinycodes:
     output: 
         server_out          = join(run_dir, "wd", "server.R"),
         obj_info            = join(run_dir, "wd", "seurat_inspector.info")
-    container: "docker://rroutsong/shinycell2_builder:latest"
+    container: config['images']['shinycell2_builder']
     params:
         rname = "shinycodes",
         rmmeta = rmmeta,
@@ -56,7 +56,7 @@ rule shinyfiles:
         marker_list         = marker_file
     output:
         out_crumb           = join(run_dir, "wd", "sc1meta.rds"),
-    container: "docker://rroutsong/shinycell2_builder:latest"
+    container: config['images']['shinycell2_builder']
     params:
         rname = "shinyfiles",
         rmmeta = rmmeta,
