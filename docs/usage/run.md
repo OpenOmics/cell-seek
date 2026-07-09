@@ -45,5 +45,6 @@ The following is an overview of the available pipelines. A detailed breakdown of
  * [<code><b>MULTI</b></code>: Run the cell-seek pipeline using Multi. This can handle a range of data combinations. Use this whenever cell multiplexing is performed using CellRanger (HTO, OCM, Flex), or GEX with VDJ data.](multi.md)
  * [<code><b>ATAC</b></code>: Run the cell-seek pipeline for ATAC only data.](atac.md)
  * [<code><b>Multiome</b></code>: Run the cell-seek pipeline for multiomic (ATAC + GEX) data.](multiome.md)
+ * [<code><b>shinycell</b></code>: Build an interactive ShinyCell2 application from a Seurat RDS object.](shinycell_command.md)
 
 

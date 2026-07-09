@@ -14,7 +14,7 @@ These instructions will guide you through launching a **Shiny App** on the NIH B
 
 Open your web browser and go to **https://hpcondemand.nih.gov**. When prompted, authenticate using your **NIH PIV card and PIN**. You will land on the HPC OnDemand home page.
 
-![HPC OnDemand home page after login](screenshots/step1.png)
+![HPC OnDemand home page after login](../screenshots/step1.png)
 
 ---
 
@@ -22,7 +22,7 @@ Open your web browser and go to **https://hpcondemand.nih.gov**. When prompted, 
 
 From the home page, click **"Interactive Apps"** in the top navigation bar and select **"All Apps"**, or click the **"all available apps"** link on the home page. A paginated list of all available applications will appear.
 
-![All Apps list — Page 1](screenshots/step2.png)
+![All Apps list — Page 1](../screenshots/step2.png)
 
 ---
 
@@ -30,7 +30,7 @@ From the home page, click **"Interactive Apps"** in the top navigation bar and s
 
 The Shiny App may not appear on the first page. Click **"2"** or **"Next"** at the bottom-right corner of the app list to go to page 2. Locate and click on **"Shiny App"**.
 
-![All Apps list — Page 2, Shiny App visible](screenshots/step5.png)
+![All Apps list — Page 2, Shiny App visible](../screenshots/step5.png)
 
 ---
 
@@ -59,7 +59,7 @@ You can also use the **"Select Path"** button to browse the file system manually
 
 Once all fields are filled in, click the large **"Launch"** button at the bottom of the form.
 
-![Shiny App configuration form](screenshots/step4.png)
+![Shiny App configuration form](../screenshots/step4.png)
 
 ---
 
@@ -73,7 +73,7 @@ After clicking Launch, you will be redirected to the **My Interactive Sessions**
 
 Once the session is running, a blue **"Connect to Shiny"** button will appear on the session card. Click it to open the interactive app in a new browser tab.
 
-![My Interactive Sessions — running Shiny App with Connect to Shiny button](screenshots/step3.png)
+![My Interactive Sessions — running Shiny App with Connect to Shiny button](../screenshots/step3.png)
 
 ---
 
