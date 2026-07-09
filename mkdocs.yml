@@ -112,7 +112,8 @@ nav:
     - MULTI: usage/multi.md
     - ATAC: usage/atac.md
     - Multiome: usage/multiome.md
-  - Instructions for PIs or Stakeholders: usage/PIs.md
+  - ShinyCell2:
+    - ShinyCell2 for PIs/stakeholders: usage/shinycell/PIs.md
   - FAQ:
     - General Questions: faq/questions.md
   - License: license.md
