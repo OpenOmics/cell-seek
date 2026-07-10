@@ -288,6 +288,39 @@ if (length(unique(assay_ncells)) > 1) {
   ))
 }
 
+# Pre-flight check: reconcile the 'sample' and 'orig.ident' metadata columns.
+# These are conventionally redundant per-cell sample identifiers, and downstream
+# ShinyCell2 building / the Shiny app expect a 'sample' column to be present.
+# Reconcile the two so both are available:
+#   - both present      -> leave as-is
+#   - only 'orig.ident' -> copy it to 'sample'
+#   - only 'sample'     -> copy it to 'orig.ident'
+#   - neither present   -> fatal error
+# This must run before metadata columns are collected for createConfig so that
+# any copied column is included in the app.
+if (class(seurat_obj)[1] == "Seurat") {
+  has_sample <- "sample" %in% colnames(seurat_obj@meta.data)
+  has_orig   <- "orig.ident" %in% colnames(seurat_obj@meta.data)
+  if (has_sample && has_orig) {
+    cat("INFO - Pre-flight: both 'sample' and 'orig.ident' metadata columns present. OK.\n")
+  } else if (has_orig && !has_sample) {
+    seurat_obj@meta.data[["sample"]] <- seurat_obj@meta.data[["orig.ident"]]
+    cat("INFO - Pre-flight: 'sample' column missing; copied 'orig.ident' to 'sample'.\n")
+  } else if (has_sample && !has_orig) {
+    seurat_obj@meta.data[["orig.ident"]] <- seurat_obj@meta.data[["sample"]]
+    cat("INFO - Pre-flight: 'orig.ident' column missing; copied 'sample' to 'orig.ident'.\n")
+  } else {
+    fatal(paste0(
+      "Pre-flight ERROR: Seurat object is missing both the 'sample' and ",
+      "'orig.ident' metadata columns.\n",
+      " └── At least one of 'sample' or 'orig.ident' must be present in\n",
+      "     seurat_obj@meta.data to identify each cell's sample of origin.\n",
+      " └── Available metadata columns: ",
+      paste(colnames(seurat_obj@meta.data), collapse = ", ")
+    ))
+  }
+}
+
 # Create ShinyCell config file
 # to make the application
 config_params <- list()
