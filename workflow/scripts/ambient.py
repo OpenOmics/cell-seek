@@ -22,11 +22,12 @@ def soupx_inputs(outs):
     outs = Path(outs)
     # These are the two GEX graph-clustering layouts supported by SoupX 1.6.2.
     modern = outs / "analysis" / "clustering" / "gene_expression_graphclust"
-    # Expect the modern layout when Cell Ranger has not generated its outputs yet.
-    if modern.is_dir() or not outs.is_dir():
-        cluster_dir = modern
-    else:
-        cluster_dir = outs / "analysis" / "clustering" / "graphclust"
+    legacy = outs / "analysis" / "clustering" / "graphclust"
+    # Partial outputs must match the modern paths declared by the count rule.
+    # Preserve SoupX's modern-directory precedence when both layouts exist.
+    cluster_dir = modern
+    if not modern.is_dir() and (legacy / "clusters.csv").is_file():
+        cluster_dir = legacy
     return [
         str(outs / matrix / name)
         for matrix in ("raw_feature_bc_matrix", "filtered_feature_bc_matrix")
