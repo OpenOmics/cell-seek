@@ -20,7 +20,7 @@ $ cell-seek run [--help] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
       [--aggregate {{mapped, none}}] [--exclude-introns] \
-      [--ambient-rna-method {none,soupx}] \
+      [--ambient-rna-method {none, soupx}] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] [--forcecells FORCECELLS] \
       --input INPUT [INPUT ...] \
@@ -108,7 +108,7 @@ Each of the following arguments are optional, and do not need to be provided.
 > ***Example:*** `--aggregate mapped`
 
 ---  
-  `--ambient-rna-method {none,soupx}`
+  `--ambient-rna-method {none, soupx}`
 > **Ambient RNA correction.**   
 > *type: string*  
 > *default: none*
@@ -117,7 +117,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX and DropletUtils for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
 >
-> Check mitochondrial QC thresholds after correction. An overly restrictive mitochondrial cutoff was observed in low quality snRNA-seq samples after ambient RNA correction and may also occur in other low quality GEX samples. If corrected mitochondrial percentages are concentrated near zero, the default upper cutoff based on three median absolute deviations (3 MAD) can round to 0%. This removes all cells or nuclei with any nonzero mitochondrial percentage, potentially discarding more than intended. In `finalreport/seurat/Summary_QC_Report.html`, check the "Cell Filter Thresholds" tab for a zero `percent.mito - Upper` cutoff and an unexpectedly high "Percentage of Cells Removed". Review these thresholds alongside the QC plots before interpreting downstream results.
+> Check mitochondrial QC thresholds after correction. An overly restrictive mitochondrial cutoff was observed in low quality snRNA-seq samples after ambient RNA correction and may also occur in other low quality GEX samples. If corrected mitochondrial percentages are concentrated near zero, the default upper cutoff based on three median absolute deviations (3 MAD) can round to 0%. This removes all cells or nuclei with any nonzero mitochondrial percentage, potentially discarding more than intended. This can be checked for in the `finalreport/seurat/{Sample}_QC_Report.html` or `finalreport/seurat/Summary_QC_Report.html`; check the "Cell Filter Thresholds" section for a zero `percent.mito - Upper` cutoff and an unexpectedly high "Percentage of Cells Removed". Review these thresholds alongside the QC plots before interpreting downstream results.
 >
 > ***Example:*** `--ambient-rna-method soupx`
 
