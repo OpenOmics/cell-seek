@@ -17,7 +17,7 @@ A basic guideline of which pipeline should be used for different modalities can 
 ## 2. Synopsis
 ```text
 $ cell-seek run [--help] \
-      [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
+      [--dry-run] [--job-name JOB_NAME] [--mode {slurm,local}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
       [--libraries LIBRARIES] 

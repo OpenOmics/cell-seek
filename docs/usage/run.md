@@ -10,11 +10,11 @@ Setting up the cell-seek pipeline is fast and easy! In its most basic form, <cod
 ## 2. Synopsis
 ```text
 $ cell-seek run [--help] \
-      [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
+      [--dry-run] [--job-name JOB_NAME] [--mode {slurm,local}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
-      [--aggregate {{mapped, none}}] [--exclude-introns] \
-      [--chain {{auto, TR, IG}}] \
+      [--aggregate {mapped, none}] [--exclude-introns] \
+      [--chain {auto, TR, IG}] \
       [--libraries LIBRARIES] [--features FEATURES] \
       [--cmo-sample CMOSAMPLE] [--cmo-reference CMOREFERENCE] \
       [--hto-sample HTOSAMPLE] \

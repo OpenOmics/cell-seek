@@ -16,10 +16,10 @@ A basic guideline of which pipeline should be used for different modalities can 
 ## 2. Synopsis
 ```text
 $ cell-seek run [--help] \
-      [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
+      [--dry-run] [--job-name JOB_NAME] [--mode {slurm,local}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
-      [--aggregate {{mapped, none}}] [--exclude-introns] \
+      [--aggregate {mapped, none}] [--exclude-introns] \
       [--ambient-rna-method {none, soupx}] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] [--forcecells FORCECELLS] \
