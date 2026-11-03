@@ -16,6 +16,11 @@
         "mem": "150g",
         "time": "2-00:00:00"
     },
+    "soupx": {
+        "threads": "2",
+        "mem": "64g",
+        "time": "0-02:00:00"
+    },
     "seuratQC": {
         "threads": "8",
         "mem": "250g",

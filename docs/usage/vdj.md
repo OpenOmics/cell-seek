@@ -17,10 +17,10 @@ A basic guideline of which pipeline should be used for different modalities can 
 ## 2. Synopsis
 ```text
 $ cell-seek run [--help] \
-      [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
+      [--dry-run] [--job-name JOB_NAME] [--mode {slurm,local}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
-      [--chain {{auto, TR, IG}}] \
+      [--chain {auto, TR, IG}] \
       [--rename RENAME] \
       --input INPUT [INPUT ...] \
       --output OUTPUT \

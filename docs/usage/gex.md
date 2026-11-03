@@ -16,10 +16,11 @@ A basic guideline of which pipeline should be used for different modalities can 
 ## 2. Synopsis
 ```text
 $ cell-seek run [--help] \
-      [--dry-run] [--job-name JOB_NAME] [--mode {{slurm,local}}] \
+      [--dry-run] [--job-name JOB_NAME] [--mode {slurm,local}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
-      [--aggregate {{mapped, none}}] [--exclude-introns] \
+      [--aggregate {mapped, none}] [--exclude-introns] \
+      [--ambient-rna-method {none, soupx}] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] [--forcecells FORCECELLS] \
       --input INPUT [INPUT ...] \
@@ -105,6 +106,20 @@ Each of the following arguments are optional, and do not need to be provided.
 > This option defines the normalization mode that should be used. Mapped is what Cell Ranger would run by default, which subsamples reads from higher depth samples until each library type has an equal number of reads per cell that are confidently mapped.  None means to not normalize at all. If this flag is not used then aggregate will not be run. Aggregate analysis is generally not needed, but it can be used to generate a Loupe Browser file for interactive exploration of the data. To run Cell Ranger aggregate, please select one of the following options: mapped, none.
 >
 > ***Example:*** `--aggregate mapped`
+
+---  
+  `--ambient-rna-method {none, soupx}`
+> **Ambient RNA correction.**   
+> *type: string*  
+> *default: none*
+>
+> Use `soupx` to correct ambient RNA in each sample before Seurat QC and integration. The default, `none`, uses the original Cell Ranger counts. This option is available for GEX only. Omit `--aggregate` when using SoupX, keep independent captures as separate samples, and use a fresh output directory when changing methods.
+>
+> SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX and DropletUtils for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
+>
+> Check mitochondrial QC thresholds after correction. An overly restrictive mitochondrial cutoff was observed in low quality snRNA-seq samples after ambient RNA correction and may also occur in other low quality GEX samples. If corrected mitochondrial percentages are concentrated near zero, the default upper cutoff based on three median absolute deviations (3 MAD) can round to 0%. This removes all cells or nuclei with any nonzero mitochondrial percentage, potentially discarding more than intended. This can be checked for in the `finalreport/seurat/{Sample}_QC_Report.html` or `finalreport/seurat/Summary_QC_Report.html`; check the "Cell Filter Thresholds" section for a zero `percent.mito - Upper` cutoff and an unexpectedly high "Percentage of Cells Removed". Review these thresholds alongside the QC plots before interpreting downstream results.
+>
+> ***Example:*** `--ambient-rna-method soupx`
 
 
 ---  

@@ -1,4 +1,11 @@
 # Pipeline output definition
+from scripts.ambient import MATRIX_FILES, soupx_inputs
+
+if ambient_rna_method == "soupx":
+    pipeline_output += expand(
+        join(workpath, "soupx", "{sample}", "{provenance}"),
+        sample=samples, provenance=["soupx_summary.tsv", "sessionInfo.txt", "soupx_estimation.pdf"]
+    )
 
 # CellRanger counts, summary report
 pipeline_output += expand(
@@ -57,6 +64,22 @@ if len(samples) > 1:
 pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
 
 # Function definitions
+def seurat_qc_matrix_dir(wildcards):
+    if ambient_rna_method == "soupx":
+        return join(workpath, "soupx", wildcards.sample, "filtered_feature_bc_matrix")
+    return join(workpath, wildcards.sample, "outs", "filtered_feature_bc_matrix")
+
+
+def seurat_qc_matrix_inputs(wildcards):
+    if ambient_rna_method == "soupx":
+        return [join(seurat_qc_matrix_dir(wildcards), name) for name in MATRIX_FILES]
+    return []
+
+
+def soupx_rule_inputs(wildcards):
+    return soupx_inputs(join(workpath, wildcards.sample, "outs"))
+
+
 def filterFastq(wildcards):
     """
     Wrapper to get a comma separated list of the directories where the FASTQ files associated with the sample are located
@@ -167,7 +190,8 @@ def seuratQCSummarySamples(wildcards):
 
 rule count:
     output:
-        html = join(workpath, "{sample}", "outs", "web_summary.html")
+        html = join(workpath, "{sample}", "outs", "web_summary.html"),
+        soupx = soupx_inputs(join(workpath, "{sample}", "outs")) if ambient_rna_method == "soupx" else []
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
@@ -258,9 +282,36 @@ rule aggregate:
         2>{log.err} 1>{log.log}
         """
 
+rule soupx:
+    input:
+        soupx_rule_inputs
+    output:
+        matrix = join(workpath, "soupx", "{sample}", "filtered_feature_bc_matrix", "matrix.mtx.gz"),
+        barcodes = join(workpath, "soupx", "{sample}", "filtered_feature_bc_matrix", "barcodes.tsv.gz"),
+        features = join(workpath, "soupx", "{sample}", "filtered_feature_bc_matrix", "features.tsv.gz"),
+        summary = join(workpath, "soupx", "{sample}", "soupx_summary.tsv"),
+        session = join(workpath, "soupx", "{sample}", "sessionInfo.txt"),
+        plot = join(workpath, "soupx", "{sample}", "soupx_estimation.pdf")
+    log:
+        join(workpath, "soupx", "{sample}.log")
+    params:
+        rname = "soupx",
+        script = join("workflow", "scripts", "soupx.R"),
+        outs = join(workpath, "{sample}", "outs"),
+        outdir = join(workpath, "soupx", "{sample}"),
+        commit = config["project"].get("git_commit_hash", "unknown")
+    envmodules: config["tools"]["rversion"]
+    shell:
+        """
+        Rscript {params.script:q} --outs {params.outs:q} --output {params.outdir:q} \\
+            --sample {wildcards.sample:q} --commit {params.commit:q} \\
+            > {log:q} 2>&1
+        """
+
 rule seuratQC:
     input:
-        join(workpath, "{sample}", "outs", "web_summary.html")
+        html = join(workpath, "{sample}", "outs", "web_summary.html"),
+        matrix = seurat_qc_matrix_inputs
     output:
         rds = join(workpath, "seurat", "{sample}", "seur_cluster.rds"),
         cell_filter = join(workpath, "seurat", "{sample}", "cell_filter_info.csv")
@@ -270,7 +321,8 @@ rule seuratQC:
         rname = "seuratQC",
         sample = "{sample}",
         outdir = join(workpath, "seurat", "{sample}"),
-        data = join(workpath, "{sample}", "outs", "filtered_feature_bc_matrix"),
+        data = seurat_qc_matrix_dir,
+        matrix_source = "soupx" if ambient_rna_method == "soupx" else "cellranger",
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
@@ -282,7 +334,8 @@ rule seuratQC:
 
         Rscript {params.seurat} \\
             --workdir {params.outdir} \\
-            --datapath {params.data} \\
+            --datapath {params.data:q} \\
+            --matrix-source {params.matrix_source} \\
             --sample {params.sample} \\
             {params.filter} \\
             {params.metadata} \\
@@ -300,6 +353,7 @@ rule seuratQCReport:
         sample = "{sample}",
         seuratdir = join(workpath, "seurat", "{sample}"),
         filter = filterFileBool,
+        matrix_source = "soupx" if ambient_rna_method == "soupx" else "cellranger",
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
     envmodules: config["tools"]["rversion"]
@@ -310,7 +364,7 @@ rule seuratQCReport:
 
 	cd {params.tmpdir}
 	cp {params.script} ./{params.sample}.Rmd
-        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{output.report}')"
+        R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}, matrix_source='{params.matrix_source}'), output_file='{output.report}')"
         """
 
 rule copySeuratQCReport:

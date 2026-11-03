@@ -14,9 +14,15 @@ from scripts.common import (
     references,
     str_bool
 )
+from scripts.ambient import validate_ambient_options, validate_soupx_import
 
 #Global workflow variables
 configfile: 'config.json'
+ambient_rna_method = validate_ambient_options(config['options'])
+if ambient_rna_method == 'soupx':
+    for sample_dir in config['options']['input']:
+        if os.path.isdir(sample_dir):
+            validate_soupx_import(sample_dir)
 tmpdir = config['options']['tmp_dir']
 pipeline = config['options']['pipeline']
 CELLRANGER = config['options']['cellranger']

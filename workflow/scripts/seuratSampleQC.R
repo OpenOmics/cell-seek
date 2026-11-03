@@ -21,7 +21,9 @@ option_list <- list(
   make_option(c("-f", "--filterfile"), type='character', action='store', default=NA,
               help="CSV file containing filters to be applied"),
   make_option(c("-m", "--metadata"), type='character', action='store', default=NA,
-              help="Metadata file with information to add to samples")
+              help="Metadata file with information to add to samples"),
+  make_option("--matrix-source", type='character', default="cellranger",
+              help="Source of input counts: cellranger or soupx")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))
@@ -41,6 +43,8 @@ if (!is.na(opt$metadata)) {
     }
   }
 }
+
+seur$matrix_source <- opt$`matrix-source`
 
 dir.create(opt$workdir, recursive=TRUE)
 setwd(opt$workdir)

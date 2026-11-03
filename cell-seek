@@ -462,6 +462,7 @@ def parsed_arguments(name, description):
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
                 [--aggregate {{mapped, none}}][--libraries LIBRARIES] \\
+                [--ambient-rna-method {{none,soupx}}] \\
                 [--features FEATURES] [--cmo-reference CMOREFERENCE] \\
                 [--cmo-sample CMOSAMPLE] [--hto-sample HTOSAMPLE] \\ 
                 [--ocm-sample OCMSAMPLE] [--probe-set PROBESET] \\
@@ -531,6 +532,11 @@ def parsed_arguments(name, description):
                                 ATAC: 2.1.0, 2.2.0
                                   Example: --cellranger 7.1.0
         {3}{4}Analysis options:{5}
+          --ambient-rna-method {{none,soupx}}
+                                Optional ambient RNA correction (default: none).
+                                SoupX requires GEX-only inputs with raw/filtered
+                                v3 matrices and graph clusters. Omit --aggregate.
+
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
                                 normalization mode that should be used. Mapped is what
@@ -1135,6 +1141,14 @@ def parsed_arguments(name, description):
         action="store_true",
         required=False,
         default=False,
+        help=argparse.SUPPRESS,
+    )
+
+    # Optional ambient RNA correction
+    subparser_run.add_argument(
+        "--ambient-rna-method",
+        choices=["none", "soupx"],
+        default="none",
         help=argparse.SUPPRESS,
     )
 
