@@ -115,7 +115,9 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > Use `soupx` to correct ambient RNA in each sample before Seurat QC and integration. The default, `none`, uses the original Cell Ranger counts. This option is available for GEX only. Omit `--aggregate` when using SoupX, keep independent captures as separate samples, and use a fresh output directory when changing methods.
 >
-> SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX, DropletUtils and optparse for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
+> SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX and DropletUtils for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
+>
+> Check mitochondrial QC thresholds after correction. An overly restrictive mitochondrial cutoff was observed in low quality snRNA-seq samples after ambient RNA correction and may also occur in other low quality GEX samples. If corrected mitochondrial percentages are concentrated near zero, the default upper cutoff based on three median absolute deviations (3 MAD) can round to 0%. This removes all cells or nuclei with any nonzero mitochondrial percentage, potentially discarding more than intended. In `finalreport/seurat/Summary_QC_Report.html`, check the "Cell Filter Thresholds" tab for a zero `percent.mito - Upper` cutoff and an unexpectedly high "Percentage of Cells Removed". Review these thresholds alongside the QC plots before interpreting downstream results.
 >
 > ***Example:*** `--ambient-rna-method soupx`
 
