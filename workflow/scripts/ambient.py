@@ -4,12 +4,21 @@ from pathlib import Path
 
 
 MATRIX_FILES = ("matrix.mtx.gz", "barcodes.tsv.gz", "features.tsv.gz")
+CELLBENDER_SETTINGS = {
+    "default": {"epochs": 150, "learning_rate": 1e-4},
+    "lower-lr": {"epochs": 300, "learning_rate": 5e-5},
+}
 
 
 def validate_ambient_options(options):
     method = options.get("ambient_rna_method", "none")
     if method not in ("none", "soupx", "cellbender"):
         raise ValueError("ambient_rna_method must be 'none', 'soupx', or 'cellbender'.")
+    settings = options.get("cellbender_settings", "default")
+    if settings not in CELLBENDER_SETTINGS:
+        raise ValueError("cellbender_settings must be 'default' or 'lower-lr'.")
+    if "cellbender_settings" in options and method != "cellbender":
+        raise ValueError("--cellbender-settings requires --ambient-rna-method cellbender.")
     if method in ("soupx", "cellbender"):
         name = "SoupX" if method == "soupx" else "CellBender"
         if options["pipeline"] != "gex":

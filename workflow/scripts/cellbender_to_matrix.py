@@ -14,7 +14,8 @@ from scipy.io import mmwrite
 from scipy.sparse import csc_matrix
 
 
-def convert(h5_path, output_dir, summary_path, sample, raw_input):
+def convert(h5_path, output_dir, summary_path, sample, raw_input,
+            settings="default", epochs=150, learning_rate=1e-4):
     # Read the genes-by-cells sparse matrix and its original annotations.
     with h5py.File(h5_path, "r") as handle:
         group = handle["matrix"]
@@ -55,7 +56,8 @@ def convert(h5_path, output_dir, summary_path, sample, raw_input):
         "raw_input": str(raw_input), "filtered_h5": str(h5_path),
         "matrix_dir": str(output_dir), "genes": matrix.shape[0],
         "cells": matrix.shape[1], "stored_entries": matrix.nnz,
-        "module": "cellbender/0.3.0", "cuda": True, "fpr": 0.01, "epochs": 150,
+        "module": "cellbender/0.3.0", "cuda": True, "fpr": 0.01,
+        "cellbender_settings": settings, "epochs": epochs, "learning_rate": learning_rate,
         "expected_cells": "automatic", "total_droplets_included": "automatic",
         "python_executable": sys.executable, "python_version": sys.version,
         "h5py": h5py.__version__, "numpy": np.__version__, "scipy": scipy.__version__,
@@ -73,8 +75,12 @@ def main():
     parser.add_argument("--summary_path", required=True)
     parser.add_argument("--sample", required=True)
     parser.add_argument("--raw-input", required=True)
+    parser.add_argument("--settings", choices=["default", "lower-lr"], default="default")
+    parser.add_argument("--epochs", type=int, default=150)
+    parser.add_argument("--learning-rate", type=float, default=1e-4)
     args = parser.parse_args()
-    convert(args.input, args.output, args.summary_path, args.sample, args.raw_input)
+    convert(args.input, args.output, args.summary_path, args.sample, args.raw_input,
+            args.settings, args.epochs, args.learning_rate)
 
 
 if __name__ == "__main__":

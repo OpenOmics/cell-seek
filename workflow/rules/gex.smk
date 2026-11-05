@@ -1,5 +1,5 @@
 # Pipeline output definition
-from scripts.ambient import MATRIX_FILES, soupx_inputs, cellbender_input
+from scripts.ambient import MATRIX_FILES, CELLBENDER_SETTINGS, soupx_inputs, cellbender_input
 
 if ambient_rna_method == "soupx":
     pipeline_output += expand(
@@ -318,6 +318,9 @@ rule soupx:
 # Only define module-based CellBender rules for this method. Existing configurations
 # for none/SoupX do not need the new tool entry.
 if ambient_rna_method == "cellbender":
+    cellbender_settings = config["options"].get("cellbender_settings", "default")
+    cellbender_training = CELLBENDER_SETTINGS[cellbender_settings]
+
     rule cellbender:
         input:
             raw = cellbender_input(join(workpath, "{sample}", "outs"))
@@ -327,7 +330,9 @@ if ambient_rna_method == "cellbender":
         log:
             join(workpath, "cellbender", "{sample}", "inference.log")
         params:
-            rname = "cellbender"
+            rname = "cellbender",
+            epochs = cellbender_training["epochs"],
+            learning_rate = cellbender_training["learning_rate"]
         envmodules: config["tools"]["cellbender"]
         shell:
             r"""
@@ -337,7 +342,7 @@ if ambient_rna_method == "cellbender":
             mkdir -p {output.artifacts:q}
             cd {output.artifacts:q}
             cellbender remove-background --input {input.raw:q} --output corrected.h5 \
-                --cuda --fpr 0.01 --epochs 150 > {log:q} 2>&1
+                --cuda --fpr 0.01 --epochs {params.epochs} --learning-rate {params.learning_rate} > {log:q} 2>&1
             mv corrected_filtered.h5 {output.filtered:q}
             """
 
@@ -355,7 +360,10 @@ if ambient_rna_method == "cellbender":
             rname = "cellbenderMatrix",
             script = join("workflow", "scripts", "cellbender_to_matrix.R"),
             outdir = join(workpath, "cellbender", "{sample}", "filtered_feature_bc_matrix"),
-            raw = cellbender_input(join(workpath, "{sample}", "outs"))
+            raw = cellbender_input(join(workpath, "{sample}", "outs")),
+            settings = cellbender_settings,
+            epochs = cellbender_training["epochs"],
+            learning_rate = cellbender_training["learning_rate"]
         envmodules: config["tools"]["rversion"]
         shell:
             """
@@ -363,7 +371,8 @@ if ambient_rna_method == "cellbender":
             test -d "$TMPDIR"
             Rscript {params.script:q} --input {input.filtered:q} --output {params.outdir:q} \\
                 --summary_path {output.summary:q} --sample {wildcards.sample:q} \\
-                --raw-input {params.raw:q} --artifacts {input.artifacts:q}
+                --raw-input {params.raw:q} --artifacts {input.artifacts:q} \\
+                --settings {params.settings:q} --epochs {params.epochs} --learning-rate {params.learning_rate}
             """
 
 rule seuratQC:

@@ -21,6 +21,7 @@ $ cell-seek run [--help] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
       [--aggregate {mapped, none}] [--exclude-introns] \
       [--ambient-rna-method {none, soupx, cellbender}] \
+      [--cellbender-settings {default, lower-lr}] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] [--forcecells FORCECELLS] \
       --input INPUT [INPUT ...] \
@@ -117,7 +118,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX and DropletUtils for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
 >
-> CellBender requires FASTQs or a Cell Ranger sample directory with `outs/raw_feature_bc_matrix.h5`. It uses `cellbender/0.3.0` and DropletUtils in the configured R environment, with fixed settings `--cuda --fpr 0.01 --epochs 150`.
+> CellBender requires FASTQs or a Cell Ranger sample directory with `outs/raw_feature_bc_matrix.h5`. It uses `cellbender/0.3.0` and DropletUtils in the configured R environment, with fixed settings `--cuda --fpr 0.01`. Training settings are controlled by the optional `--cellbender-settings` argument below.
 >
 > Biowulf Slurm only: use `--mode slurm` and **leave `--tmp-dir` unset**; changing it drops GPU requests. Review `config/cluster.json` resources and test one sample first. Full integration testing is pending.
 >
@@ -126,6 +127,20 @@ Each of the following arguments are optional, and do not need to be provided.
 > Check mitochondrial QC thresholds after correction. An overly restrictive mitochondrial cutoff was observed in low quality snRNA-seq samples after ambient RNA correction and may also occur in other low quality GEX samples. If corrected mitochondrial percentages are concentrated near zero, the default upper cutoff based on three median absolute deviations (3 MAD) can round to 0%. This removes all cells or nuclei with any nonzero mitochondrial percentage, potentially discarding more than intended. This can be checked for in the `finalreport/seurat/{Sample}_QC_Report.html` or `finalreport/seurat/Summary_QC_Report.html`; check the "Cell Filter Thresholds" section for a zero `percent.mito - Upper` cutoff and an unexpectedly high "Percentage of Cells Removed". Review these thresholds alongside the QC plots before interpreting downstream results.
 >
 > ***Example:*** `--ambient-rna-method soupx`
+
+---
+  `--cellbender-settings {default, lower-lr}`
+> **CellBender training settings.**
+>
+> *type: string*
+>
+> *default: default*
+>
+> Optional; requires `--ambient-rna-method cellbender`. Omitting this argument uses `default`: 150 epochs and learning rate `1e-4`. Choose `lower-lr` for 300 epochs and learning rate `5e-5`. The selected settings apply to all samples in the run. Older configurations without this option also use `default`.
+>
+> The selected setting, epoch count, and learning rate are recorded in each sample's `cellbender/<sample>/conversion.json`. Use a fresh output directory when changing settings.
+>
+> ***Example:*** `--ambient-rna-method cellbender --cellbender-settings lower-lr`
 
 
 ---  
