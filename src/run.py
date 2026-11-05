@@ -10,7 +10,9 @@ import os, re, json, sys, subprocess
 from utils import git_commit_hash, join_jsons, fatal, which, exists, err
 
 from . import version as __version__
-from workflow.scripts.ambient import validate_ambient_options, validate_soupx_import
+from workflow.scripts.ambient import (
+    validate_ambient_options, validate_soupx_import, validate_cellbender_import
+)
 
 
 def init(
@@ -963,9 +965,13 @@ def check_conditional_parameters(config):
     input_folders = folder_inputs(config["options"]["input"])
 
     try:
-        if validate_ambient_options(config["options"]) == "soupx" and input_folders:
+        ambient_method = validate_ambient_options(config["options"])
+        if ambient_method in ("soupx", "cellbender") and input_folders:
             for sample_dir in config["options"]["input"]:
-                validate_soupx_import(sample_dir)
+                if ambient_method == "soupx":
+                    validate_soupx_import(sample_dir)
+                else:
+                    validate_cellbender_import(sample_dir)
     except ValueError as e:
         errorMessage.append(str(e))
 

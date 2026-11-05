@@ -8,13 +8,14 @@ MATRIX_FILES = ("matrix.mtx.gz", "barcodes.tsv.gz", "features.tsv.gz")
 
 def validate_ambient_options(options):
     method = options.get("ambient_rna_method", "none")
-    if method not in ("none", "soupx"):
-        raise ValueError("ambient_rna_method must be 'none' or 'soupx'.")
-    if method == "soupx":
+    if method not in ("none", "soupx", "cellbender"):
+        raise ValueError("ambient_rna_method must be 'none', 'soupx', or 'cellbender'.")
+    if method in ("soupx", "cellbender"):
+        name = "SoupX" if method == "soupx" else "CellBender"
         if options["pipeline"] != "gex":
-            raise ValueError("SoupX requires --pipeline gex (gene expression only).")
+            raise ValueError(f"{name} requires --pipeline gex (gene expression only).")
         if options.get("aggregate", "") != "":
-            raise ValueError("SoupX cannot use Cell Ranger aggregation; omit --aggregate.")
+            raise ValueError(f"{name} cannot use Cell Ranger aggregation; omit --aggregate.")
     return method
 
 
@@ -43,3 +44,14 @@ def validate_soupx_import(sample_dir):
         raise ValueError("SoupX sample '{}': missing required input(s): {}".format(
             sample_dir.name, ", ".join(missing)
         ))
+
+
+def cellbender_input(outs):
+    return str(Path(outs) / "raw_feature_bc_matrix.h5")
+
+
+def validate_cellbender_import(sample_dir):
+    sample_dir = Path(sample_dir)
+    raw = cellbender_input(sample_dir / "outs")
+    if not Path(raw).is_file():
+        raise ValueError(f"CellBender sample '{sample_dir.name}': missing required input: {raw}")
