@@ -351,8 +351,6 @@ if ambient_rna_method == "cellbender":
             features = join(workpath, "cellbender", "{sample}", "filtered_feature_bc_matrix", "features.tsv.gz"),
             summary = join(workpath, "cellbender", "{sample}", "conversion.json"),
             diagnostics = directory(join(workpath, "cellbender", "{sample}", "diagnostics"))
-        log:
-            join(workpath, "cellbender", "{sample}", "conversion.log")
         params:
             rname = "cellbenderMatrix",
             script = join("workflow", "scripts", "cellbender_to_matrix.R"),
@@ -365,7 +363,7 @@ if ambient_rna_method == "cellbender":
             test -d "$TMPDIR"
             Rscript {params.script:q} --input {input.filtered:q} --output {params.outdir:q} \\
                 --summary_path {output.summary:q} --sample {wildcards.sample:q} \\
-                --raw-input {params.raw:q} --artifacts {input.artifacts:q} > {log:q} 2>&1
+                --raw-input {params.raw:q} --artifacts {input.artifacts:q}
             """
 
 rule seuratQC:
