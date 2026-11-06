@@ -23,7 +23,7 @@ option_list <- list(
   make_option(c("-m", "--metadata"), type='character', action='store', default=NA,
               help="Metadata file with information to add to samples"),
   make_option("--matrix-source", type='character', default="cellranger",
-              help="Source of input counts: cellranger or soupx")
+              help="Source of input counts: cellranger, soupx, or cellbender")
 )
 
 opt <- parse_args(OptionParser(option_list=option_list))

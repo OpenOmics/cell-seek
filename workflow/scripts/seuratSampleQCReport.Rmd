@@ -47,7 +47,7 @@ seuratdir <- params$seuratdir
 # QC Analysis
 
 Matrix source: **`r params$matrix_source`**. Pre-filter plots show counts before
-Seurat cell filtering; with SoupX enabled, these counts are already corrected.
+Seurat cell filtering; with SoupX or CellBender enabled, these counts are already corrected.
 Cell Ranger's native report describes the original counts.
 
 ## Pre-Filter Violin Plots {.tabset .tabset-pills}

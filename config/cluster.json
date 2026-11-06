@@ -21,6 +21,20 @@
         "mem": "64g",
         "time": "0-02:00:00"
     },
+    "cellbender": {
+        "threads": "8",
+        "mem": "64g",
+        "partition": "gpu",
+        "time": "0-08:00:00",
+        "gres": "gpu:a100:1,lscratch:40"
+    },
+    "cellbenderMatrix": {
+        "threads": "2",
+        "mem": "64g",
+        "partition": "norm",
+        "time": "0-04:00:00",
+        "gres": "lscratch:40"
+    },
     "seuratQC": {
         "threads": "8",
         "mem": "250g",

@@ -20,7 +20,8 @@ $ cell-seek run [--help] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
       [--aggregate {mapped, none}] [--exclude-introns] \
-      [--ambient-rna-method {none, soupx}] \
+      [--ambient-rna-method {none, soupx, cellbender}] \
+      [--cellbender-settings {default, lower-lr}] \
       [--filter FILTER] [--metadata METADATA] [--create-bam] \
       [--rename RENAME] [--forcecells FORCECELLS] \
       --input INPUT [INPUT ...] \
@@ -108,18 +109,34 @@ Each of the following arguments are optional, and do not need to be provided.
 > ***Example:*** `--aggregate mapped`
 
 ---  
-  `--ambient-rna-method {none, soupx}`
+  `--ambient-rna-method {none, soupx, cellbender}`
 > **Ambient RNA correction.**   
 > *type: string*  
 > *default: none*
 >
-> Use `soupx` to correct ambient RNA in each sample before Seurat QC and integration. The default, `none`, uses the original Cell Ranger counts. This option is available for GEX only. Omit `--aggregate` when using SoupX, keep independent captures as separate samples, and use a fresh output directory when changing methods.
+> Use `soupx` or `cellbender` to correct ambient RNA in each sample before Seurat QC and integration. The default, `none`, uses the original Cell Ranger counts. This option is available for GEX only. Omit `--aggregate` when using either correction method (including `--aggregate none`), keep independent captures as separate samples, and use a fresh output directory when changing methods.
 >
 > SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX and DropletUtils for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
+>
+> CellBender requires FASTQs or a Cell Ranger sample directory with `outs/raw_feature_bc_matrix.h5`. It uses `cellbender/0.3.0` and DropletUtils in the configured R environment, with fixed settings `--cuda --fpr 0.01`. Training settings are controlled by the optional `--cellbender-settings` argument below. CellBender integration is supported only on Biowulf using Slurm. Use `--mode slurm` and **omit `--tmp-dir`** to use the required default `/lscratch` configuration. 
+>
+> Downstream analysis uses CellBender's cell calls and matrix at `cellbender/<sample>/filtered_feature_bc_matrix/`, with diagnostics and logs alongside. Successful conversion deletes all generated H5 files **including the filtered H5**, checkpoints, and inference intermediates. Allow disk space before cleanup; recreating a deleted matrix requires inference again.
 >
 > Check mitochondrial QC thresholds after correction. An overly restrictive mitochondrial cutoff was observed in low quality snRNA-seq samples after ambient RNA correction and may also occur in other low quality GEX samples. If corrected mitochondrial percentages are concentrated near zero, the default upper cutoff based on three median absolute deviations (3 MAD) can round to 0%. This removes all cells or nuclei with any nonzero mitochondrial percentage, potentially discarding more than intended. This can be checked for in the `finalreport/seurat/{Sample}_QC_Report.html` or `finalreport/seurat/Summary_QC_Report.html`; check the "Cell Filter Thresholds" section for a zero `percent.mito - Upper` cutoff and an unexpectedly high "Percentage of Cells Removed". Review these thresholds alongside the QC plots before interpreting downstream results.
 >
 > ***Example:*** `--ambient-rna-method soupx`
+
+---
+  `--cellbender-settings {default, lower-lr}`
+> **CellBender training settings.**
+>
+> *type: string*
+>
+> *default: default*
+>
+> Optional; requires `--ambient-rna-method cellbender`. Omitting this argument uses `default`: 150 epochs and learning rate `1e-4`. Choose `lower-lr` for 300 epochs and learning rate `5e-5`. The selected settings apply to all samples in the run. 
+>
+> ***Example:*** `--ambient-rna-method cellbender --cellbender-settings lower-lr`
 
 
 ---  

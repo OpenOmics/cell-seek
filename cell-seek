@@ -462,7 +462,8 @@ def parsed_arguments(name, description):
                 [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \\
                 [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \\
                 [--aggregate {{mapped, none}}][--libraries LIBRARIES] \\
-                [--ambient-rna-method {{none,soupx}}] \\
+                [--ambient-rna-method {{none,soupx,cellbender}}] \\
+                [--cellbender-settings {{default,lower-lr}}] \\
                 [--features FEATURES] [--cmo-reference CMOREFERENCE] \\
                 [--cmo-sample CMOSAMPLE] [--hto-sample HTOSAMPLE] \\ 
                 [--ocm-sample OCMSAMPLE] [--probe-set PROBESET] \\
@@ -532,10 +533,19 @@ def parsed_arguments(name, description):
                                 ATAC: 2.1.0, 2.2.0
                                   Example: --cellranger 7.1.0
         {3}{4}Analysis options:{5}
-          --ambient-rna-method {{none,soupx}}
+          --ambient-rna-method {{none,soupx,cellbender}}
                                 Optional ambient RNA correction (default: none).
                                 SoupX requires GEX-only inputs with raw/filtered
                                 v3 matrices and graph clusters. Omit --aggregate.
+                                CellBender requires GEX raw H5; supported only on
+                                Biowulf using Slurm GPUs. Use --mode slurm and
+                                omit --tmp-dir and --aggregate.
+
+          --cellbender-settings {{default,lower-lr}}
+                                Optional CellBender training settings (default: default).
+                                default: 150 epochs, learning rate 1e-4.
+                                lower-lr: 300 epochs, learning rate 5e-5.
+                                Requires --ambient-rna-method cellbender.
 
           --aggregate  {{mapped,none}}
                                 Cell Ranger aggregate. This option defines the
@@ -1147,8 +1157,16 @@ def parsed_arguments(name, description):
     # Optional ambient RNA correction
     subparser_run.add_argument(
         "--ambient-rna-method",
-        choices=["none", "soupx"],
+        choices=["none", "soupx", "cellbender"],
         default="none",
+        help=argparse.SUPPRESS,
+    )
+
+    # Optional CellBender training settings; omission resolves to default.
+    subparser_run.add_argument(
+        "--cellbender-settings",
+        choices=["default", "lower-lr"],
+        default=argparse.SUPPRESS,
         help=argparse.SUPPRESS,
     )
 
