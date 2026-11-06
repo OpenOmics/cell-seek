@@ -1,0 +1,63 @@
+{
+    "__default__": {
+        "threads": "4",
+        "mem": "16g",
+        "partition": "all",
+        "time": "0-04:00:00"
+    },
+    "count": {
+        "threads": "32",
+        "mem": "96g",
+        "time": "1-00:00:00"
+    },
+    "multi": {
+        "threads": "16",
+        "mem": "150g",
+        "time": "2-00:00:00"
+    },
+    "soupx": {
+        "threads": "2",
+        "mem": "64g",
+        "time": "0-02:00:00"
+    },
+    "seuratQC": {
+        "threads": "8",
+        "mem": "250g",
+        "time": "1-00:00:00"
+    },
+    "aggregate": {
+        "threads": "16",
+        "mem": "96g",
+        "time": "1-00:00:00"
+    },
+    "seuratIntegrate": {
+        "threads": "8",
+        "mem": "1000g",
+        "time": "3-00:00:00"
+    },
+    "shinycodes": {
+        "threads": "16",
+        "mem": "32g",
+        "time": "0-08:00:00"
+    },
+    "shinyfiles": {
+        "threads": "16",
+        "mem": "32g",
+        "time": "0-08:00:00"
+    },
+    "shinytar": {
+        "threads": "32",
+        "mem": "64g",
+        "time": "0-08:00:00"
+    },
+    "prelim_analysis_one": {
+        "threads": "16",
+        "mem": "128g",
+        "time": "1-00:00:00"
+    },
+    "prelim_analysis_all": {
+        "threads": "16",
+        "mem": "240g",
+        "time": "1-00:00:00"
+    }
+}

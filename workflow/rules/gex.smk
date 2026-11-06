@@ -204,7 +204,7 @@ rule count:
         createbam = count_bam,
         fastqs = filterFastq,
         forcecells = force_cells
-    envmodules: config["tools"]["cellranger"][CELLRANGER]
+    container: config["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
@@ -272,7 +272,7 @@ rule aggregate:
         rname = "aggregate",
         id = "AggregateDatasets",
         norm = aggr_norm
-    envmodules: config["tools"]["cellranger"][CELLRANGER]
+    container: config["cellranger"][CELLRANGER]
     shell:
         """
         cellranger aggr \\
@@ -300,7 +300,7 @@ rule soupx:
         outs = join(workpath, "{sample}", "outs"),
         outdir = join(workpath, "soupx", "{sample}"),
         commit = config["project"].get("git_commit_hash", "unknown")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         Rscript {params.script:q} --outs {params.outs:q} --output {params.outdir:q} \\
@@ -326,7 +326,7 @@ rule seuratQC:
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -356,7 +356,7 @@ rule seuratQCReport:
         matrix_source = "soupx" if ambient_rna_method == "soupx" else "cellranger",
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -389,7 +389,7 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -409,7 +409,7 @@ rule seuratQCSummaryReport:
         samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratSampleQCSummaryReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -469,7 +469,7 @@ rule seuratIntegrate:
         workdir = join(workpath, "seurat", "integrate"),
         rds = ','.join(expand(rules.seuratQC.output.rds, sample=samples)),
         rversion = config["tools"]["rversion"].split('/')[1]
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -488,7 +488,7 @@ rule seuratIntegrateSummaryReport:
         rname = "seurateIntegrateReport",
         script = join(workpath, "workflow", "scripts", "seuratIntegrateSummaryReport.Rmd"),
         workdir = join(workpath, "seurat", "integrate")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER

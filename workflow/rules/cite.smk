@@ -156,7 +156,7 @@ rule count:
         introns = count_intron,
         createbam = count_bam,
         forcecells = force_cells
-    envmodules: config["tools"]["cellranger"][CELLRANGER]
+    container: config["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
@@ -329,7 +329,7 @@ rule seuratQC:
         seurat = join("workflow", "scripts", "seuratCiteSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -358,7 +358,7 @@ rule seuratQCReport:
         filter = filterFileBool,
         tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -391,7 +391,7 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -411,7 +411,7 @@ rule seuratQCSummaryReport:
         samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER

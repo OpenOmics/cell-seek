@@ -227,7 +227,7 @@ checkpoint multi:
         batch = "-l nodes=1:ppn=16,mem=96gb",
         prefix = "{sample}",
         transcriptome = config["references"][genome]["gex_transcriptome"],
-    envmodules: config["tools"]["cellranger"][CELLRANGER]
+    container: config["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
@@ -299,7 +299,7 @@ rule seuratQC:
         filter = filterFile,
         metadata = metadataFile,
         log = join(workpath, "seurat", "{sample}", "{count_sample}", "seurat.log")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -332,7 +332,7 @@ rule seuratQCReport:
         tmpdir = tmpdir,
         report = join(workpath, "seurat", "{sample}", "{count_sample}_QC_Report.html"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -387,7 +387,7 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat", "*"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
@@ -409,7 +409,7 @@ rule seuratQCSummaryReport:
         seuratdir = join(workpath, "seurat"),
         cleanreport = join(workpath, "seurat", "Clean_Summary_QC_Report.html"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["seurat_qc"]
     shell:
         """
         unset __RLIBSUSER
