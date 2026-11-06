@@ -118,9 +118,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > SoupX requires version-3 raw and filtered Gene Expression matrices and Cell Ranger graph clusters. Install SoupX and DropletUtils for the configured R/4.4.0 module; for `--mode local`, load this module before running. Corrected matrices and diagnostics are saved under `soupx/<sample>/`. Failed automatic estimation stops the workflow.
 >
-> CellBender requires FASTQs or a Cell Ranger sample directory with `outs/raw_feature_bc_matrix.h5`. It uses `cellbender/0.3.0` and DropletUtils in the configured R environment, with fixed settings `--cuda --fpr 0.01`. Training settings are controlled by the optional `--cellbender-settings` argument below.
->
-> CellBender integration is supported only on Biowulf using Slurm. Use `--mode slurm` and **omit `--tmp-dir`** to retain the required default `/lscratch` configuration. Review `config/cluster.json` resources and test one sample first. Full integration testing is pending.
+> CellBender requires FASTQs or a Cell Ranger sample directory with `outs/raw_feature_bc_matrix.h5`. It uses `cellbender/0.3.0` and DropletUtils in the configured R environment, with fixed settings `--cuda --fpr 0.01`. Training settings are controlled by the optional `--cellbender-settings` argument below. CellBender integration is supported only on Biowulf using Slurm. Use `--mode slurm` and **omit `--tmp-dir`** to use the required default `/lscratch` configuration. 
 >
 > Downstream analysis uses CellBender's cell calls and matrix at `cellbender/<sample>/filtered_feature_bc_matrix/`, with diagnostics and logs alongside. Successful conversion deletes all generated H5 files **including the filtered H5**, checkpoints, and inference intermediates. Allow disk space before cleanup; recreating a deleted matrix requires inference again.
 >
