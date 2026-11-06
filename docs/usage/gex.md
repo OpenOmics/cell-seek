@@ -136,9 +136,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > *default: default*
 >
-> Optional; requires `--ambient-rna-method cellbender`. Omitting this argument uses `default`: 150 epochs and learning rate `1e-4`. Choose `lower-lr` for 300 epochs and learning rate `5e-5`. The selected settings apply to all samples in the run. Older configurations without this option also use `default`.
->
-> The selected setting, epoch count, and learning rate are recorded in each sample's `cellbender/<sample>/conversion.json`. Use a fresh output directory when changing settings.
+> Optional; requires `--ambient-rna-method cellbender`. Omitting this argument uses `default`: 150 epochs and learning rate `1e-4`. Choose `lower-lr` for 300 epochs and learning rate `5e-5`. The selected settings apply to all samples in the run. 
 >
 > ***Example:*** `--ambient-rna-method cellbender --cellbender-settings lower-lr`
 
