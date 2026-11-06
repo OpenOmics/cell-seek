@@ -120,7 +120,7 @@ Each of the following arguments are optional, and do not need to be provided.
 >
 > CellBender requires FASTQs or a Cell Ranger sample directory with `outs/raw_feature_bc_matrix.h5`. It uses `cellbender/0.3.0` and DropletUtils in the configured R environment, with fixed settings `--cuda --fpr 0.01`. Training settings are controlled by the optional `--cellbender-settings` argument below.
 >
-> Biowulf Slurm only: use `--mode slurm` and **leave `--tmp-dir` unset**; changing it drops GPU requests. Review `config/cluster.json` resources and test one sample first. Full integration testing is pending.
+> CellBender integration is supported only on Biowulf using Slurm. Use `--mode slurm` and **omit `--tmp-dir`** to retain the required default `/lscratch` configuration. Review `config/cluster.json` resources and test one sample first. Full integration testing is pending.
 >
 > Downstream analysis uses CellBender's cell calls and matrix at `cellbender/<sample>/filtered_feature_bc_matrix/`, with diagnostics and logs alongside. Successful conversion deletes all generated H5 files **including the filtered H5**, checkpoints, and inference intermediates. Allow disk space before cleanup; recreating a deleted matrix requires inference again.
 >

@@ -537,8 +537,9 @@ def parsed_arguments(name, description):
                                 Optional ambient RNA correction (default: none).
                                 SoupX requires GEX-only inputs with raw/filtered
                                 v3 matrices and graph clusters. Omit --aggregate.
-                                CellBender requires GEX raw H5 and Biowulf Slurm
-                                GPUs with default /lscratch. Omit --aggregate.
+                                CellBender requires GEX raw H5; supported only on
+                                Biowulf using Slurm GPUs. Use --mode slurm and
+                                omit --tmp-dir and --aggregate.
 
           --cellbender-settings {{default,lower-lr}}
                                 Optional CellBender training settings (default: default).

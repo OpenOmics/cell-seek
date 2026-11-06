@@ -25,6 +25,11 @@ def validate_ambient_options(options):
             raise ValueError(f"{name} requires --pipeline gex (gene expression only).")
         if options.get("aggregate", "") != "":
             raise ValueError(f"{name} cannot use Cell Ranger aggregation; omit --aggregate.")
+    if method == "cellbender":
+        if options["mode"] != "slurm":
+            raise ValueError("CellBender requires --mode slurm.")
+        if options["tmp_dir"] != "/lscratch/$SLURM_JOBID/":
+            raise ValueError("CellBender requires the default scratch configuration; omit --tmp-dir.")
     return method
 
 
