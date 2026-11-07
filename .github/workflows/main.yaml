@@ -21,10 +21,10 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
     steps:
     - uses: actions/checkout@v2
-    - uses: docker://snakemake/snakemake:v5.24.2
+    - uses: docker://snakemake/snakemake:v7.32.4
     - name: Dry Run with test data
       run: |
-        docker run -e GITHUB_TOKEN -e GITHUB_ACTOR -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
+        docker run -e GITHUB_TOKEN -e GITHUB_ACTOR -v $PWD:/opt2 snakemake/snakemake:v7.32.4 \
         /opt2/cell-seek run --input \
         /opt2/.tests/WT_S1_L001_R1_001.fastq.gz /opt2/.tests/WT_S1_L001_R2_001.fastq.gz \
         /opt2/.tests/WT_S2_L001_R1_001.fastq.gz /opt2/.tests/WT_S2_L001_R2_001.fastq.gz \
@@ -37,7 +37,7 @@ jobs:
     - name: Lint Workflow
       continue-on-error: true
       run: |
-        docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
+        docker run -v $PWD:/opt2 snakemake/snakemake:v7.32.4 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
         echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'
   Dry_Run_and_Lint_cellranger:
     runs-on: ubuntu-latest
@@ -46,10 +46,10 @@ jobs:
       GITHUB_ACTOR: ${{ github.actor }}
     steps:
     - uses: actions/checkout@v2
-    - uses: docker://snakemake/snakemake:v5.24.2
+    - uses: docker://snakemake/snakemake:v7.32.4
     - name: Dry Run with test data
       run: |
-        docker run -e GITHUB_TOKEN -e GITHUB_ACTOR -v $PWD:/opt2 snakemake/snakemake:v5.24.2 \
+        docker run -e GITHUB_TOKEN -e GITHUB_ACTOR -v $PWD:/opt2 snakemake/snakemake:v7.32.4 \
         /opt2/cell-seek run --input \
         /opt2/.tests/WT/ \
         --output /opt2/output --genome hg38 --pipeline gex --cellranger 8.0.0 --mode local --dry-run
@@ -59,6 +59,6 @@ jobs:
     - name: Lint Workflow
       continue-on-error: true
       run: |
-        docker run -v $PWD:/opt2 snakemake/snakemake:v5.24.2 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
+        docker run -v $PWD:/opt2 snakemake/snakemake:v7.32.4 snakemake --lint -s /opt2/output/workflow/Snakefile -d /opt2/output || \
         echo 'There may have been a few warnings or errors. Please read through the log to determine if its harmless.'
 
