@@ -52,12 +52,12 @@ RUN R -e ' \
   pak::pkg_install(c( \
     "BiocManager", "devtools", "remotes", "optparse", "dplyr", "stringr", "ggplot2", \
     "gridExtra", "cluster", "base64enc", "xfun", "knitr", "rmarkdown", "rmdformats", \
-    "kableExtra", "flextable", "DT", "pander", "SoupX", "Seurat", \
+    "kableExtra", "flextable", "DT", "pander", "SoupX", "Seurat", "harmony", \
     "SingleCellExperiment", "SummarizedExperiment", "scater", "scRNAseq", "SingleR", "DropletUtils" \
   ), ask = FALSE)'
 
 # Fail the build early if any key package did not install
-RUN R -e 'for (p in c("Seurat","SoupX","SingleR","DropletUtils","scater","scRNAseq","flextable","kableExtra","rmdformats")) library(p, character.only = TRUE)'
+RUN R -e 'for (p in c("Seurat","harmony","SoupX","SingleR","DropletUtils","scater","scRNAseq","flextable","kableExtra","rmdformats")) library(p, character.only = TRUE)'
 
 # Set working directory
 WORKDIR /data
