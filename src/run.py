@@ -1458,6 +1458,17 @@ def runner(
     tmp_parent = os.path.dirname(tmp_dir.rstrip("/"))
     if exists(tmp_parent):
         bindpaths = "{},{}".format(outdir, tmp_parent)
+    elif is_skyline():
+        # --tmp-dir defaults to the unexpanded literal '$TMPDIR' on
+        # Skyline (see default_tmp_dir()), so os.path.dirname() can't
+        # recover a parent directory from it the way it can for
+        # Biowulf's '/lscratch/$SLURM_JOBID/'. Fall back to binding
+        # Skyline's node-local scratch mount directly: $TMPDIR resolves
+        # per-node to /data/scratch/<user>/<hostname>, and /data/scratch
+        # is the common parent mounted under that same path on every node.
+        skyline_scratch = "/data/scratch"
+        if exists(skyline_scratch):
+            bindpaths = "{},{}".format(outdir, skyline_scratch)
     # Set ENV variable 'SINGULARITY_CACHEDIR'
     # to output directory
     my_env = {}

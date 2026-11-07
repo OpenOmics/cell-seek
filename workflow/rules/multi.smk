@@ -299,7 +299,7 @@ rule seuratQC:
         filter = filterFile,
         metadata = metadataFile,
         log = join(workpath, "seurat", "{sample}", "{count_sample}", "seurat.log")
-    container: config["images"]["seurat_qc"]
+    container: config["images"]["r_base"]
     shell:
         """
         unset __RLIBSUSER
@@ -332,13 +332,14 @@ rule seuratQCReport:
         tmpdir = tmpdir,
         report = join(workpath, "seurat", "{sample}", "{count_sample}_QC_Report.html"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCReport.Rmd")
-    container: config["images"]["seurat_qc"]
+    container: config["images"]["r_base"]
     shell:
         """
         unset __RLIBSUSER
         unset R_LIBS_USER
 
 	if [ -f "{params.rds}" ]; then
+          mkdir -p {params.tmpdir}
           cd {params.tmpdir}
           cp {params.script} "./{params.sample}.Rmd"
           R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{params.report}')"
@@ -387,7 +388,7 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat", "*"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
-    container: config["images"]["seurat_qc"]
+    container: config["images"]["r_base"]
     shell:
         """
         unset __RLIBSUSER
@@ -409,7 +410,7 @@ rule seuratQCSummaryReport:
         seuratdir = join(workpath, "seurat"),
         cleanreport = join(workpath, "seurat", "Clean_Summary_QC_Report.html"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
-    container: config["images"]["seurat_qc"]
+    container: config["images"]["r_base"]
     shell:
         """
         unset __RLIBSUSER

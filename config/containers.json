@@ -3,7 +3,7 @@
         "cite_base": "docker://skchronicles/chicyte:v0.1.0",
         "signac_base": "docker://rroutsong/signac_analysis:0.0.2",
         "shinycell2_builder": "docker://rroutsong/shinycell2_builder:0.0.9",
-        "seurat_qc": "docker://ghcr.io/openomics/cell-seek:seurat-qc-4.4.0"
+        "r_base": "docker://ghcr.io/openomics/cell-seek:r-base-4.4.0"
     },
     "cellranger": {
         "10.0.0" : "docker://ghcr.io/openomics/cell-seek:cellranger-10.0.0",
