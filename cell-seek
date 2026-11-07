@@ -52,6 +52,10 @@ from src.utils import (
     permissions,
     check_cache,
     require,
+    require_github_auth,
+    configure_singularity_github_auth,
+    container_pull_required,
+    default_tmp_dir,
 )
 
 
@@ -115,10 +119,21 @@ def run(sub_args):
     # Step 2. Setup pipeline for execution,
     # dynamically create config.json config
     # file from user inputs and base config
-    # templates
+    # templates. setup() also resolves the selected
+    # Cell Ranger image against --sif-cache, if provided.
     config = setup(
         sub_args, ifiles=input_files, repo_path=git_repo, output_path=sub_args.output
     )
+
+    # Step 2b. Check for GitHub Container Registry auth,
+    # but only if the Cell Ranger image required by this
+    # pipeline/version was NOT already resolved to a local
+    # SIF from --sif-cache. If it's already cached, singularity
+    # does not need to pull from the private ghcr.io/openomics/
+    # cell-seek package, so no GHCR credentials are required.
+    if container_pull_required(config):
+        require_github_auth()
+        configure_singularity_github_auth()
 
     # Step 3. Resolve docker/singularity bind
     # paths from the config file.
@@ -1285,7 +1300,7 @@ def parsed_arguments(name, description):
         "--tmp-dir",
         type=str,
         required=False,
-        default="/lscratch/$SLURM_JOBID/",
+        default=default_tmp_dir(),
         help=argparse.SUPPRESS,
     )
 
@@ -1799,7 +1814,7 @@ def parsed_arguments(name, description):
         dest="tmpdir",
         type=str,
         required=False,
-        default="/lscratch/$SLURM_JOBID/",
+        default=default_tmp_dir(),
         help=argparse.SUPPRESS,
     )
     subparser_shinycell.add_argument(
