@@ -93,13 +93,17 @@ data %>% kable(format='html') %>%
 ```{r  echo=F ,results='asis'}
 data <- read.csv(params$cellfilter)
 
-# Convert numeric columns and round them
+# Convert numeric columns; preserve threshold precision and round statistics.
 for(col in colnames(data)) {
   suppressWarnings({
     potential_numeric <- as.numeric(data[[col]])
     # If conversion produces no NAs, the column is numeric-compatible
     if(sum(is.na(potential_numeric)) == 0) {
-      data[[col]] <- round(potential_numeric, 2)
+      if (grepl('_(low|high)$', col)) {
+        data[[col]] <- potential_numeric
+      } else {
+        data[[col]] <- round(potential_numeric, 2)
+      }
     }
   })
 }
