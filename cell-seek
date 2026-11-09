@@ -131,7 +131,7 @@ def run(sub_args):
     # SIF from --sif-cache. If it's already cached, singularity
     # does not need to pull from the private ghcr.io/openomics/
     # cell-seek package, so no GHCR credentials are required.
-    if container_pull_required(config):
+    if not sub_args.dry_run and container_pull_required(config):
         require_github_auth()
         configure_singularity_github_auth()
 
