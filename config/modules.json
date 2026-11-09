@@ -5,6 +5,7 @@
 	"cellranger-arc": {"2.0.1": "cellranger-arc/2.0.1", "2.1.0": "cellranger-arc/2.1.0"},
         "python2": "python/2.7",
         "python3": "python/3.8",
+        "cellbender": "cellbender/0.3.0",
 	"rversion": "R/4.4.0"
     },
     "r_libs": {
