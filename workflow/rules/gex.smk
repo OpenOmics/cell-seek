@@ -194,11 +194,21 @@ def seuratQCSummarySamples(wildcards):
     #"','".join(samples)
 
 
+count_ambient_outputs = []
+
+if ambient_rna_method == "soupx":
+    count_ambient_outputs = soupx_inputs(
+        join(workpath, "{sample}", "outs")
+    )
+elif ambient_rna_method == "cellbender":
+    count_ambient_outputs = [
+        cellbender_input(join(workpath, "{sample}", "outs"))
+    ]
+
 rule count:
     output:
         html = join(workpath, "{sample}", "outs", "web_summary.html"),
-        soupx = soupx_inputs(join(workpath, "{sample}", "outs")) if ambient_rna_method == "soupx" else [],
-        cellbender = cellbender_input(join(workpath, "{sample}", "outs")) if ambient_rna_method == "cellbender" else []
+        ambient = count_ambient_outputs
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
