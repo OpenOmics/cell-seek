@@ -248,7 +248,14 @@ def container_pull_required(config):
         # fail safe and assume a pull (and auth) is required.
         return True
 
-    return uri.startswith("docker://")
+    if uri.startswith("docker://"):
+        return True
+
+    if pipeline in ("gex", "cite", "multi"):
+        r_uri = config.get("images", {}).get("r_base")
+        return r_uri is None or r_uri.startswith("docker://")
+
+    return False
 
 
 def require_github_auth():
