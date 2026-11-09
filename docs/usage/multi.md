@@ -39,7 +39,7 @@ $ cell-seek run [--help] \
       --output OUTPUT \
       --pipeline multi \
       --genome {hg38, ...} \
-      --cellranger {8.0.0, ...}
+      --cellranger {8.0.1, ...}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
@@ -95,11 +95,11 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0}`
+  `--cellranger {7.1.0, 7.2.0, 8.0.1, 9.0.1, 10.0.0}`
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.1, 9.0.1, 10.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -554,7 +554,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --mode slurm \
                   --dry-run
@@ -567,7 +567,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --mode slurm
 ```
@@ -618,7 +618,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-sample cmo_sample.csv \
                   --mode slurm \
@@ -632,7 +632,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-sample cmo_sample.csv \
                   --mode slurm
@@ -692,7 +692,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-reference cmo_reference.csv \
                   --mode slurm \
@@ -706,7 +706,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-reference cmo_reference.csv \
                   --mode slurm
@@ -725,7 +725,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-reference cmo_reference.csv \
                   --mode slurm \
@@ -739,7 +739,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-reference cmo_reference.csv \
                   --mode slurm
@@ -808,7 +808,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --hto-sample hto_sample.csv \
@@ -823,7 +823,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --hto-sample hto_sample.csv \
@@ -885,7 +885,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --mode slurm \
@@ -899,7 +899,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --mode slurm
@@ -951,7 +951,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --ocm-sample ocm_sample.csv \
                   --mode slurm \
@@ -965,7 +965,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --ocm-sample ocm_sample.csv \
                   --mode slurm
@@ -1007,7 +1007,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --probe-set Chromium_Human_Transcriptome_Probe_Set_v1.1.0_GRCh38-2024-A.csv \
                   --mode slurm \
@@ -1021,7 +1021,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --probe-set Chromium_Human_Transcriptome_Probe_Set_v1.1.0_GRCh38-2024-A.csv \
                   --mode slurm
@@ -1055,7 +1055,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --probe-set Chromium_Human_Transcriptome_Probe_Set_v1.1.0_GRCh38-2024-A.csv \
                   --probe-sample probesample.csv \
@@ -1070,7 +1070,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --features features.csv \
                   --probe-set Chromium_Human_Transcriptome_Probe_Set_v1.1.0_GRCh38-2024-A.csv \
@@ -1113,7 +1113,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --filter filter.csv \
                   --mode slurm \
@@ -1127,7 +1127,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --filter filter.csv \
                   --mode slurm
@@ -1162,7 +1162,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --metadata metadata.csv \
                   --mode slurm \
@@ -1176,7 +1176,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --metadata metadata.csv \
                   --mode slurm
@@ -1212,7 +1212,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --forcecells forcecells.csv \
                   --mode slurm \
@@ -1226,7 +1226,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline gex \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --forcecells forcecells.csv \
                   --mode slurm
@@ -1262,7 +1262,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline multi \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-sample cmo_sample.csv \
                   --forcecells forcecells.csv \
@@ -1277,7 +1277,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline gex \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --libraries libraries.csv \
                   --cmo-sample cmo_sample.csv \
                   --forcecells forcecells.csv \

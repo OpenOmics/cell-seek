@@ -26,7 +26,7 @@ $ cell-seek run [--help] \
       --output OUTPUT \
       --pipeline {gex, ...} \
       --genome {hg38, ...} \
-      --cellranger {8.0.0, ...}
+      --cellranger {8.0.1, ...}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.

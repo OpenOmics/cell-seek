@@ -977,12 +977,12 @@ def check_conditional_parameters(config):
 
     # List supported versions for each pipeline
     supported_versions = {
-        "gex": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
-        "cite": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
-        "multi": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
-        "vdj": ["7.1.0", "7.2.0", "8.0.0", "9.0.0", "10.0.0"],
-        "atac": ["2.1.0", "2.2.0"],
-        "multiome": ["2.0.1", "2.1.0"],
+        "gex": ["7.1.0", "7.2.0", "8.0.1", "9.0.1", "10.0.0"],
+        "cite": ["7.1.0", "7.2.0", "8.0.1", "9.0.1", "10.0.0"],
+        "multi": ["7.1.0", "7.2.0", "8.0.1", "9.0.1", "10.0.0"],
+        "vdj": ["7.1.0", "7.2.0", "8.0.1", "9.0.1", "10.0.0"],
+        "atac": ["2.2.0"],
+        "multiome": ["2.1.0"],
     }
 
     # Check if compatible cellranger version is provided when required
@@ -1002,26 +1002,26 @@ def check_conditional_parameters(config):
         if config["options"]["cellranger"] != "":
             if int(config["options"]["cellranger"].split(".")[0]) < 9:
                 errorMessage += [
-                    "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
+                    "Error: Version of cellranger required to process {} needs to be 9.0.1 or higher\n \
                     └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
                         [
                             i
                             for i in ["hto_sample", "ocm_sample"]
                             if config["options"].get(i, "None") != "None"
                         ][0].replace("_", "-"),
-                        ", ".join(["9.0.0", "10.0.0"]),
+                        ", ".join(["9.0.1", "10.0.0"]),
                     )
                 ]
         else:
             errorMessage += [
-                "Error: Version of cellranger required to process {} needs to be 9.0.0 or higher\n \
+                "Error: Version of cellranger required to process {} needs to be 9.0.1 or higher\n \
                 └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
                     [
                         i
                         for i in ["hto_sample", "ocm_sample"]
                         if config["options"].get(i, "None") != "None"
                     ][0].replace("_", "-"),
-                    ", ".join(["9.0.0", "10.0.0"]),
+                    ", ".join(["9.0.1", "10.0.0"]),
                 )
             ]
 
@@ -1035,16 +1035,16 @@ def check_conditional_parameters(config):
         if config["options"]["cellranger"] != "":
             if int(config["options"]["cellranger"].split(".")[0]) < 8:
                 errorMessage += [
-                    "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
+                    "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.1 or higher\n \
                     └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                        ", ".join(["8.0.0", "9.0.0", "10.0.0"])
+                        ", ".join(["8.0.1", "9.0.1", "10.0.0"])
                     )
                 ]
         else:
             errorMessage += [
-                "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.0 or higher\n \
+                "Error: Version of cellranger required to process Flex (probe_sample and probe_set) needs to be 8.0.1 or higher\n \
                 └── Please use the --cellranger flag to select one of the compatible versions: {}".format(
-                    ", ".join(["8.0.0", "9.0.0", "10.0.0"])
+                    ", ".join(["8.0.1", "9.0.1", "10.0.0"])
                 )
             ]
 
