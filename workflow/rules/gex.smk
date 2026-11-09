@@ -346,9 +346,6 @@ if ambient_rna_method == "cellbender":
         envmodules: config["tools"]["cellbender"]
         shell:
             r"""
-            # Resolve scratch in the GPU worker, never in the controller.
-            export TMPDIR="/lscratch/${{SLURM_JOB_ID:?CellBender requires a Slurm GPU worker}}"
-            test -d "$TMPDIR"
             mkdir -p {output.artifacts:q}
             cd {output.artifacts:q}
             cellbender remove-background --input {input.raw:q} --output corrected.h5 \
@@ -377,8 +374,6 @@ if ambient_rna_method == "cellbender":
         envmodules: config["tools"]["rversion"]
         shell:
             """
-            export TMPDIR="/lscratch/${{SLURM_JOB_ID:?CellBender matrix conversion requires a Slurm worker}}"
-            test -d "$TMPDIR"
             Rscript {params.script:q} --input {input.filtered:q} --output {params.outdir:q} \\
                 --summary_path {output.summary:q} --sample {wildcards.sample:q} \\
                 --raw-input {params.raw:q} --artifacts {input.artifacts:q} \\
