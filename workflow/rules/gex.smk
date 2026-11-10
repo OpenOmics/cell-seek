@@ -1,10 +1,16 @@
 # Pipeline output definition
-from scripts.ambient import MATRIX_FILES, soupx_inputs
+from scripts.ambient import MATRIX_FILES, CELLBENDER_SETTINGS, soupx_inputs, cellbender_input
 
 if ambient_rna_method == "soupx":
     pipeline_output += expand(
         join(workpath, "soupx", "{sample}", "{provenance}"),
         sample=samples, provenance=["soupx_summary.tsv", "sessionInfo.txt", "soupx_estimation.pdf"]
+    )
+
+if ambient_rna_method == "cellbender":
+    pipeline_output += expand(
+        join(workpath, "cellbender", "{sample}", "{record}"),
+        sample=samples, record=["conversion.json"]
     )
 
 # CellRanger counts, summary report
@@ -65,13 +71,13 @@ pipeline_output += [join(workpath, "Project_Cell_Filters.csv")]
 
 # Function definitions
 def seurat_qc_matrix_dir(wildcards):
-    if ambient_rna_method == "soupx":
-        return join(workpath, "soupx", wildcards.sample, "filtered_feature_bc_matrix")
+    if ambient_rna_method in ("soupx", "cellbender"):
+        return join(workpath, ambient_rna_method, wildcards.sample, "filtered_feature_bc_matrix")
     return join(workpath, wildcards.sample, "outs", "filtered_feature_bc_matrix")
 
 
 def seurat_qc_matrix_inputs(wildcards):
-    if ambient_rna_method == "soupx":
+    if ambient_rna_method in ("soupx", "cellbender"):
         return [join(seurat_qc_matrix_dir(wildcards), name) for name in MATRIX_FILES]
     return []
 
@@ -188,10 +194,21 @@ def seuratQCSummarySamples(wildcards):
     #"','".join(samples)
 
 
+count_ambient_outputs = []
+
+if ambient_rna_method == "soupx":
+    count_ambient_outputs = soupx_inputs(
+        join(workpath, "{sample}", "outs")
+    )
+elif ambient_rna_method == "cellbender":
+    count_ambient_outputs = [
+        cellbender_input(join(workpath, "{sample}", "outs"))
+    ]
+
 rule count:
     output:
         html = join(workpath, "{sample}", "outs", "web_summary.html"),
-        soupx = soupx_inputs(join(workpath, "{sample}", "outs")) if ambient_rna_method == "soupx" else []
+        ambient = count_ambient_outputs
     log:
         err = "run_{sample}_10x_cellranger_count.err",
         log ="run_{sample}_10x_cellranger_count.log"
@@ -308,6 +325,61 @@ rule soupx:
             > {log:q} 2>&1
         """
 
+# Only define module-based CellBender rules for this method. Existing configurations
+# for none/SoupX do not need the new tool entry.
+if ambient_rna_method == "cellbender":
+    cellbender_settings = config["options"].get("cellbender_settings", "default")
+    cellbender_training = CELLBENDER_SETTINGS[cellbender_settings]
+
+    rule cellbender:
+        input:
+            raw = cellbender_input(join(workpath, "{sample}", "outs"))
+        output:
+            filtered = temp(join(workpath, "cellbender", "{sample}", "corrected_filtered.h5")),
+            artifacts = temp(directory(join(workpath, "cellbender", "{sample}", "inference")))
+        log:
+            join(workpath, "cellbender", "{sample}", "inference.log")
+        params:
+            rname = "cellbender",
+            epochs = cellbender_training["epochs"],
+            learning_rate = cellbender_training["learning_rate"]
+        envmodules: config["tools"]["cellbender"]
+        shell:
+            r"""
+            mkdir -p {output.artifacts:q}
+            cd {output.artifacts:q}
+            cellbender remove-background --input {input.raw:q} --output corrected.h5 \
+                --cuda --fpr 0.01 --epochs {params.epochs} --learning-rate {params.learning_rate} > {log:q} 2>&1
+            mv corrected_filtered.h5 {output.filtered:q}
+            """
+
+    rule cellbenderMatrix:
+        input:
+            filtered = rules.cellbender.output.filtered,
+            artifacts = rules.cellbender.output.artifacts
+        output:
+            matrix = join(workpath, "cellbender", "{sample}", "filtered_feature_bc_matrix", "matrix.mtx.gz"),
+            barcodes = join(workpath, "cellbender", "{sample}", "filtered_feature_bc_matrix", "barcodes.tsv.gz"),
+            features = join(workpath, "cellbender", "{sample}", "filtered_feature_bc_matrix", "features.tsv.gz"),
+            summary = join(workpath, "cellbender", "{sample}", "conversion.json"),
+            diagnostics = directory(join(workpath, "cellbender", "{sample}", "diagnostics"))
+        params:
+            rname = "cellbenderMatrix",
+            script = join("workflow", "scripts", "cellbender_to_matrix.R"),
+            outdir = join(workpath, "cellbender", "{sample}", "filtered_feature_bc_matrix"),
+            raw = cellbender_input(join(workpath, "{sample}", "outs")),
+            settings = cellbender_settings,
+            epochs = cellbender_training["epochs"],
+            learning_rate = cellbender_training["learning_rate"]
+        envmodules: config["tools"]["rversion"]
+        shell:
+            """
+            Rscript {params.script:q} --input {input.filtered:q} --output {params.outdir:q} \\
+                --summary_path {output.summary:q} --sample {wildcards.sample:q} \\
+                --raw-input {params.raw:q} --artifacts {input.artifacts:q} \\
+                --settings {params.settings:q} --epochs {params.epochs} --learning-rate {params.learning_rate}
+            """
+
 rule seuratQC:
     input:
         html = join(workpath, "{sample}", "outs", "web_summary.html"),
@@ -322,7 +394,7 @@ rule seuratQC:
         sample = "{sample}",
         outdir = join(workpath, "seurat", "{sample}"),
         data = seurat_qc_matrix_dir,
-        matrix_source = "soupx" if ambient_rna_method == "soupx" else "cellranger",
+        matrix_source = ambient_rna_method if ambient_rna_method != "none" else "cellranger",
         seurat = join("workflow", "scripts", "seuratSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
@@ -350,7 +422,7 @@ rule seuratQCReport:
         sample = "{sample}",
         seuratdir = join(workpath, "seurat", "{sample}"),
         filter = filterFileBool,
-        matrix_source = "soupx" if ambient_rna_method == "soupx" else "cellranger",
+        matrix_source = ambient_rna_method if ambient_rna_method != "none" else "cellranger",
 	tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratSampleQCReport.Rmd")
     container: config["images"]["r_base"]
