@@ -340,9 +340,11 @@ rule seuratQCReport:
 
 	if [ -f "{params.rds}" ]; then
           mkdir -p {params.tmpdir}
-          cd {params.tmpdir}
+          workdir=$(mktemp -d "{params.tmpdir}/seuratQCReport.{params.sample}.XXXXXX")
+          cd "$workdir"
           cp {params.script} "./{params.sample}.Rmd"
           R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{params.report}')"
+          rm -rf "$workdir"
        fi
         """
 

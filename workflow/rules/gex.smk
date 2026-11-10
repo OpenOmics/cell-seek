@@ -429,9 +429,11 @@ rule seuratQCReport:
     shell:
         """
         mkdir -p {params.tmpdir}
-        cd {params.tmpdir}
+        workdir=$(mktemp -d "{params.tmpdir}/seuratQCReport.{params.sample}.XXXXXX")
+        cd "$workdir"
         cp {params.script} ./{params.sample}.Rmd
         R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}, matrix_source='{params.matrix_source}'), output_file='{output.report}')"
+        rm -rf "$workdir"
         """
 
 rule copySeuratQCReport:

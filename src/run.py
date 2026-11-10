@@ -1368,6 +1368,11 @@ def dryrun(
     outdir, config="config.json", snakefile=os.path.join("workflow", "Snakefile")
 ):
     """Dryruns the pipeline to ensure there are no errors prior to runnning.
+    Uses `-np` rather than `-npr`: the `-r`/`--reason` flag was removed in
+    Snakemake 8 (reason printing is unconditional there during a dry-run),
+    so this invocation runs snakemake directly from $PATH without needing
+    the Skyline-specific version pin that src/run.sh's load_snakemake()
+    applies before slurm/uge submission.
     @param outdir <str>:
         Pipeline output PATH
     @return dryrun_output <str>:
@@ -1377,7 +1382,7 @@ def dryrun(
         dryrun_output = subprocess.check_output(
             [
                 "snakemake",
-                "-npr",
+                "-np",
                 "-s",
                 str(snakefile),
                 "--use-singularity",
@@ -1509,11 +1514,15 @@ def runner(
     # Run on compute node or instance
     # without submitting jobs to a scheduler
     if mode == "local":
-        # Run pipeline's main process
+        # Run pipeline's main process. Uses "-p" rather than "-pr": the
+        # "-r"/"--reason" flag was removed in Snakemake 8 (reason printing
+        # is unconditional there), so this runs snakemake directly from
+        # $PATH without needing the Skyline-specific version pin that
+        # src/run.sh's load_snakemake() applies before slurm/uge submission.
         masterjob = subprocess.Popen(
             [
                 "snakemake",
-                "-pr",
+                "-p",
                 "--rerun-incomplete",
                 "--use-singularity",
                 "--singularity-args",
