@@ -272,8 +272,10 @@ function submit(){
           # keeps the original --gres behavior and cluster.json. This is
           # also deliberately restricted to Skyline's interactive nodes
           # (see is_skyline()), never the head/submit node.
-          if is_skyline; then
+          if is_skyline || [[ ${6#\'} != /lscratch* ]]; then
             CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
+          fi
+          if is_skyline; then
             CLUSTER_JSON="config/cluster.skyline.json"
           fi
           # Create sbacth script to build index
