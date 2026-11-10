@@ -148,8 +148,6 @@ Each of the following arguments are optional, and do not need to be provided.
 >   
 > A CSV file containing per-sample QC threshold overrides. The header must include `Sample` and metric names ending in `_low` or `_high`. For each sample, automatic thresholds based on 3 median absolute deviations (MADs) of log-transformed values are calculated first; supplied numeric values replace individual thresholds. Missing columns, blank or `NA` values, and samples absent from the CSV retain automatic defaults. Without a file, all automatic defaults are used.
 >
-> **Behavior change:** Previously, a matching CSV row applied only the supplied thresholds, and omitted or blank criteria were not filtered. They now retain automatic filtering. This change applies to GEX only.
->
 > *Here is an example filter.csv file:*
 > ```
 > Sample,nFeature_RNA_low,nFeature_RNA_high,percent.mito_high
@@ -170,7 +168,7 @@ Each of the following arguments are optional, and do not need to be provided.
 > Sample,percent.mito_high
 > sample1,5
 > ```
-> Gene and UMI count filtering for `sample1` still uses its automatic thresholds. Other samples use all automatic thresholds. Cells above 5% fail the mitochondrial criterion; cells at exactly 5% pass that criterion. Final applied thresholds are recorded in `cell_filter_info.csv` and the QC reports.
+> Gene and UMI count filtering for `sample1` still uses its automatic thresholds. Other samples use all automatic thresholds. Cells above 5% fail the mitochondrial criterion; cells at exactly 5% pass that criterion. Final applied thresholds are summarized in `Project_Cell_Filters.csv`, and shown in the QC reports.
 
 ---  
   `--metadata METADATA`
