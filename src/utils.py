@@ -198,7 +198,8 @@ def is_skyline():
     try:
         out = subprocess.run(
             ["scontrol", "show", "config"],
-            capture_output=True, text=True, timeout=5,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=5,
         ).stdout
     except Exception:
         return False
@@ -287,6 +288,40 @@ def require_github_auth():
         )
 
 
+def require_singularity_registry_login_support():
+    """Enforces a minimum Singularity/SingularityCE version that supports the
+    `singularity registry login` subcommand, used to authenticate to ghcr.io.
+    That subcommand did not exist prior to SingularityCE 4.0.0: OCI/Docker
+    registry auth was previously performed with `singularity remote login`
+    (added in Singularity 3.7.0), until the registry-related commands were
+    split out of `remote` into their own dedicated `registry` command group
+    in SingularityCE 4.0.0. Installs older than 4.0.0 would otherwise fail
+    with a raw CalledProcessError from an unrecognized subcommand; fail with
+    a clear, actionable message instead.
+    @calls fatal() if singularity is older than 4.0.0, or its version cannot
+        be determined
+    """
+    c = Colors
+    try:
+        out = subprocess.run(
+            ["singularity", "--version"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=5,
+        ).stdout
+    except Exception as e:
+        out = ""
+
+    m = re.search(r"(\d+)\.(\d+)\.(\d+)", out)
+    if not m or int(m.group(1)) < 4:
+        fatal("""\n{}{}Fatal: installed singularity version is too old for GitHub Container Registry authentication!{}
+        `singularity registry login` (used to authenticate to ghcr.io) requires
+        SingularityCE >= 4.0.0; detected version: {}
+        └── Possible solution: upgrade to SingularityCE >= 4.0.0, or provide a
+            pre-pulled/cached SIF via --sif-cache so no ghcr.io pull is needed.""".format(
+            c.bg_red, c.white, c.end, out.strip() or "unknown")
+        )
+
+
 def configure_singularity_github_auth():
     """Logs into ghcr.io with GitHub Container Registry credentials, scoped
     to that registry only. SINGULARITY_DOCKER_USERNAME/PASSWORD are deliberately
@@ -297,7 +332,9 @@ def configure_singularity_github_auth():
     only (in the user's default registry config), leaving DockerHub pulls
     anonymous. Call require_github_auth() first to ensure the GITHUB_*
     variables are actually present.
-    @calls fatal() if the login to ghcr.io fails
+    @calls fatal() if the login to ghcr.io fails, or if singularity is too old
+        to support `singularity registry login` (see
+        require_singularity_registry_login_support())
     """
     token = os.environ.get("GITHUB_TOKEN", "")
     actor = os.environ.get("GITHUB_ACTOR") or os.environ.get("GITHUB_USER") or ""
@@ -305,6 +342,8 @@ def configure_singularity_github_auth():
         # Nothing to configure; require_github_auth() should have
         # already enforced these are set before this is called.
         return
+
+    require_singularity_registry_login_support()
 
     try:
         subprocess.run(
@@ -315,9 +354,9 @@ def configure_singularity_github_auth():
                 "docker://ghcr.io",
             ],
             input=token,
-            text=True,
+            universal_newlines=True,
             check=True,
-            capture_output=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         )
     except subprocess.CalledProcessError as e:
         c = Colors

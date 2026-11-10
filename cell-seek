@@ -125,25 +125,30 @@ def run(sub_args):
         sub_args, ifiles=input_files, repo_path=git_repo, output_path=sub_args.output
     )
 
-    # Step 2b. Check for GitHub Container Registry auth,
-    # but only if the Cell Ranger image required by this
-    # pipeline/version was NOT already resolved to a local
-    # SIF from --sif-cache. If it's already cached, singularity
-    # does not need to pull from the private ghcr.io/openomics/
-    # cell-seek package, so no GHCR credentials are required.
-    if not sub_args.dry_run and container_pull_required(config):
-        require_github_auth()
-        configure_singularity_github_auth()
-
     # Step 3. Resolve docker/singularity bind
     # paths from the config file.
     bindpaths = bind(sub_args, config=config)
 
     config["bindpaths"] = bindpaths
 
-    # Step 4. Save config to output directory
+    # Step 4. Save config to output directory. Written before the GHCR
+    # auth check below, since that check runs its own internal dry-run,
+    # which requires a config.json to already be in place.
     with open(os.path.join(sub_args.output, "config.json"), "w") as fh:
         json.dump(config, fh, indent=4, sort_keys=True)
+
+    # Step 4b. Check for GitHub Container Registry auth, but only if
+    # there is actually pending work that needs it. container_pull_required()
+    # is a cheap, static check of the configured image URI; if it indicates
+    # a pull may be needed, an internal dry-run then confirms Snakemake would
+    # really execute something before demanding credentials. This way,
+    # resuming an already-completed run (where Snakemake has nothing left to
+    # do) does not require GITHUB_TOKEN/GITHUB_ACTOR to be set.
+    if not sub_args.dry_run and container_pull_required(config):
+        preflight_output = dryrun(outdir=sub_args.output)
+        if b"Nothing to be done" not in preflight_output:
+            require_github_auth()
+            configure_singularity_github_auth()
 
     # Optional Step: Dry-run pipeline
     if sub_args.dry_run:
@@ -161,7 +166,7 @@ def run(sub_args):
                 finalcheck(config=config, flag=arg_check)
         sys.exit(0)
 
-    # Step 4b. Perform final check of input files
+    # Step 4c. Perform final check of input files
     for arg_check in ["rename", "libraries"]:
         if config["options"][arg_check] != "None":
             finalcheck(config=config, flag=arg_check)
