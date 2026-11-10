@@ -35,17 +35,17 @@
         "mem": "1000g",
         "time": "3-00:00:00"
     },
-    "shinycodes": {
+    "cellsightcodes": {
         "threads": "16",
         "mem": "32g",
         "time": "0-08:00:00"
     },
-    "shinyfiles": {
+    "cellsightfiles": {
         "threads": "16",
         "mem": "32g",
         "time": "0-08:00:00"
     },
-    "shinytar": {
+    "cellsighttar": {
         "threads": "32",
         "mem": "64g",
         "time": "0-08:00:00"

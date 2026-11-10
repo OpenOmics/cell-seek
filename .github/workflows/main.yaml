@@ -38,7 +38,7 @@ jobs:
         .tests/WT_S2_L001_R1_001.fastq.gz .tests/WT_S2_L001_R2_001.fastq.gz \
         .tests/WT_S3_L001_R1_001.fastq.gz .tests/WT_S3_L001_R2_001.fastq.gz \
         .tests/WT_S4_L001_R1_001.fastq.gz .tests/WT_S4_L001_R2_001.fastq.gz \
-        --output output --genome hg38 --pipeline gex --cellranger 8.0.0 --mode local --dry-run
+        --output output --genome hg38 --pipeline gex --cellranger 8.0.1 --mode local --dry-run
     - name: View the pipeline config file
       run: |
         echo "Generated config file for pipeline...." && cat $PWD/output/config.json
@@ -68,7 +68,7 @@ jobs:
       run: |
         ./cell-seek run --input \
         .tests/WT/ \
-        --output output --genome hg38 --pipeline gex --cellranger 8.0.0 --mode local --dry-run
+        --output output --genome hg38 --pipeline gex --cellranger 8.0.1 --mode local --dry-run
     - name: View the pipeline config file
       run: |
         echo "Generated config file for pipeline...." && cat $PWD/output/config.json
