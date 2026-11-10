@@ -289,17 +289,20 @@ def require_github_auth():
 
 
 def require_singularity_registry_login_support():
-    """Enforces a minimum Singularity/SingularityCE version that supports the
-    `singularity registry login` subcommand, used to authenticate to ghcr.io.
-    That subcommand did not exist prior to SingularityCE 4.0.0: OCI/Docker
-    registry auth was previously performed with `singularity remote login`
-    (added in Singularity 3.7.0), until the registry-related commands were
-    split out of `remote` into their own dedicated `registry` command group
-    in SingularityCE 4.0.0. Installs older than 4.0.0 would otherwise fail
-    with a raw CalledProcessError from an unrecognized subcommand; fail with
-    a clear, actionable message instead.
-    @calls fatal() if singularity is older than 4.0.0, or its version cannot
-        be determined
+    """Enforces a minimum version of whichever OCI runtime is installed as
+    `singularity` that supports the `registry login` subcommand, used to
+    authenticate to ghcr.io. `singularity`/`apptainer` are separate forks on
+    unrelated version scales (e.g. Apptainer 1.5.0 is far newer than it
+    sounds next to SingularityCE 4.0.0), so the installed flavor must be
+    detected before picking a floor:
+      - SingularityCE: `registry login`/`logout` were split out of `remote`
+        into their own `registry` command group in 4.0.0.
+      - Apptainer: the same split happened independently in 1.3.0.
+    Versions older than that floor for the detected flavor would otherwise
+    fail with a raw CalledProcessError from an unrecognized subcommand; fail
+    with a clear, actionable message instead.
+    @calls fatal() if the installed runtime is older than its flavor's
+        floor, or its version cannot be determined
     """
     c = Colors
     try:
@@ -311,14 +314,21 @@ def require_singularity_registry_login_support():
     except Exception as e:
         out = ""
 
+    is_apptainer = bool(re.search(r"\bapptainer\b", out, re.IGNORECASE))
+    flavor = "Apptainer" if is_apptainer else "SingularityCE"
+    floor = (1, 3, 0) if is_apptainer else (4, 0, 0)
+
     m = re.search(r"(\d+)\.(\d+)\.(\d+)", out)
-    if not m or int(m.group(1)) < 4:
-        fatal("""\n{}{}Fatal: installed singularity version is too old for GitHub Container Registry authentication!{}
-        `singularity registry login` (used to authenticate to ghcr.io) requires
-        SingularityCE >= 4.0.0; detected version: {}
-        └── Possible solution: upgrade to SingularityCE >= 4.0.0, or provide a
-            pre-pulled/cached SIF via --sif-cache so no ghcr.io pull is needed.""".format(
-            c.bg_red, c.white, c.end, out.strip() or "unknown")
+    version = tuple(int(g) for g in m.groups()) if m else None
+    if version is None or version < floor:
+        fatal("""\n{}{}Fatal: installed {} version is too old for GitHub Container Registry authentication!{}
+        `registry login` (used to authenticate to ghcr.io) requires
+        {} >= {}; detected version: {}
+        └── Possible solution: upgrade {}, or provide a pre-pulled/cached SIF
+            via --sif-cache so no ghcr.io pull is needed.""".format(
+            c.bg_red, c.white, flavor, c.end,
+            flavor, ".".join(str(v) for v in floor), out.strip() or "unknown",
+            flavor)
         )
 
 
