@@ -330,7 +330,7 @@ def genome_options(parser, user_option, prebuilt):
     return user_option
 
 
-def shinycell(args):
+def cellsight(args):
     require(["snakemake", "singularity"], ["snakemake", "singularity"])
 
     if (args.markers is None) != (args.cluster_labels is None):
@@ -367,14 +367,20 @@ def shinycell(args):
     json.dump(cfg, open(os.path.join(args.outdir, "config.json"), "w"), indent=4)
 
     scrules = os.path.join(
-        os.path.dirname(__file__), "workflow", "rules", "shinycell2.smk"
+        os.path.dirname(__file__), "workflow", "rules", "cellsight.smk"
     )
     cluster_resources = os.path.join(
         os.path.dirname(__file__), "config", "cluster.json"
     )
+    cluster_resources_skyline = os.path.join(
+        os.path.dirname(__file__), "config", "cluster.skyline.json"
+    )
     to_copy = {
         scrules: os.path.join(args.outdir, "workflow", "Snakefile"),
         cluster_resources: os.path.join(args.outdir, "config", "cluster.json"),
+        cluster_resources_skyline: os.path.join(
+            args.outdir, "config", "cluster.skyline.json"
+        ),
     }
     for src, dest in to_copy.items():
         if not os.path.exists(os.path.dirname(dest)):
@@ -1630,13 +1636,13 @@ def parsed_arguments(name, description):
     # Add custom help message
     subparser_cache.add_argument("-h", "--help", action="help", help=argparse.SUPPRESS)
 
-    # shinycell builder subcommands
-    required_shinycell_options = textwrap.dedent(
+    # cellsight builder subcommands
+    required_cellsight_options = textwrap.dedent(
         """\
         {0}: {1}
 
         {3}{4}Synopsis:{5}
-        $ {2} shinycell [-h] \\
+        $ {2} cellsight [-h] \\
                 -j OBJ -o OUTDIR --proj PROJECT \\
                 [--markers MARKERS] [--cluster_labels CLUSTER_LABELS] \\
                 [--rmmeta META1,META2] [--defred DEFAULTRED] \\
@@ -1645,7 +1651,7 @@ def parsed_arguments(name, description):
         Optional arguments are shown in square brackets above.
 
         {3}{4}Description:{5}
-        Builds a ShinyCell2 application from a Seurat RDS object. The command
+        Builds a CellSight application from a Seurat RDS object. The command
         validates inputs, creates configuration, and writes the files and/or
         Shiny code required to deploy an interactive single-cell web app.
 
@@ -1705,19 +1711,19 @@ def parsed_arguments(name, description):
         """.format(styled_name, description, name, c.bold, c.url, c.end)
     )
 
-    shinycell_epilog = textwrap.dedent(
+    cellsight_epilog = textwrap.dedent(
         """\
         {2}{3}Examples:{4}
-        # Basic: create a ShinyCell2 app from a Seurat RDS file
-        ./{0} shinycell -j seurat_obj.rds -o ./ShinyCell2_test --proj NCBR-34
+        # Basic: create a CellSight app from a Seurat RDS file
+        ./{0} cellsight -j seurat_obj.rds -o ./CellSight_test --proj NCBR-34
 
         # Include markers and cluster labels (markers file must exist)
-        ./{0} shinycell -j seurat_obj.rds -o ./ShinyCell2_markers \\
+        ./{0} cellsight -j seurat_obj.rds -o ./CellSight_markers \\
                         --proj NCBR-34 --markers markers.txt \\
                         --cluster_labels seurat_clusters
 
         # Specify assays to include and drop unwanted metadata columns
-        ./{0} shinycell -j seurat_obj.rds -o ./ShinyCell2_assays \\
+        ./{0} cellsight -j seurat_obj.rds -o ./CellSight_assays \\
                         --proj NCBR-34 -a RNA,spatial --rmmeta large_matrix
 
         {2}{3}Notes:{4}
@@ -1731,65 +1737,65 @@ def parsed_arguments(name, description):
         {1}
         """.format(name, __version__, c.bold, c.url, c.end)
     )
-    subparser_shinycell = subparsers.add_parser(
-        "shinycell",
-        help="Run the ShinyCell2 application creation pipeline.",
+    subparser_cellsight = subparsers.add_parser(
+        "cellsight",
+        help="Run the CellSight application creation pipeline.",
         usage=argparse.SUPPRESS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=required_shinycell_options,
-        epilog=shinycell_epilog,
+        description=required_cellsight_options,
+        epilog=cellsight_epilog,
         add_help=False,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "-j",
         "--obj",
         dest="object",
         help=argparse.SUPPRESS,
         required=True,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "-o",
         "--outdir",
         dest="outdir",
         help=argparse.SUPPRESS,
         required=True,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--proj",
         dest="project",
         help=argparse.SUPPRESS,
         required=True,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--markers",
         dest="markers",
         help=argparse.SUPPRESS,
         default=None,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--cluster_labels",
         dest="cluster_labels",
         help=argparse.SUPPRESS,
         default=None,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--rmmeta",
         dest="meta_to_rm",
         help=argparse.SUPPRESS,
         default=None,
         metavar="<META.VAR.TO.RM>, [<META.VAR.TO.RM>,] [<META.VAR.TO.RM>,] [...]",
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--defred",
         dest="defaultreduction",
         help=(
-            "The default reduction to use with ShinyCell2, this value must exist in Seurat::DefaultDimReduc(obj).\n"
+            "The default reduction to use with CellSight, this value must exist in Seurat::DefaultDimReduc(obj).\n"
             "The two major principal components for this reductions must be labeled the same label with a 1 and a 2 trailing it.\n"
             "i.e. defaultreduction = UMAP, UMAP1 and UMAP2 are the two components that must exist"
         ),
         default=None,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "-l",
         "--maxlevels",
         dest="max_levels",
@@ -1797,18 +1803,18 @@ def parsed_arguments(name, description):
         help="The maximum allowable amount levels/factors of categorical values (int).",
         default=50,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "-a",
         "--assay",
         dest="assaytouse",
         metavar="<ASSAY1>, <ASSAY2>, <ASSAY3>, ...",
         help=(
-            "The assay to utilize for ShinyCell2 web application.\n"
+            "The assay to utilize for CellSight web application.\n"
             "Comma delimit multiple assays in a single string e.g.: RNA,spatial,ATAC,etc."
         ),
         default=None,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--tmp-dir",
         dest="tmpdir",
         type=str,
@@ -1816,7 +1822,7 @@ def parsed_arguments(name, description):
         default=default_tmp_dir(),
         help=argparse.SUPPRESS,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--mode",
         type=str,
         required=False,
@@ -1824,24 +1830,24 @@ def parsed_arguments(name, description):
         choices=["slurm", "local"],
         help=argparse.SUPPRESS,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--threads", type=int, required=False, default=2, help=argparse.SUPPRESS
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--job-name",
         type=str,
         required=False,
-        default="pl:{}:shinycell".format(name),
+        default="pl:{}:cellsight".format(name),
         help=argparse.SUPPRESS,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "--silent",
         action="store_true",
         required=False,
         default=False,
         help=argparse.SUPPRESS,
     )
-    subparser_shinycell.add_argument(
+    subparser_cellsight.add_argument(
         "-h", "--help", action="help", help=argparse.SUPPRESS
     )
 
@@ -1850,7 +1856,7 @@ def parsed_arguments(name, description):
     subparser_unlock.set_defaults(func=unlock)
     subparser_cache.set_defaults(func=cache)
     subparser_genome.set_defaults(func=genome)
-    subparser_shinycell.set_defaults(func=shinycell)
+    subparser_cellsight.set_defaults(func=cellsight)
 
     # Parse command-line args
     args = parser.parse_args()
