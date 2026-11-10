@@ -17,7 +17,7 @@
         },
         "python2": "python/2.7",
         "python3": "python/3.8",
-        "rversion": "R/4.4.0"
+        "rversion": "R/4.4.0",
         "cellbender": "cellbender/0.3.0"
     },
     "r_libs": {
