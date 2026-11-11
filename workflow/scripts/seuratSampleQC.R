@@ -81,6 +81,7 @@ defaultThreshold <- function(seur) {
 }
 
 thresh <- defaultThreshold(seur)
+threshold_sources <- setNames(rep('automatic 3 MAD calculation', length(thresh)), names(thresh))
 if (!is.na(opt$filterfile)){
   thresholds <- read.csv(opt$filterfile)
   index <- grep("Sample", colnames(thresholds), ignore.case=T)
@@ -105,8 +106,30 @@ if (!is.na(opt$filterfile)){
 
       metric <- sub('_(high|low)$', '', column, ignore.case=TRUE)
       direction <- tolower(sub('.*_', '', column))
-      thresh[[paste(metric, direction, sep='_')]] <- value
+      threshold_name <- paste(metric, direction, sep='_')
+      thresh[[threshold_name]] <- value
+      threshold_sources[[threshold_name]] <- sprintf("CSV '%s', column '%s'", opt$filterfile, column)
     }
+  }
+}
+
+# Validate the final bounds after applying all manual overrides.
+for (low in grep('_low$', names(thresh), value=TRUE)) {
+  high <- sub('_low$', '_high', low)
+  if (!(high %in% names(thresh))) next
+
+  if (!isTRUE(thresh[[high]] > thresh[[low]])) {
+    stop(
+      paste(
+        paste("Sample:", opt$sample),
+        paste(high, "=", thresh[[high]], "from", threshold_sources[[high]]),
+        paste(low, "=", thresh[[low]], "from", threshold_sources[[low]]),
+        "The high cutoff must be greater than the low cutoff.",
+        "Provide or update --filter with corrected bounds.",
+        sep = "\n"
+      ),
+      call. = FALSE
+    )
   }
 }
 
