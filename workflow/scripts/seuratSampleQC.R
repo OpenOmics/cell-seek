@@ -69,28 +69,19 @@ figures$PreFilter_Gene_Plot <- plot1+plot2
 
 
 ## ----Cell Quality Thresholds - Default----
-thresh <- list()
 defaultThreshold <- function(seur) {
   thresh <- list()
-  thresh['nFeature_RNA_low'] <- expm1(median(log1p(seur$nFeature_RNA)) - 3*mad(log1p(seur$nFeature_RNA))) %>% round
   thresh['nFeature_RNA_low'] <- expm1(median(log1p(seur$nFeature_RNA)) - 3*mad(log1p(seur$nFeature_RNA))) %>% round
   thresh['nFeature_RNA_high'] <- expm1(median(log1p(seur$nFeature_RNA)) + 3*mad(log1p(seur$nFeature_RNA))) %>% round
   thresh['nCount_RNA_low'] <- expm1(median(log1p(seur$nCount_RNA)) - 3*mad(log1p(seur$nCount_RNA))) %>% round
   thresh['nCount_RNA_high'] <- expm1(median(log1p(seur$nCount_RNA)) + 3*mad(log1p(seur$nCount_RNA))) %>% round
   thresh['percent.mito_high'] = min(expm1(median(log1p(seur$percent.mito)) + 3*mad(log1p(seur$percent.mito))) %>% round, 100)
 
-  cellsToRemove <- colnames(seur)[which(seur$nFeature_RNA < thresh['nFeature_RNA_low'] | seur$nFeature_RNA > thresh['nFeature_RNA_high'])]
-  cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur$nCount_RNA < thresh['nCount_RNA_low'] | seur$nCount_RNA > thresh['nCount_RNA_high'])])
-  cellsToRemove <- union(cellsToRemove,  colnames(seur)[which(seur$percent.mito > thresh['percent.mito_high'])])
-
-
-  thresh['initialCellCount'] <- dim(seur)[2]
-  thresh['numCellsRemove'] <- length(cellsToRemove)
-  thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
-  thresh['finalCellCount'] <- thresh[['initialCellCount']] - thresh[['numCellsRemove']]
-  return(list(threshold=thresh, filter=cellsToRemove))
+  return(thresh)
 }
 
+thresh <- defaultThreshold(seur)
+threshold_sources <- setNames(rep('automatic 3 MAD calculation', length(thresh)), names(thresh))
 if (!is.na(opt$filterfile)){
   thresholds <- read.csv(opt$filterfile)
   index <- grep("Sample", colnames(thresholds), ignore.case=T)
@@ -98,38 +89,64 @@ if (!is.na(opt$filterfile)){
     thresh_orig <- thresholds[which(thresholds[,index] == opt$sample),]
     thresh_orig[index] <- NULL
 
-    thresh <- list()
-    cellsToRemove <- character()
-    for (i in colnames(thresh_orig)) {
-      try({
-        if (length(grep('_high$', i, ignore.case=T, value=T)) > 0 | length(grep('_low$', i, ignore.case=T, value=T)) > 0) {
-          colname <- (i %>% strsplit(split='_'))[[1]] %>% head(n=-1) %>% paste(collapse='_')
-          direction <- (i %>% strsplit(split='_'))[[1]] %>% tail(n=1) %>% str_to_lower
-          if(direction == "low") {
-            cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] < thresh_orig[[i]])])
-            thresh[i] <- thresh_orig[[i]]
-          }
-          if (direction == "high") {
-            cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] > thresh_orig[[i]])])
-            thresh[i] <- thresh_orig[[i]]
-          }
-        }
-      })
+    threshold_columns <- grep(
+      '_(high|low)$', names(thresh_orig),
+      ignore.case=TRUE, value=TRUE
+    )
+
+    for (column in threshold_columns) {
+      value <- thresh_orig[[column]]
+      if (is.na(value) || trimws(as.character(value)) == "") next
+
+      value <- suppressWarnings(as.numeric(as.character(value)))
+      if (is.na(value)) {
+        stop(sprintf("Sample '%s': threshold '%s' must be numeric.",
+                     opt$sample, column))
+      }
+
+      metric <- sub('_(high|low)$', '', column, ignore.case=TRUE)
+      direction <- tolower(sub('.*_', '', column))
+      threshold_name <- paste(metric, direction, sep='_')
+      thresh[[threshold_name]] <- value
+      threshold_sources[[threshold_name]] <- sprintf("CSV '%s', column '%s'", opt$filterfile, column)
     }
-    thresh['initialCellCount'] <- dim(seur)[2]
-    thresh['numCellsRemove'] <- length(cellsToRemove)
-    thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
-    thresh['finalCellCount'] <- thresh[['initialCellCount']] - thresh[['numCellsRemove']]
-  } else {
-    result <- defaultThreshold(seur)
-    thresh <- result$threshold
-    cellsToRemove <- result$filter
   }
-} else {
-  result <- defaultThreshold(seur)
-  thresh <- result$threshold
-  cellsToRemove <- result$filter
 }
+
+# Validate the final bounds after applying all manual overrides.
+for (low in grep('_low$', names(thresh), value=TRUE)) {
+  high <- sub('_low$', '_high', low)
+  if (!(high %in% names(thresh))) next
+
+  if (!isTRUE(thresh[[high]] > thresh[[low]])) {
+    stop(
+      paste(
+        paste("Sample:", opt$sample),
+        paste(high, "=", thresh[[high]], "from", threshold_sources[[high]]),
+        paste(low, "=", thresh[[low]], "from", threshold_sources[[low]]),
+        "The high cutoff must be greater than the low cutoff.",
+        "Provide or update --filter with corrected bounds.",
+        sep = "\n"
+      ),
+      call. = FALSE
+    )
+  }
+}
+
+# Apply thresholds only after all manual overrides have been merged.
+cellsToRemove <- character()
+for (i in names(thresh)) {
+  colname <- sub('_(high|low)$', '', i)
+  if (endsWith(i, '_low')) {
+    cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] < thresh[[i]])])
+  } else {
+    cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] > thresh[[i]])])
+  }
+}
+thresh['initialCellCount'] <- dim(seur)[2]
+thresh['numCellsRemove'] <- length(cellsToRemove)
+thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
+thresh['finalCellCount'] <- thresh[['initialCellCount']] - thresh[['numCellsRemove']]
 
 write.csv(thresh, 'cell_filter_info.csv', row.names=FALSE)
 

@@ -163,7 +163,7 @@ Each of the following arguments are optional, and do not need to be provided.
 > **Filter threshold file.**   
 > *type: file*
 >   
-> Filter threshold file. A CSV file containing the different thresholds to be applied for individual samples within the project during the QC analysis. The file should contain a header row with Sample as the column name for the sample IDs, and the name of each metric that will be filtered along with if it is the high or low threshold for that metric. Each row is then the entries for each sample that the manual thresholds will be applied. If no file is provided then the default thresholds will be used. If a cell is left blank for a sample then that sample would not be filtered based on that criteria. This flag is currently only applicable when dealing with GEX projects.
+> A CSV file containing per-sample QC threshold overrides. The header must include `Sample` and metric names ending in `_low` or `_high`. For each sample, automatic thresholds based on 3 median absolute deviations (MADs) of log-transformed values are calculated first; supplied numeric values replace individual thresholds. Missing columns, blank or `NA` values, and samples absent from the CSV retain automatic defaults. Without a file, all automatic defaults are used.
 >
 > *Here is an example filter.csv file:*
 > ```
@@ -179,6 +179,13 @@ Each of the following arguments are optional, and do not need to be provided.
 > - *nFeature_RNA_low,nFeature_RNA_high,percent.mito_high:* Example entries that can be used for manual thresholding. The column names need to be formatted as metadataname_high/low. Entries that ends with high will be treated as the upper threshold. Entries that ends with low will be treated as the lower threshold. Valid metadata names include nCount_RNA, nFeature_RNA, and percent.mito.
 >
 > ***Example:*** `--filter filter.csv`
+>
+> To set only a mitochondrial maximum of 5% for one sample:
+> ```csv
+> Sample,percent.mito_high
+> sample1,5
+> ```
+> Gene and UMI count filtering for `sample1` still uses its automatic thresholds. Other samples use all automatic thresholds. Cells above 5% fail the mitochondrial criterion; cells at exactly 5% pass that criterion. Final applied thresholds are summarized in `Project_Cell_Filters.csv`, and shown in the QC reports.
 
 ---  
   `--metadata METADATA`

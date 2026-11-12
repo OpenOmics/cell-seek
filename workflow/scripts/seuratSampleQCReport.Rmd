@@ -121,8 +121,8 @@ if (file.exists(file.path(seuratdir, 'PreFilter_UMAP_percent.rps.png'))) {
 ```{r Cell Filter, warning=FALSE, message=FALSE, results='asis', fig.width=5, fig.height=7, out.width="70%"}
 if (params$defaultfilter) {
   cat("Adaptive thresholds based on the feature distributions were used to filter out potential low quality cells and multiplets. The values were log-transformed and a threshold of 3 median absolute deviations (MADs) above and below the median was calculated. Only an upper threshold was calculated for mitochondrial percentage.^1^\n\n")
-}else {
-  cat("Thresholds were used to filter out potential low quality cells and multiplets.\n\n")
+} else {
+  cat("Automatic thresholds based on 3 median absolute deviations (MADs) of log-transformed values were calculated. Numeric values supplied for this sample in the filter CSV override individual thresholds; omitted, blank, or NA values retain automatic defaults.\n\n")
 }
 cat("The following are the thresholds that were set for each set of statistics.\n\n")
 
@@ -131,7 +131,13 @@ thresh <- read.csv(file.path(seuratdir, 'cell_filter_info.csv'))
 printed <- c(apply(expand.grid(c("nFeature_RNA", "nCount_RNA", "percent.mito"), c("low", "high")), 1, paste, collapse='_'), "numCellsRemove", "pctCellsRemove", "initialCellCount", "finalCellCount")
 
 get_value <- function(thresh, value) {
-  if (is.null(thresh[[value]])) {NA} else{sprintf("%.0f", thresh[[value]])}
+  if (is.null(thresh[[value]])) {
+    NA
+  } else if (grepl('_(low|high)$', value)) {
+    as.character(thresh[[value]])
+  } else {
+    sprintf("%.0f", thresh[[value]])
+  }
 }
 cat("GEX Gene Count Thresholds:", paste0("(", get_value(thresh, "nFeature_RNA_low"), ", ", get_value(thresh, "nFeature_RNA_high"), ")"), "\n\n")
 

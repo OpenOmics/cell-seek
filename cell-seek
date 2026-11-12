@@ -758,9 +758,10 @@ def parsed_arguments(name, description):
                                 and the name of each metric that will be filtered along with
                                 if it is the high or low threshold for that metric. Each row
                                 is then the entries for each sample that the manual thresholds
-                                will be applied. If no file is provided then the default
-                                thresholds will be used. If a cell is left blank for a sample
-                                then that sample would not be filtered based on that criteria.
+                                will be applied. For GEX, numeric values override individual
+                                automatic 3 MAD thresholds. Missing columns, blank or NA
+                                values, and samples absent from the CSV retain automatic
+                                defaults. Without a file, all automatic defaults are used.
                                 This flag is currently only applicable when dealing with GEX
                                 projects.
                                   Here is an example filter.csv file:
