@@ -75,7 +75,7 @@ defaultThreshold <- function(seur) {
   thresh['nFeature_RNA_high'] <- expm1(median(log1p(seur$nFeature_RNA)) + 3*mad(log1p(seur$nFeature_RNA))) %>% round
   thresh['nCount_RNA_low'] <- expm1(median(log1p(seur$nCount_RNA)) - 3*mad(log1p(seur$nCount_RNA))) %>% round
   thresh['nCount_RNA_high'] <- expm1(median(log1p(seur$nCount_RNA)) + 3*mad(log1p(seur$nCount_RNA))) %>% round
-  thresh['percent.mito_high'] = min(expm1(median(log1p(seur$percent.mito)) + 3*mad(log1p(seur$percent.mito))) %>% round, 100)
+  thresh['percent.mito_high'] = min(expm1(median(log1p(seur$percent.mito)) + 3*mad(log1p(seur$percent.mito))) %>% round(digits=2), 100)
 
   return(thresh)
 }
