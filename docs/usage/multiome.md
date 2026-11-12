@@ -25,7 +25,7 @@ $ cell-seek run [--help] \
       --output OUTPUT \
       --pipeline multiome \
       --genome {hg38, ...} \
-      --cellranger {2.0.1, 2.1.0}
+      --cellranger {2.1.0}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
@@ -84,11 +84,11 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {2.0.0, 2.1.0}`
+  `--cellranger {2.1.0}`
 > **The version of Cell Ranger ARC to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger ARC to use when running the Multiome pipeline. Please select one of the following options: 2.0.1, 2.1.0
+> This option specifies which version of Cell Ranger ARC to use when running the Multiome pipeline. Please select one of the following options: 2.1.0
 >
 > ***Example:*** `--cellranger 2.1.0`
 

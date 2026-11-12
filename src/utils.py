@@ -4,7 +4,7 @@
 # Python standard library
 from __future__ import print_function
 from shutil import copytree
-import os, sys, hashlib
+import os, sys, hashlib, re, socket
 import subprocess, json
 
 
@@ -179,7 +179,199 @@ def require(cmds, suggestions, path=None):
 
     if error: fatal()
 
-    return 
+    return
+
+
+def is_skyline():
+    """Determines if running on a Skyline interactive node (ai-hpcnXXX,
+    where XXX is any integer), mirroring the equivalent is_skyline() check
+    in src/run.sh. Deliberately false on the head/submit node
+    (ai-hpcsubmitN) and any other host, even if SLURM's ClusterName also
+    resolves to skyline-prod there.
+    @return <boolean>:
+        True if on a Skyline interactive node, False otherwise
+    """
+    host = socket.gethostname().split(".")[0]
+    if not re.match(r"^ai-hpcn[0-9]+$", host):
+        return False
+
+    try:
+        out = subprocess.run(
+            ["scontrol", "show", "config"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=5,
+        ).stdout
+    except Exception:
+        return False
+
+    m = re.search(r"^ClusterName\s*=\s*(\S+)", out, re.MULTILINE)
+    return bool(m) and m.group(1) == "skyline-prod"
+
+
+def default_tmp_dir():
+    """Returns a cluster-appropriate default for --tmp-dir. Skyline's
+    scratch space is node-local and already exported via $TMPDIR (e.g.
+    /data/scratch/<user>/<hostname>), unlike Biowulf, which requires
+    building a path from $SLURM_JOBID (/lscratch/$SLURM_JOBID/). Both
+    variables are deliberately left unexpanded here so they resolve
+    correctly inside whichever node a given job actually lands on,
+    rather than being baked in at CLI-parse time on the submitting node.
+    @return <str>:
+        Default --tmp-dir value for this cluster
+    """
+    if is_skyline():
+        return "$TMPDIR"
+    return "/lscratch/$SLURM_JOBID/"
+
+
+def container_pull_required(config):
+    """Determines whether singularity still needs to pull a Cell Ranger image
+    from ghcr.io, or whether image_cache() already resolved the selected
+    pipeline/version to a local SIF from --sif-cache. Fails safe: if the
+    image for the selected pipeline/version can't be resolved in config,
+    this assumes a pull (and GHCR auth) is required.
+    @param config <dict>:
+        Pipeline config dictionary, after setup() (and image_cache()) have run
+    @return <boolean>:
+        True if a docker:// pull is still required, False if a local SIF
+        was already found in --sif-cache
+    """
+    pipeline = config.get("options", {}).get("pipeline", "")
+    version = config.get("options", {}).get("cellranger", "")
+    tool = {
+        "atac": "cellranger-atac",
+        "multiome": "cellranger-arc",
+    }.get(pipeline, "cellranger")
+
+    uri = config.get(tool, {}).get(version)
+    if uri is None:
+        # Could not resolve the image for this pipeline/version,
+        # fail safe and assume a pull (and auth) is required.
+        return True
+
+    if uri.startswith("docker://"):
+        return True
+
+    if pipeline in ("gex", "cite", "multi"):
+        r_uri = config.get("images", {}).get("r_base")
+        return r_uri is None or r_uri.startswith("docker://")
+
+    return False
+
+
+def require_github_auth():
+    """Enforces that GitHub Container Registry (ghcr.io) credentials are present
+    in the environment. Every pipeline branch pulls a Cell Ranger image from a
+    private ghcr.io/openomics/cell-seek package via singularity. This checks for
+    the GITHUB_TOKEN and GITHUB_ACTOR (or GITHUB_USER) environment variables,
+    which configure_singularity_github_auth() uses to log singularity into
+    ghcr.io, prior to runtime.
+    """
+    c = Colors
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    actor = (os.environ.get("GITHUB_ACTOR") or os.environ.get("GITHUB_USER") or "").strip()
+
+    missing = []
+    if not token:
+        missing.append("GITHUB_TOKEN")
+    if not actor:
+        missing.append("GITHUB_ACTOR or GITHUB_USER")
+
+    if missing:
+        fatal("""\n{}{}Fatal: missing required GitHub Container Registry authentication!{}
+        This pipeline pulls Cell Ranger images from a private ghcr.io/openomics/cell-seek
+        package, so the following environment variable(s) must be set: {}
+        └── Possible solution: export GITHUB_TOKEN=<personal access token with read:packages scope>
+            and export GITHUB_ACTOR=<your github username>, then run again!
+        Need a token? See: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic""".format(
+            c.bg_red, c.white, c.end, ", ".join(missing))
+        )
+
+
+def require_singularity_registry_login_support():
+    """Enforces a minimum version of whichever OCI runtime is installed as
+    `singularity` that supports the `registry login` subcommand, used to
+    authenticate to ghcr.io. `singularity`/`apptainer` are separate forks on
+    unrelated version scales (e.g. Apptainer 1.5.0 is far newer than it
+    sounds next to SingularityCE 4.0.0), so the installed flavor must be
+    detected before picking a floor:
+      - SingularityCE: `registry login`/`logout` were split out of `remote`
+        into their own `registry` command group in 4.0.0.
+      - Apptainer: the same split happened independently in 1.3.0.
+    Versions older than that floor for the detected flavor would otherwise
+    fail with a raw CalledProcessError from an unrecognized subcommand; fail
+    with a clear, actionable message instead.
+    @calls fatal() if the installed runtime is older than its flavor's
+        floor, or its version cannot be determined
+    """
+    c = Colors
+    try:
+        out = subprocess.run(
+            ["singularity", "--version"],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True, timeout=5,
+        ).stdout
+    except Exception as e:
+        out = ""
+
+    is_apptainer = bool(re.search(r"\bapptainer\b", out, re.IGNORECASE))
+    flavor = "Apptainer" if is_apptainer else "SingularityCE"
+    floor = (1, 3, 0) if is_apptainer else (4, 0, 0)
+
+    m = re.search(r"(\d+)\.(\d+)\.(\d+)", out)
+    version = tuple(int(g) for g in m.groups()) if m else None
+    if version is None or version < floor:
+        fatal("""\n{}{}Fatal: installed {} version is too old for GitHub Container Registry authentication!{}
+        `registry login` (used to authenticate to ghcr.io) requires
+        {} >= {}; detected version: {}
+        └── Possible solution: upgrade {}, or provide a pre-pulled/cached SIF
+            via --sif-cache so no ghcr.io pull is needed.""".format(
+            c.bg_red, c.white, flavor, c.end,
+            flavor, ".".join(str(v) for v in floor), out.strip() or "unknown",
+            flavor)
+        )
+
+
+def configure_singularity_github_auth():
+    """Logs into ghcr.io with GitHub Container Registry credentials, scoped
+    to that registry only. SINGULARITY_DOCKER_USERNAME/PASSWORD are deliberately
+    NOT used here: those env vars are applied by singularity to every docker://
+    pull regardless of registry, which breaks anonymous pulls of this pipeline's
+    other, public DockerHub images (e.g. docker://skchronicles/chicyte). Using
+    `singularity registry login` instead stores credentials keyed to ghcr.io
+    only (in the user's default registry config), leaving DockerHub pulls
+    anonymous. Call require_github_auth() first to ensure the GITHUB_*
+    variables are actually present.
+    @calls fatal() if the login to ghcr.io fails, or if singularity is too old
+        to support `singularity registry login` (see
+        require_singularity_registry_login_support())
+    """
+    token = os.environ.get("GITHUB_TOKEN", "")
+    actor = os.environ.get("GITHUB_ACTOR") or os.environ.get("GITHUB_USER") or ""
+    if not token or not actor:
+        # Nothing to configure; require_github_auth() should have
+        # already enforced these are set before this is called.
+        return
+
+    require_singularity_registry_login_support()
+
+    try:
+        subprocess.run(
+            [
+                "singularity", "registry", "login",
+                "--username", actor,
+                "--password-stdin",
+                "docker://ghcr.io",
+            ],
+            input=token,
+            universal_newlines=True,
+            check=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as e:
+        c = Colors
+        fatal("""\n{}{}Fatal: failed to login to ghcr.io with the provided GitHub credentials!{}
+        {}""".format(c.bg_red, c.white, c.end, e.stderr or e.stdout or str(e)))
 
 
 def safe_copy(source, target, resources = []):

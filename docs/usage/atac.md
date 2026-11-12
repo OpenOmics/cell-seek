@@ -25,7 +25,7 @@ $ cell-seek run [--help] \
       --output OUTPUT \
       --pipeline atac \
       --genome {hg38, ...} \
-      --cellranger {2.1.0, 2.2.0}
+      --cellranger {2.2.0}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
@@ -85,11 +85,11 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {2.1.0, 2.2.0}`
+  `--cellranger {2.2.0}`
 > **The version of Cell Ranger ATAC to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger ATAC to use when running the ATAC pipeline. Please select one of the following options: 2.1.0, 2.2.0
+> This option specifies which version of Cell Ranger ATAC to use when running the ATAC pipeline. Please select one of the following options: 2.2.0
 >
 > ***Example:*** `--cellranger 2.2.0`
 

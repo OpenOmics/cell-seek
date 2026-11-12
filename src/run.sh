@@ -151,6 +151,61 @@ function require(){
 }
 
 
+function cluster_name(){
+  # Returns this node's SLURM cluster name (e.g. 'skyline-prod'), used to
+  # branch cluster-specific job submission behavior (snakemake version,
+  # GRES support, etc.) without relying on fragile heuristics like
+  # inspecting the --tmp-dir value.
+  # @ECHOES cluster name, or an empty string if it cannot be determined
+
+  scontrol show config 2>/dev/null | awk -F'= ' '/^ClusterName/ {print $2}'
+}
+
+
+function is_skyline(){
+  # True only when running on a Skyline interactive node (ai-hpcnXXX,
+  # where XXX is any integer). Deliberately false on the head/submit
+  # node (ai-hpcsubmit1) and any other host, even if SLURM's ClusterName
+  # also happens to resolve to skyline-prod there, since Skyline-specific
+  # job submission behavior should only apply to interactive nodes.
+  # @RETURNS 0 (true) if on a Skyline interactive node, 1 (false) otherwise
+
+  local host
+  host="$(hostname -s 2>/dev/null || hostname)"
+  [[ "${host}" =~ ^ai-hpcn[0-9]+$ ]] && [[ "$(cluster_name)" == "skyline-prod" ]]
+}
+
+
+function is_skyline_head_node(){
+  # True when running on a Skyline head/submit node (ai-hpcsubmitN,
+  # where N is any integer). Jobs should never be submitted from here.
+  # @RETURNS 0 (true) if on a Skyline head node, 1 (false) otherwise
+
+  local host
+  host="$(hostname -s 2>/dev/null || hostname)"
+  [[ "${host}" =~ ^ai-hpcsubmit[0-9]+$ ]]
+}
+
+
+function load_snakemake(){
+  # Loads a snakemake module compatible with this cluster's job submission
+  # mechanism. Skyline's default snakemake module (8.x) dropped the
+  # --cluster-config/--cluster-status/--cluster-cancel flags that the
+  # skyline profile depends on, so pin to the last version that still
+  # supports them there. Other clusters (e.g. Biowulf) already default
+  # to a compatible snakemake version, so fall back to the normal
+  # $PATH/module check.
+  # @CALLS fatal() if a compatible snakemake cannot be found or loaded
+
+  if is_skyline; then
+    module load snakemake/7.22.0 &> /dev/null || \
+      fatal "Failed to load 'snakemake/7.22.0', required by the skyline profile."
+  else
+    require snakemake
+  fi
+}
+
+
 function submit(){
   # Submit jobs to the defined job scheduler or executor (i.e. slurm)
   # INPUT $1 = Snakemake Mode of execution
@@ -160,9 +215,20 @@ function submit(){
   # INPUT $5 = Singularity cache directory
   # INPUT $6 = Temporary directory for output files
 
-  # Check if singularity and snakemake are in $PATH
+  # Refuse to submit from the Skyline head/submit node; jobs
+  # should only ever be launched from an interactive node
+  if is_skyline_head_node; then
+    fatal "Fatal: Do not run this pipeline from the Skyline head node ($(hostname -s)). Please run it from an interactive node instead.
+    └── Need an interactive node? Run: srun --pty bash"
+  fi
+
+  # Check if singularity is in $PATH
   # If not, try to module load singularity as a last resort
-  require singularity snakemake
+  require singularity
+
+  # Check for a snakemake version compatible with this cluster's
+  # job submission mechanism, loading an alternate module if needed
+  load_snakemake
 
   # Snakemake executor, or target job scheduler
   # more maybe added in the future, TBA
@@ -193,21 +259,24 @@ function submit(){
           # --singularity-args -B {}.format({bindpaths}) --local-cores 24
           SLURM_DIR="$3/logfiles/slurmfiles"
           CLUSTER_OPTS="sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
-          # Check if NOT running on Biowulf
-          # Assumes other clusters do NOT 
-          # have GRES for local node disk,
-          # long term it might be worth 
-          # adding a new option to allow 
-          # a user to decide whether to 
-          # use GRES at job submission,
-          # trying to infer this because
-          # most users will not even know
-          # what GRES is and how or why
-          # it should be used and by default
-          # SLURM is not configured to use 
-          # GRES, remove prefix single quote
-          if [[ ${6#\'} != /lscratch* ]]; then
+          CLUSTER_JSON="config/cluster.json"
+          # Skyline is not configured with GRES for local node disk, so
+          # injecting --gres into its sbatch submissions fails outright.
+          # It also only has an 'all' partition, unlike Biowulf's 'norm'/
+          # 'largemem', so a separate cluster-config file with Skyline-valid
+          # partitions is used there. Detect the cluster by its SLURM
+          # ClusterName rather than guessing from the --tmp-dir value,
+          # since --tmp-dir defaults to '/lscratch/...' for Biowulf
+          # backwards-compatibility regardless of which cluster the
+          # pipeline actually runs on. Every other cluster (i.e. Biowulf)
+          # keeps the original --gres behavior and cluster.json. This is
+          # also deliberately restricted to Skyline's interactive nodes
+          # (see is_skyline()), never the head/submit node.
+          if is_skyline || [[ ${6#\'} != /lscratch* ]]; then
             CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
+          fi
+          if is_skyline; then
+            CLUSTER_JSON="config/cluster.skyline.json"
           fi
           # Create sbacth script to build index
     cat << EOF > kickoff.sh
@@ -225,7 +294,7 @@ set -euo pipefail
 snakemake --latency-wait 120 -s "$3/workflow/Snakefile" -d "$3" \\
   --use-singularity --singularity-args "'-B $4'" \\
   --use-envmodules --configfile="$3/config.json" \\
-  --printshellcmds --cluster-config "$3/config/cluster.json" \\
+  --printshellcmds --cluster-config "$3/$CLUSTER_JSON" \\
   --cluster "${CLUSTER_OPTS}" --keep-going --restart-times 3 -j 500 \\
   --rerun-incomplete --stats "$3/logfiles/runtime_statistics.json" \\
   --keep-remote --local-cores 14 2>&1
