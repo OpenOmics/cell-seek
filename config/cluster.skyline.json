@@ -3,7 +3,8 @@
         "threads": "4",
         "mem": "16g",
         "partition": "all",
-        "time": "0-04:00:00"
+        "time": "0-04:00:00",
+        "gres": ""
     },
     "count": {
         "threads": "32",
@@ -19,6 +20,13 @@
         "threads": "2",
         "mem": "64g",
         "time": "0-02:00:00"
+    },
+    "cellbender": {
+        "threads": "8",
+        "mem": "64g",
+        "partition": "gpu",
+        "time": "0-08:00:00",
+        "gres": "--gres=gpu"
     },
     "seuratQC": {
         "threads": "8",

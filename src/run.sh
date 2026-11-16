@@ -261,22 +261,28 @@ function submit(){
           CLUSTER_OPTS="sbatch --gres {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
           CLUSTER_JSON="config/cluster.json"
           # Skyline is not configured with GRES for local node disk, so
-          # injecting --gres into its sbatch submissions fails outright.
-          # It also only has an 'all' partition, unlike Biowulf's 'norm'/
-          # 'largemem', so a separate cluster-config file with Skyline-valid
-          # partitions is used there. Detect the cluster by its SLURM
-          # ClusterName rather than guessing from the --tmp-dir value,
-          # since --tmp-dir defaults to '/lscratch/...' for Biowulf
-          # backwards-compatibility regardless of which cluster the
-          # pipeline actually runs on. Every other cluster (i.e. Biowulf)
-          # keeps the original --gres behavior and cluster.json. This is
-          # also deliberately restricted to Skyline's interactive nodes
-          # (see is_skyline()), never the head/submit node.
-          if is_skyline || [[ ${6#\'} != /lscratch* ]]; then
-            CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
-          fi
+          # unconditionally injecting a "--gres <value>" pair (Biowulf's
+          # format, e.g. "lscratch:32" or "gpu:a100:1,lscratch:40") into its
+          # sbatch submissions fails outright. It also only has an 'all'
+          # partition, unlike Biowulf's 'norm'/'largemem', so a separate
+          # cluster-config file with Skyline-valid partitions is used there.
+          # Skyline's GPU rules (e.g. cellbender) still need a bare
+          # "--gres=gpu" per Skyline's docs, so cluster.skyline.json's
+          # "gres" field stores the entire flag (or an empty string for
+          # non-GPU rules) rather than just the value after "--gres".
+          # Detect the cluster by its SLURM ClusterName rather than
+          # guessing from the --tmp-dir value, since --tmp-dir defaults to
+          # '/lscratch/...' for Biowulf backwards-compatibility regardless
+          # of which cluster the pipeline actually runs on. Every other
+          # cluster (i.e. Biowulf) keeps the original --gres behavior and
+          # cluster.json. This is also deliberately restricted to
+          # Skyline's interactive nodes (see is_skyline()), never the
+          # head/submit node.
           if is_skyline; then
+            CLUSTER_OPTS="sbatch {cluster.gres} --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
             CLUSTER_JSON="config/cluster.skyline.json"
+          elif [[ ${6#\'} != /lscratch* ]]; then
+            CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
           fi
           # Create sbacth script to build index
     cat << EOF > kickoff.sh
