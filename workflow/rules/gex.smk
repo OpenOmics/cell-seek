@@ -343,7 +343,7 @@ if ambient_rna_method == "cellbender":
             rname = "cellbender",
             epochs = cellbender_training["epochs"],
             learning_rate = cellbender_training["learning_rate"]
-        envmodules: config["tools"]["cellbender"]
+        container: config["images"]["ambient_rna"]
         shell:
             r"""
             mkdir -p {output.artifacts:q}

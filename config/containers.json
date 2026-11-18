@@ -4,8 +4,8 @@
         "signac_base": "docker://rroutsong/signac_analysis:0.0.2",
         "cellsight_builder": "docker://rroutsong/cellsight_builder:latest",
         "r_base": "docker://ghcr.io/openomics/cell-seek:r-base-4.4.0",
-        "ambient_rna": "docker://ghcr.io/openomics/cell-seek:ambient_rna-latest",
-        "azimuth": "docker://ghcr.io/openomics/cell-seek:azimuth-latest"
+        "ambient_rna": "docker://ghcr.io/openomics/cell-seek:ambient-rna-22.04",
+        "azimuth": "docker://ghcr.io/openomics/cell-seek:azimuth-22.04"
     },
     "cellranger": {
         "10.0.0" : "docker://ghcr.io/openomics/cell-seek:cellranger-10.0.0",

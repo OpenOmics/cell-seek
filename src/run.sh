@@ -284,6 +284,18 @@ function submit(){
           elif [[ ${6#\'} != /lscratch* ]]; then
             CLUSTER_OPTS="sbatch --cpus-per-task {cluster.threads} -p {cluster.partition} -t {cluster.time} --mem {cluster.mem} --job-name={params.rname} -e $SLURM_DIR/slurm-%j_{params.rname}.out -o $SLURM_DIR/slurm-%j_{params.rname}.out"
           fi
+          # Singularity/Apptainer only exposes the NVIDIA driver and CUDA
+          # libraries inside the container when launched with "--nv"; a
+          # host-side gres=gpu SLURM allocation alone is not enough.
+          # Only pass "--nv" when this run will actually request a GPU
+          # via gres (currently only the cellbender rule, gated by the
+          # ambient_rna_method option), so non-GPU runs aren't stuck with
+          # the harmless but noisy "--nv" driver-binding warning on nodes
+          # without an NVIDIA driver.
+          NV_ARG=""
+          if grep -q '"ambient_rna_method": "cellbender"' "$3/config.json"; then
+            NV_ARG="--nv "
+          fi
           # Create sbacth script to build index
     cat << EOF > kickoff.sh
 #!/usr/bin/env bash
@@ -298,7 +310,7 @@ function submit(){
 set -euo pipefail
 # Main process of pipeline
 snakemake --latency-wait 120 -s "$3/workflow/Snakefile" -d "$3" \\
-  --use-singularity --singularity-args "'-B $4'" \\
+  --use-singularity --singularity-args "${NV_ARG}-B $4" \\
   --use-envmodules --configfile="$3/config.json" \\
   --printshellcmds --cluster-config "$3/$CLUSTER_JSON" \\
   --cluster "${CLUSTER_OPTS}" --keep-going --restart-times 3 -j 500 \\

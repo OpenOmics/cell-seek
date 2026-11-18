@@ -1526,7 +1526,7 @@ def runner(
                 "--rerun-incomplete",
                 "--use-singularity",
                 "--singularity-args",
-                "'-B {}'".format(bindpaths),
+                "-B {}".format(bindpaths),
                 "--cores",
                 str(threads),
                 "--configfile=config.json",
