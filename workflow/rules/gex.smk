@@ -371,7 +371,7 @@ if ambient_rna_method == "cellbender":
             settings = cellbender_settings,
             epochs = cellbender_training["epochs"],
             learning_rate = cellbender_training["learning_rate"]
-        envmodules: config["tools"]["rversion"]
+        container: config["images"]["r_base"]
         shell:
             """
             Rscript {params.script:q} --input {input.filtered:q} --output {params.outdir:q} \\
