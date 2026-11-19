@@ -176,17 +176,6 @@ function is_skyline(){
 }
 
 
-function is_skyline_head_node(){
-  # True when running on a Skyline head/submit node (ai-hpcsubmitN,
-  # where N is any integer). Jobs should never be submitted from here.
-  # @RETURNS 0 (true) if on a Skyline head node, 1 (false) otherwise
-
-  local host
-  host="$(hostname -s 2>/dev/null || hostname)"
-  [[ "${host}" =~ ^ai-hpcsubmit[0-9]+$ ]]
-}
-
-
 function load_snakemake(){
   # Loads a snakemake module compatible with this cluster's job submission
   # mechanism. Skyline's default snakemake module (8.x) dropped the
@@ -214,13 +203,6 @@ function submit(){
   # INPUT $4 = Singularity Bind paths
   # INPUT $5 = Singularity cache directory
   # INPUT $6 = Temporary directory for output files
-
-  # Refuse to submit from the Skyline head/submit node; jobs
-  # should only ever be launched from an interactive node
-  if is_skyline_head_node; then
-    fatal "Fatal: Do not run this pipeline from the Skyline head node ($(hostname -s)). Please run it from an interactive node instead.
-    └── Need an interactive node? Run: srun --pty bash"
-  fi
 
   # Check if singularity is in $PATH
   # If not, try to module load singularity as a last resort

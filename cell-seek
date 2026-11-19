@@ -217,14 +217,17 @@ def run(sub_args):
                 )
             )
     elif sub_args.mode == "slurm":
+        if int(mjob.returncode) != 0:
+            fatal(
+                "Error occurred when submitting the master job. Please see {} for more information.".format(
+                    os.path.join(sub_args.output, "logfiles", "master.log")
+                )
+            )
         jobid = (
             open(os.path.join(sub_args.output, "logfiles", "mjobid.log")).read().strip()
         )
         if not sub_args.silent:
-            if int(mjob.returncode) == 0:
-                print("Successfully submitted master job: ", end="")
-            else:
-                fatal("Error occurred when submitting the master job.")
+            print("Successfully submitted master job: ", end="")
         print(jobid)
 
 
@@ -429,12 +432,15 @@ def cellsight(args):
                 )
             )
     elif args.mode == "slurm":
+        if int(mjob.returncode) != 0:
+            fatal(
+                "Error occurred when submitting the master job. Please see {} for more information.".format(
+                    os.path.join(args.outdir, "logfiles", "master.log")
+                )
+            )
         jobid = open(os.path.join(args.outdir, "logfiles", "mjobid.log")).read().strip()
         if not args.silent:
-            if int(mjob.returncode) == 0:
-                print("Successfully submitted master job: ", end="")
-            else:
-                fatal("Error occurred when submitting the master job.")
+            print("Successfully submitted master job: ", end="")
         print(jobid)
 
     return
