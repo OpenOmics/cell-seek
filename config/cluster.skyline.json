@@ -26,7 +26,7 @@
         "mem": "64g",
         "partition": "gpu",
         "time": "0-08:00:00",
-        "gres": "--gres=gpu"
+        "gres": "--gres=gpu:1"
     },
     "seuratQC": {
         "threads": "8",
