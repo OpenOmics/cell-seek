@@ -156,7 +156,7 @@ rule count:
         introns = count_intron,
         createbam = count_bam,
         forcecells = force_cells
-    envmodules: config["tools"]["cellranger"][CELLRANGER]
+    container: config["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory
@@ -218,7 +218,6 @@ rule seurat:
     shell:
         """
         # Add external packages to R .libPath
-        export R_LIBS_USER='{params.rlibs}'
         R --no-save --args \\
             {params.outdir} \\
             {params.data} \\
@@ -329,12 +328,9 @@ rule seuratQC:
         seurat = join("workflow", "scripts", "seuratCiteSampleQC.R"),
         filter = filterFile,
         metadata = metadataFile
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["r_base"]
     shell:
         """
-        unset __RLIBSUSER
-        unset R_LIBS_USER
-
         Rscript --vanilla {params.seurat} \\
             --workdir {params.outdir} \\
             --datapath {params.data} \\
@@ -358,15 +354,15 @@ rule seuratQCReport:
         filter = filterFileBool,
         tmpdir = tmpdir,
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["r_base"]
     shell:
         """
-        unset __RLIBSUSER
-        unset R_LIBS_USER
-
-        cd {params.tmpdir}
+        mkdir -p {params.tmpdir}
+        workdir=$(mktemp -d "{params.tmpdir}/seuratQCReport.{params.sample}.XXXXXX")
+        cd "$workdir"
         cp {params.script} ./{params.sample}.Rmd
         R -e "rmarkdown::render('{params.sample}.Rmd', params=list(seuratdir='{params.seuratdir}', sample='{params.sample}', defaultfilter={params.filter}), output_file='{output.report}')"
+        rm -rf "$workdir"
         """
 
 rule copySeuratQCReport:
@@ -391,12 +387,9 @@ rule cellFilterSummary:
         seuratdir = join(workpath, "seurat"),
         filename = "cell_filter_info.csv",
         script = join("workflow", "scripts", "cellFilterSummary.R")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["r_base"]
     shell:
         """
-        unset __RLIBSUSER
-        unset R_LIBS_USER
-
         Rscript {params.script} --datapath {params.seuratdir} --filename {params.filename} --output {output.cell_filter_summary}
         """
 
@@ -411,12 +404,9 @@ rule seuratQCSummaryReport:
         samples = seuratQCSummarySamples,
         seuratdir = join(workpath, "seurat"),
         script = join(workpath, "workflow", "scripts", "seuratCiteSampleQCSummaryReport.Rmd")
-    envmodules: config["tools"]["rversion"]
+    container: config["images"]["r_base"]
     shell:
         """
-        unset __RLIBSUSER
-        unset R_LIBS_USER
-
         R -e "rmarkdown::render('{params.script}', params=list(seuratdir='{params.seuratdir}', samples={params.samples}, cellfilter='{input.cell_filter}'), output_file='{output.report}')"
         """
 

@@ -15,20 +15,21 @@ tmpdir              = config['tmpdir']
 
 rule all:
     input:
-        join(run_dir, "shinyapp.tar.gz")
+        join(run_dir, "cellsightapp.tar.gz")
 
 
-rule shinycodes:
-    input: 
+rule cellsightcodes:
+    input:
         seurat_object       = seurat_object,
         marker_list         = marker_file,
-        files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
-    output: 
+        files_crumb         = join(run_dir, "wd", "sc1conf.qs2.rds"),
+    output:
         server_out          = join(run_dir, "wd", "server.R"),
+        ui_out              = join(run_dir, "wd", "ui.R"),
         obj_info            = join(run_dir, "wd", "seurat_inspector.info")
-    container: config['images']['shinycell2_builder']
+    container: config['images']['cellsight_builder']
     params:
-        rname = "shinycodes",
+        rname = "cellsightcodes",
         rmmeta = rmmeta,
         max_levels = max_levels,
         assaytouse = assaytouse,
@@ -40,7 +41,7 @@ rule shinycodes:
     shell:
         dedent("""
         seurat_inspector.R {input.seurat_object} > {output.obj_info}
-        build_shinycell.R \\
+        build_cellsight.R \\
             -j {input.seurat_object} {params.marker_flag} \\
             --proj {params.title} {params.cluster_flag} \\
             --rmmeta {params.rmmeta} {params.defred_flag} \\
@@ -50,15 +51,19 @@ rule shinycodes:
             --codesonly
         """)
 
-rule shinyfiles:
+rule cellsightfiles:
     input:
         seurat_object       = seurat_object,
         marker_list         = marker_file
     output:
-        out_crumb           = join(run_dir, "wd", "sc1meta.rds"),
-    container: config['images']['shinycell2_builder']
+        conf_crumb          = join(run_dir, "wd", "sc1conf.qs2.rds"),
+        meta_crumb          = join(run_dir, "wd", "sc1meta.qs2.rds"),
+        gene_crumb          = join(run_dir, "wd", "sc1gene.qs2.rds"),
+        dimr_crumb          = join(run_dir, "wd", "sc1dimr.qs2.rds"),
+        def_crumb           = join(run_dir, "wd", "sc1def.qs2.rds"),
+    container: config['images']['cellsight_builder']
     params:
-        rname = "shinyfiles",
+        rname = "cellsightfiles",
         rmmeta = rmmeta,
         max_levels = max_levels,
         assaytouse = assaytouse,
@@ -69,7 +74,7 @@ rule shinyfiles:
         marker_flag = lambda w, input: f"--markers {input.marker_list} " if input.marker_list and exists(input.marker_list) else "",
     shell:
         dedent("""
-        build_shinycell.R \\
+        build_cellsight.R \\
             -j {input.seurat_object} {params.marker_flag} \\
             --proj {params.title} {params.cluster_flag} \\
             --rmmeta {params.rmmeta} {params.defred_flag} \\
@@ -80,13 +85,13 @@ rule shinyfiles:
         """)
 
 
-rule shinytar:
-    input: 
-        files_crumb         = join(run_dir, "wd", "sc1meta.rds"),
+rule cellsighttar:
+    input:
+        files_crumb         = join(run_dir, "wd", "sc1conf.qs2.rds"),
         codes_crumb         = join(run_dir, "wd", "server.R")
-    output: join(run_dir, "shinyapp.tar.gz")
+    output: join(run_dir, "cellsightapp.tar.gz")
     params:
-        rname = "shinytar",
+        rname = "cellsighttar",
         tmpdir = tmpdir,
         wd_dir = join(run_dir, "wd"),
     threads: 30

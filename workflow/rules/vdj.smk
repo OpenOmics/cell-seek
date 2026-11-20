@@ -55,7 +55,7 @@ rule count:
         reference = config["references"][genome]["vdj_ref"],
         fastqs = filterFastq,
         chain = CHAIN
-    envmodules: config["tools"]["cellranger"][CELLRANGER]
+    container: config["cellranger"][CELLRANGER]
     shell:
         """
         # Remove output directory

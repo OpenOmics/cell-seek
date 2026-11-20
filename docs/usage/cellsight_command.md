@@ -1,14 +1,14 @@
-# <code>cell-seek <b>shinycell</b></code>
+# <code>cell-seek <b>cellsight</b></code>
 
 ## 1. About
 The `cell-seek` executable is composed of several inter-related sub commands. Please see `cell-seek -h` for all available options.
 
-This part of the documentation describes options and concepts for <code>cell-seek <b>shinycell</b></code> sub command in more detail. With minimal configuration, the **`shinycell`** sub command enables you to build a ShinyCell2 application from a Seurat RDS object.
+This part of the documentation describes options and concepts for <code>cell-seek <b>cellsight</b></code> sub command in more detail. With minimal configuration, the **`cellsight`** sub command enables you to build a CellSight application from a Seurat RDS object.
 
-The ShinyCell2 application creates an interactive web application for exploring single-cell data. The command validates inputs, creates configuration files, and writes the files and/or Shiny code required to deploy an interactive single-cell web app.
+The CellSight application creates an interactive web application for exploring single-cell data. The command validates inputs, creates configuration files, and writes the files and/or Shiny code required to deploy an interactive single-cell web app.
 
-You can find more information about ShinyCell2 at its [GitHub repository](https://github.com/the-ouyang-lab/ShinyCell2) and the OpenOmics fork of ShinyCell2 [here](https://github.com/OpenOmics/ShinyCell2).
-Setting up the ShinyCell2 pipeline is fast and easy! In its most basic form, <code>cell-seek <b>shinycell</b></code> only has *3 required inputs*:
+You can find more information about CellSight at its [GitHub repository](https://github.com/OpenOmics/CellSight).
+Setting up the CellSight pipeline is fast and easy! In its most basic form, <code>cell-seek <b>cellsight</b></code> only has *3 required inputs*:
 
 - Seurat RDS object file. (with a set of valid cluster identities labels) 
 - A project title.
@@ -17,16 +17,14 @@ Setting up the ShinyCell2 pipeline is fast and easy! In its most basic form, <co
 A user can optionally provide a TSV file with marker genes to add a DEG page to the application.
 
 !!! important "Supported Assays"
-    `ShinyCell2` does not support all `Seurat` object assays. **Mileage may vary with the Seurat Object you use.**
-    **_HTO assays_** and **_Azimuth cell.annotation_** `(prediction.score.celltype.l*)` assays will be removed from your object when using the ShinyCell2 pipeline.
-    
-    These assay types are unsupported currently by the original ShinyCell2.
+    `CellSight` does not support all `Seurat` object assays. **Mileage may vary with the Seurat Object you use.**
+    **_HTO assays_** and **_Azimuth cell.annotation_** `(prediction.score.celltype.l*)` assays will be removed from your object when using the CellSight pipeline.
 
-    For more information about support for assays and extended format support please consult the original ShinyCell2 repository: https://github.com/the-ouyang-lab/ShinyCell2
+    For more information about supported assays and extended format support please consult the [CellSight repository](https://github.com/OpenOmics/CellSight).
 
 ## 2. Synopsis
 ```text
-$ cell-seek shinycell [-h] \
+$ cell-seek cellsight [-h] \
       -j OBJ -o OUTDIR --proj PROJECT \
       [--markers MARKERS] [--cluster_labels CLUSTER_LABELS] \
       [--rmmeta META1,META2] [--defred DEFAULTRED] \
@@ -152,11 +150,11 @@ Each of the following arguments are optional, and do not need to be provided.
   `--job-name JOB_NAME`  
 > **Set the name of the pipeline's master job.**  
 > *type: string*
-> *default: pl:cell-seek:shinycell*
+> *default: pl:cell-seek:cellsight*
 >
-> When submitting the pipeline to a job scheduler, like SLURM, this option allows you to set the name of the pipeline's master job. By default, the name of the pipeline's master job is set to "pl:cell-seek:shinycell".
+> When submitting the pipeline to a job scheduler, like SLURM, this option allows you to set the name of the pipeline's master job. By default, the name of the pipeline's master job is set to "pl:cell-seek:cellsight".
 >
-> ***Example:*** `--job-name pl_shinycell_id-42`
+> ***Example:*** `--job-name pl_cellsight_id-42`
 
 ---  
   `--silent`            
@@ -200,9 +198,9 @@ Each of the following arguments are optional, and do not need to be provided.
 
 ## 3. Example
 
-### 3.1 Basic ShinyCell2 Application
+### 3.1 Basic CellSight Application
 
-Create a basic ShinyCell2 app from a Seurat RDS file:
+Create a basic CellSight app from a Seurat RDS file:
 
 ```bash
 # Step 1.) Grab an interactive node,
@@ -211,16 +209,16 @@ srun -N 1 -n 1 --time=1:00:00 --mem=8gb --cpus-per-task=2 --pty bash
 module purge
 module load singularity snakemake
 
-# Step 2.) Run the shinycell subcommand
-./cell-seek shinycell -j seurat_obj.rds \
-                       -o ./ShinyCell2_app \
+# Step 2.) Run the cellsight subcommand
+./cell-seek cellsight -j seurat_obj.rds \
+                       -o ./CellSight_app \
                        --proj NCBR-34 \
                        --mode slurm
 ```
 
 ### 3.2 Including Marker Genes
 
-Create a ShinyCell2 app with marker genes and cluster labels:
+Create a CellSight app with marker genes and cluster labels:
 
 ```bash
 # Step 1.) Grab an interactive node,
@@ -229,9 +227,9 @@ srun -N 1 -n 1 --time=1:00:00 --mem=8gb --cpus-per-task=2 --pty bash
 module purge
 module load singularity snakemake
 
-# Step 2.) Run the shinycell subcommand with markers
-./cell-seek shinycell -j seurat_obj.rds \
-                       -o ./ShinyCell2_markers \
+# Step 2.) Run the cellsight subcommand with markers
+./cell-seek cellsight -j seurat_obj.rds \
+                       -o ./CellSight_markers \
                        --proj NCBR-34 \
                        --markers markers.txt \
                        --cluster_labels seurat_clusters \
@@ -240,7 +238,7 @@ module load singularity snakemake
 
 ### 3.3 Advanced Configuration
 
-Create a ShinyCell2 app with specific assays and metadata filtering:
+Create a CellSight app with specific assays and metadata filtering:
 
 ```bash
 # Step 1.) Grab an interactive node,
@@ -249,9 +247,9 @@ srun -N 1 -n 1 --time=1:00:00 --mem=8gb --cpus-per-task=2 --pty bash
 module purge
 module load singularity snakemake
 
-# Step 2.) Run the shinycell subcommand with advanced options
-./cell-seek shinycell -j seurat_obj.rds \
-                       -o ./ShinyCell2_advanced \
+# Step 2.) Run the cellsight subcommand with advanced options
+./cell-seek cellsight -j seurat_obj.rds \
+                       -o ./CellSight_advanced \
                        --proj NCBR-34 \
                        -a RNA,spatial \
                        --rmmeta large_matrix,sensitive_col \
@@ -262,15 +260,15 @@ module load singularity snakemake
 
 ### 3.4 Local Execution Mode
 
-Run ShinyCell2 in local mode for testing or debugging:
+Run CellSight in local mode for testing or debugging:
 
 ```bash
 # Step 1.) Ensure you have sufficient resources
 # on your current node
 
-# Step 2.) Run the shinycell subcommand in local mode
-./cell-seek shinycell -j seurat_obj.rds \
-                       -o ./ShinyCell2_local \
+# Step 2.) Run the cellsight subcommand in local mode
+./cell-seek cellsight -j seurat_obj.rds \
+                       -o ./CellSight_local \
                        --proj NCBR-34 \
                        --mode local \
                        --threads 8
@@ -306,10 +304,10 @@ Seurat provides two main functions for identifying marker genes:
 
 #### FindAllMarkers (Recommended)
 
-`FindAllMarkers()` automatically identifies markers for **all clusters** and includes the `cluster` column in its output, making it directly compatible with ShinyCell2:
+`FindAllMarkers()` automatically identifies markers for **all clusters** and includes the `cluster` column in its output, making it directly compatible with CellSight:
 
 ```r
-# Run FindAllMarkers - produces ShinyCell2-compatible output
+# Run FindAllMarkers - produces CellSight-compatible output
 markers <- FindAllMarkers(seurat_obj, 
                          only.pos = TRUE,
                          min.pct = 0.25,
@@ -325,7 +323,7 @@ write.table(markers,
 
 #### FindMarkers (Requires Post-Processing)
 
-`FindMarkers()` compares gene expression between **two specific groups** but does **not** include cluster labels in its output. To use `FindMarkers()` results with ShinyCell2, you must manually add the `cluster` column.
+`FindMarkers()` compares gene expression between **two specific groups** but does **not** include cluster labels in its output. To use `FindMarkers()` results with CellSight, you must manually add the `cluster` column.
 
 The following script demonstrates how to run `FindMarkers()` on each cluster and create `FindAllMarkers`-like output:
 
@@ -416,15 +414,15 @@ cat("Output saved to: markers_from_findmarkers.tsv\n")
 | **Cluster column** | ✅ Included automatically | ❌ Must be added manually |
 | **Scope** | All clusters at once | One comparison at a time |
 | **Use case** | Quick marker discovery | Specific pairwise comparisons |
-| **ShinyCell2 compatibility** | ✅ Direct | ⚠️ Requires post-processing |
+| **CellSight compatibility** | ✅ Direct | ⚠️ Requires post-processing |
 
 ### 4.4 Usage Example
 
 Once you have generated your marker file using either method:
 
 ```bash
-./cell-seek shinycell -j seurat_obj.rds \
-                       -o ./ShinyCell2_app \
+./cell-seek cellsight -j seurat_obj.rds \
+                       -o ./CellSight_app \
                        --proj MyProject \
                        --markers markers.tsv \
                        --cluster_labels seurat_clusters \

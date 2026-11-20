@@ -6,6 +6,15 @@ import os, sys, re, json, glob
 # 3rd party imports from pypi
 from snakemake.workflow import workflow as wf_api
 from snakemake.utils import R
+from snakemake.shell import shell
+
+# Singularity inherits the host's environment by default,
+# so a host `module load R` leaks R_LIBS_USER/R_LIBS_SITE into containerized
+# R rules. R then prepends those host paths and loads personal/site packages
+# compiled against a different R ABI, crashing with "undefined symbol"
+# dyn.load errors. Unset them for every rule's shell command so containers
+# only ever see their own bundled R library paths.
+shell.prefix("unset R_LIBS R_LIBS_USER R_LIBS_SITE R_ENVIRON R_PROFILE R_PROFILE_USER; ")
 
 # Local imports
 from scripts.common import (

@@ -26,7 +26,7 @@
         "mem": "64g",
         "partition": "gpu",
         "time": "0-08:00:00",
-        "gres": "gpu:a100:1,lscratch:40"
+        "gres": "gpu:1,lscratch:40"
     },
     "cellbenderMatrix": {
         "threads": "2",
@@ -51,21 +51,21 @@
         "partition": "largemem",
         "time": "3-00:00:00"
     },
-    "shinycodes": {
+    "cellsightcodes": {
         "threads": "16",
         "mem": "32g",
         "partition": "norm",
         "time": "0-08:00:00",
         "gres": "lscratch:100"
     },
-    "shinyfiles": {
+    "cellsightfiles": {
         "threads": "16",
         "mem": "32g",
         "partition": "norm",
         "time": "0-08:00:00",
         "gres": "lscratch:100"
     },
-    "shinytar": {
+    "cellsighttar": {
         "threads": "32",
         "mem": "64g",
         "partition": "norm",

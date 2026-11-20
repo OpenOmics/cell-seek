@@ -76,7 +76,7 @@ rule count:
         fastqs = filterFastq,
         forcecells = force_cells
     threads: 24
-    envmodules: config["tools"]["cellranger-atac"][CELLRANGER]
+    container: config["cellranger-atac"][CELLRANGER]
     shell:
         dedent("""
         # Remove output directory

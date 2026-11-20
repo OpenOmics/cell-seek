@@ -107,7 +107,7 @@ nav:
     - cell-seek run: usage/run.md
     - cell-seek genome: usage/genome.md
     - cell-seek unlock: usage/unlock.md
-    - cell-seek shinycell: usage/shinycell_command.md
+    - cell-seek cellsight: usage/cellsight_command.md
     - cell-seek cache: usage/cache.md
   - Pipelines:
     - GEX: usage/gex.md
@@ -116,8 +116,8 @@ nav:
     - MULTI: usage/multi.md
     - ATAC: usage/atac.md
     - Multiome: usage/multiome.md
-  - ShinyCell2: usage/shinycell_general.md
-  - ShinyCell2 for PIs/stakeholders: usage/shinycell/PIs.md
+  - CellSight: usage/cellsight_general.md
+  - CellSight for PIs/stakeholders: usage/cellsight/PIs.md
   - FAQ:
     - General Questions: faq/questions.md
   - License: license.md

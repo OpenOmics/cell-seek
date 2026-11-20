@@ -26,7 +26,7 @@ $ cell-seek run [--help] \
       --output OUTPUT \
       --pipeline vdj \
       --genome {hg38, ...} \
-      --cellranger {8.0.0, ...}
+      --cellranger {8.0.1, ...}
 ```
 
 The synopsis for each command shows its arguments and their usage. Optional arguments are shown in square brackets.
@@ -85,11 +85,11 @@ Each of the following arguments are required. Failure to provide a required argu
 > ***Example:*** `--genome hg38`
 
 ---  
-  `--cellranger {7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0}`
+  `--cellranger {7.1.0, 7.2.0, 8.0.1, 9.0.1, 10.0.0}`
 > **The version of Cell Ranger to run.**   
 > *type: string*
 >   
-> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.0, 9.0.0, 10.0.0
+> This option specifies which version of Cell Ranger to use when running GEX, VDJ, CITE, or MULTI pipelines. Please select one of the following options: 7.1.0, 7.2.0, 8.0.1, 9.0.1, 10.0.0
 >
 > ***Example:*** `--cellranger 7.1.0`
 
@@ -245,7 +245,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --mode slurm \
                   --dry-run
 
@@ -257,7 +257,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --mode slurm
 ```
 
@@ -277,7 +277,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --mode slurm \
                   --dry-run
 
@@ -289,7 +289,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --mode slurm
 ```
 
@@ -335,7 +335,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --rename rename.csv
                   --mode slurm \
                   --dry-run
@@ -348,7 +348,7 @@ module load singularity snakemake
                   --output /data/$USER/output \
                   --pipeline vdj \
                   --genome hg38 \
-                  --cellranger 8.0.0 \
+                  --cellranger 8.0.1 \
                   --rename rename.csv
                   --mode slurm
 ```

@@ -90,7 +90,7 @@ rule count:
         reference = config["references"][genome]["arc_ref"],
         introns = count_introns,
         createbam = count_bam
-    envmodules: config["tools"]["cellranger-arc"][CELLRANGER]
+    container: config["cellranger-arc"][CELLRANGER]
     shell:
         """
         # Remove output directory
