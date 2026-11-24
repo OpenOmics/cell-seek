@@ -8,7 +8,7 @@
     },
     "count": {
         "threads": "32",
-        "mem": "96g",
+        "mem": "200g",
         "time": "1-00:00:00"
     },
     "multi": {

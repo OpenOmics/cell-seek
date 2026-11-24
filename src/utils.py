@@ -39,6 +39,23 @@ def md5sum(filename, first_block_only = False, blocksize = 65536):
     return hasher.hexdigest()
 
 
+def logical_abspath(path):
+    """Resolves a relative path to an absolute path using the shell's
+    logical working directory ($PWD) rather than os.getcwd(). os.getcwd()
+    returns the kernel's physical cwd, which silently resolves through
+    mount/symlink aliases (e.g. 'cd /data/foo' can report as
+    '/vf/users/foo'), breaking singularity bind PATHs built from a PATH
+    as the user originally gave it.
+    @param path <str>:
+        Path to resolve
+    @return <str>:
+        Absolute PATH, preserving the given PATH's alias if relative
+    """
+    if os.path.isabs(path):
+        return os.path.normpath(path)
+    return os.path.normpath(os.path.join(os.environ.get("PWD", os.getcwd()), path))
+
+
 def permissions(parser, path, *args, **kwargs):
     """Checks permissions using os.access() to see the user is authorized to access
     a file/directory. Checks for existence, readability, writability and executability via:
@@ -55,7 +72,7 @@ def permissions(parser, path, *args, **kwargs):
     if not os.access(path, *args, **kwargs):
         parser.error("Path '{}' exists, but cannot read path due to permissions!".format(path))
 
-    return os.path.abspath(path)
+    return logical_abspath(path)
 
 
 def standard_input(parser, path, *args, **kwargs):
