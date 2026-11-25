@@ -49,6 +49,7 @@ from src.utils import (
     err,
     exists,
     fatal,
+    logical_abspath,
     permissions,
     check_cache,
     require,
@@ -104,6 +105,10 @@ def run(sub_args):
     # The pipelines has only two requirements:
     # snakemake and singularity
     require(["snakemake", "singularity"], ["snakemake", "singularity"])
+
+    # abspath, not realpath: keeps --input PATHs matching the singularity
+    # bind PATHs, which are derived from these same un-resolved PATHs.
+    sub_args.input = [os.path.abspath(f) for f in sub_args.input]
 
     # Step 1. Initialize working directory,
     # copy over required resources to run
@@ -1054,7 +1059,7 @@ def parsed_arguments(name, description):
     # working directory
     subparser_run.add_argument(
         "--output",
-        type=lambda option: os.path.abspath(os.path.expanduser(option)),
+        type=lambda option: logical_abspath(os.path.expanduser(option)),
         required=True,
         help=argparse.SUPPRESS,
     )
