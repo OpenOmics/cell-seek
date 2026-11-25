@@ -108,6 +108,7 @@ if FORCECELLS != 'None':
 
 # Import rules
 include: join("rules", "common.smk")
+include: join("rules", "hooks.smk")
 
 if pipeline == 'cite':
     include: join("rules", "cite.smk")
