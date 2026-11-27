@@ -1,5 +1,6 @@
 # Pipeline output definition
 from textwrap import dedent
+from shlex import quote
 
 # CellRanger counts, summary report
 pipeline_output += expand(
@@ -29,6 +30,18 @@ pipeline_output += expand(
 pipeline_output += [join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv")]
 
 # Function definitions
+def filterFile(wildcards):
+    """Pass the optional QC cutoff CSV to the analysis script."""
+    if filter_file == "None":
+        return ""
+    return f"--filterfile {quote(filter_file)}"
+
+def filterFileBool(wildcards):
+    """Tell the report whether no cutoff CSV was supplied."""
+    if filter_file == "None":
+        return "TRUE"
+    return "FALSE"
+
 def filterFastq(wildcards):
     """
     Wrapper to get a comma separated list of the directories where the FASTQ files associated with the sample are located
@@ -139,12 +152,15 @@ rule prelim_analysis_one:
     input:
         matrix                  = join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"),
         fragments               = join(workpath, "{sample}", "outs", "fragments.tsv.gz"),
-        filterfile              = join(workpath, "{sample}", "outs", "singlecell.csv")
+        barcodes                = join(workpath, "{sample}", "outs", "singlecell.csv"),
+        qc_thresholds           = [] if filter_file == "None" else [filter_file]
     output:
         filter_info             = join(workpath, "scATAC_analysis", "{sample}", "cell_filter_info.csv"),
         report                  = join(workpath, "scATAC_analysis", "{sample}", "{sample}.QC_Report.html")
     params:
         rname                   = "prelim_analysis_one",
+        filter                  = filterFile,
+        defaultfilter           = filterFileBool,
         script                  = join("/opt", "scripts", "signacSampleQC.R"),
         scriptrmd               = join("/opt", "scripts", "signacSampleQCReport.Rmd"),
         genes                   = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
@@ -158,16 +174,17 @@ rule prelim_analysis_one:
             --sample {wildcards.sample} \\
             --featurematrix {input.matrix} \\
             --fragments {input.fragments} \\
-            --barcodes {input.filterfile} \\
+            --barcodes {input.barcodes} \\
             --genes {params.genes} \\
             --genome {params.genome} \\
             --project "{params.project}" \\
+            {params.filter} \\
             --output {params.outdir}
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
                             thresholds='{output.filter_info}',
                             sample='{wildcards.sample}',
-                            defaultfilter=TRUE),
+                            defaultfilter={params.defaultfilter}),
                 output_file='{params.outdir}/{wildcards.sample}.QC_Report.html',
                 intermediates_dir='{params.outdir}')"
         """)
@@ -178,12 +195,15 @@ rule prelim_analysis_all:
     input:
         matrix                  = expand(join(workpath, "{sample}", "outs", "filtered_peak_bc_matrix.h5"), sample=samples),
         fragments               = expand(join(workpath, "{sample}", "outs", "fragments.tsv.gz"), sample=samples),
-        filterfile              = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples)
+        barcodes                = expand(join(workpath, "{sample}", "outs", "singlecell.csv"), sample=samples),
+        qc_thresholds           = [] if filter_file == "None" else [filter_file]
     output:
         filter_info             = join(workpath, "scATAC_analysis", "cohort", "cell_filter_info.csv"),
         report                  = join(workpath, "scATAC_analysis", "cohort", "Cohort_QC_Report.html")
     params:
         rname                   = "prelim_analysis_all",
+        filter                  = filterFile,
+        defaultfilter           = filterFileBool,
         script                  = join("/opt", "scripts", "signacMultiSampleQC.R"),
         scriptrmd               = join("/opt", "scripts", "signacMultiSampleQCreport.Rmd"),
         genes                   = join(config["references"][genome]["atac_ref"], "genes", "genes.gtf.gz"),
@@ -191,7 +211,7 @@ rule prelim_analysis_all:
         sids                    = ','.join(samples),
         matricies               = lambda wc, input: ','.join(input.matrix),
         fragments               = lambda wc, input: ','.join(input.fragments),
-        filterfiles             = lambda wc, input: ','.join(input.filterfile),
+        barcodes                = lambda wc, input: ','.join(input.barcodes),
         outdir                  = join(workpath, "scATAC_analysis", "cohort"),
         project                 = "Preliminary QC Report for Cell-seek Multi-Sample Analysis"
     container: config["images"]["signac_base"]
@@ -201,15 +221,16 @@ rule prelim_analysis_all:
             --sample {params.sids} \\
             --matrix {params.matricies} \\
             --fragments {params.fragments} \\
-            --barcodes {params.filterfiles} \\
+            --barcodes {params.barcodes} \\
             --genes {params.genes} \\
             --genome {params.genome} \\
             --project "{params.project}" \\
+            {params.filter} \\
             --output {params.outdir}
         R -e "rmarkdown::render('{params.scriptrmd}',
                 params=list(signacdir='{params.outdir}',
                             samples='{params.sids}',
-                            defaultfilter=TRUE),
+                            defaultfilter={params.defaultfilter}),
                 output_file='{params.outdir}/Cohort_QC_Report.html',
                 intermediates_dir='{params.outdir}')"
         """)
