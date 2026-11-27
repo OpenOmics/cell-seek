@@ -20,7 +20,7 @@ $ cell-seek run [--help] \
       [--dry-run] [--job-name JOB_NAME] [--mode {slurm,local}] \
       [--sif-cache SIF_CACHE] [--singularity-cache SINGULARITY_CACHE] \
       [--silent] [--threads THREADS] [--tmp-dir TMP_DIR] \
-      [--rename RENAME] [--forcecells FORCECELLS] \
+      [--rename RENAME] [--forcecells FORCECELLS] [--filter FILTER] \
       --input INPUT [INPUT ...] \
       --output OUTPUT \
       --pipeline atac \
@@ -143,6 +143,38 @@ Each of the following arguments are required. Failure to provide a required argu
 >
 > ***Example:*** `--forcecells forcecells.csv`
 
+
+
+---
+  `--filter FILTER`
+> **Filter threshold file.**
+> *type: file*
+>
+> A CSV file containing per-sample QC threshold overrides. The header must include `Sample` and metric names ending in `_low` or `_high`. Automatic thresholds based on 3 median absolute deviations (MADs) of log-transformed values are calculated first; supplied numeric values replace individual thresholds. Missing columns, blank or `NA` values, and samples absent from the CSV use automatic defaults. Without a file, all automatic defaults are used.
+>
+> The following metadata are used for automatic filtering:
+>
+> | Metadata | Automatic cutoffs |
+> | --- | --- |
+> | `nFeature_peaks` | Lower and upper |
+> | `nCount_peaks` | Lower and upper |
+> | `TSS.enrichment` | Lower, at least 1 |
+> | `nucleosome_signal` | Upper |
+> | `pct_reads_in_peaks` | Lower, on the percentage scale |
+>
+> The same CSV applies to individual and cohort analyses. Automatic thresholds are calculated separately for each sample in each analysis, so unsupplied thresholds can differ.
+>
+> *Example filter.csv file:*
+> ```csv
+> Sample,TSS.enrichment_low,nucleosome_signal_high,pct_reads_in_peaks_low
+> sample1,2,,
+> sample2,,4,
+> sample4,,,15
+> ```
+>
+> `Sample` should match the sample name used for Cell Ranger count. For `sample1`, only `TSS.enrichment_low` changes; other criteria still use automatic thresholds. Final upper cutoffs must be greater than paired lower cutoffs. Values equal to a cutoff pass that criterion. Applied thresholds are listed in `cell_filter_info.csv` and the QC reports.
+>
+> ***Example:*** `--filter filter.csv`
 
 ### 2.3 Orchestration Options
 
@@ -448,3 +480,21 @@ module load singularity snakemake
                   --forcecells forcecells.csv \
                   --mode slurm
 ```
+
+### 3.5 Four samples with one QC CSV
+
+This illustrative command runs four individual analyses and one cohort analysis. Replace `/path/to/...` with actual paths. Provide the sample folders containing `outs/`, not `outs/` itself. Run on a Biowulf compute allocation with the required modules loaded, using a fresh output directory.
+
+```bash
+./cell-seek run \
+    --input /path/to/A_rep1 /path/to/A_rep2 /path/to/B_rep1 /path/to/B_rep2 \
+    --output /path/to/fresh_atac_qc_output \
+    --pipeline atac \
+    --genome hg38 \
+    --cellranger 2.2.0 \
+    --filter /path/to/filter.csv \
+    --mode slurm \
+    --dry-run
+```
+
+After the dry run succeeds, remove `--dry-run` to execute. Inspect each sample's `scATAC_analysis/<sample>/cell_filter_info.csv` and QC report, plus `scATAC_analysis/cohort/cell_filter_info.csv` and `Cohort_QC_Report.html`. The A/B names do not request a condition comparison; differential accessibility is a separate downstream analysis.

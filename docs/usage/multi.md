@@ -326,7 +326,9 @@ Each of the following arguments are optional, and do not need to be provided.
 > **Filter threshold file.**   
 > *type: file*
 >   
-> Filter threshold file. A CSV file containing the different thresholds to be applied for individual samples within the project during the QC analysis. The file should contain a header row with Sample as the column name for the sample IDs, and the name of each metric that will be filtered along with if it is the high or low threshold for that metric. Each row is then the entries for each sample that the manual thresholds will be applied. If no file is provided then the default thresholds will be used. If a cell is left blank for a sample then that sample would not be filtered based on that criteria. 
+> A CSV file containing per-sample overrides of automatic QC thresholds. Use a `Sample` column for sample IDs and `<metadata>_low` or `<metadata>_high` columns for cutoffs. Automatic thresholds are calculated first; only supplied numeric values replace individual bounds. Missing columns, blank or `NA` values, and samples absent from the CSV use their automatic defaults. Without a file, all automatic defaults are used. Entering `0` sets the cutoff to zero; leaving an entry blank keeps its automatic value.
+>
+> `nFeature_RNA` and `nCount_RNA` use lower and upper 3 MAD thresholds. `percent.mito` uses an upper threshold. `nCount_ADT` uses lower and upper thresholds when ADT is present; `nCount_HTO` uses an upper threshold when HTO is present. Additional cutoffs can target existing numeric metadata.
 >
 > This flag is currently not properly tested for situations where Cell Ranger demultiplexing is performed. Please double-check the output if applying this flag to those runs.
 >
@@ -335,12 +337,12 @@ Each of the following arguments are optional, and do not need to be provided.
 > Sample,nFeature_RNA_low,nFeature_RNA_high,percent.mito_high
 > sample1,500,6000,15
 > sample2,500,6000,5
-> sample4,500,6000,5
+> sample4,500,6000,
 > ```
 >
 > *Where:*  
 >
-> - *Sample:* Unique sample ID that should match the sample name used for Cell Ranger count.
+> - *Sample:* Sample ID passed to Seurat QC. For Cell Ranger multi output, use the child ID under `outs/per_sample_outs/<sample_id>/`, not the parent run/library directory name.
 > - *nFeature_RNA_low,nFeature_RNA_high,percent.mito_high:* Example entries that can be used for manual thresholding. The column names need to be formatted as metadataname_high/low. Entries that ends with high will be treated as the upper threshold. Entries that ends with low will be treated as the lower threshold. Valid metadata names include nCount_RNA, nFeature_RNA, and percent.mito.
 >
 > ***Example:*** `--filter filter.csv`
@@ -1081,6 +1083,8 @@ module load singularity snakemake
 
 ### 3.6 Run with Custom Filters
 
+Match CSV rows to the child sample IDs under `outs/per_sample_outs/`. Each child uses its own automatic thresholds; an override for one child does not apply to siblings. The CSV does not distinguish identical child IDs reused under different parent runs.
+
 This has only been properly tested when run on samples that do not undergo Cell Ranger demultiplexing. 
 
 In order to use this option, a CSV file should be created. In the CSV there should be a row for each sample that will have custom filters applied. If these custom filters are being applied to a project that was already processed by the cell-seek pipeline, then the created `Project_Cell_Filters.csv` can be used as a template.
@@ -1094,11 +1098,13 @@ sample2,500,6000,5
 sample4,500,6000,
 ```
 
-Based on this file, custom filters will only be applied to samples sample1, sample2, and sample4. These samples will have the following filters applied to only keep cells meeting the following criteria:
+These values override individual automatic bounds:
 
-- sample1:  nFeature_RNA > 500 and nFeature_RNA < 6000 and percent.mito < 15
-- sample2:  nFeature_RNA > 500 and nFeature_RNA < 6000 and percent.mito < 5
-- sample4:  nFeature_RNA > 500 and nFeature_RNA < 6000
+- sample1: keep `500 <= nFeature_RNA <= 6000` and `percent.mito <= 15`, alongside the remaining automatic criteria.
+- sample2: keep `500 <= nFeature_RNA <= 6000` and `percent.mito <= 5`, alongside the remaining automatic criteria.
+- sample4: keep `500 <= nFeature_RNA <= 6000`; the blank mitochondrial entry uses its automatic upper cutoff.
+
+Automatic UMI and applicable ADT/HTO filters remain active for all three samples. Unlisted samples use all automatic defaults. For example, a CSV containing only `Sample,percent.mito_high` changes only the mitochondrial upper cutoff. This differs from earlier releases, where a matching row disabled automatic criteria omitted from that row.
 
 
 ```bash

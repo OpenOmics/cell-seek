@@ -121,15 +121,19 @@ data %>% kable(format='html') %>%
 ## Cell Filter Thresholds
 
 ```{r  echo=F ,results='asis'}
-data <- read.csv(params$cellfilter)
+data <- read.csv(params$cellfilter, colClasses=c(Sample="character"))
 
-# Convert numeric columns and round them
-for(col in colnames(data)) {
+# Preserve sample IDs and threshold precision; round summary statistics.
+for(col in setdiff(colnames(data), "Sample")) {
   suppressWarnings({
     potential_numeric <- as.numeric(data[[col]])
-    # If conversion produces no NAs, the column is numeric-compatible
-    if(sum(is.na(potential_numeric)) == 0) {
-      data[[col]] <- round(potential_numeric, 2)
+    # Missing assay-specific values remain NA in mixed-assay summaries.
+    if (all(is.na(data[[col]]) | !is.na(potential_numeric))) {
+      if (grepl('_(low|high)$', col)) {
+        data[[col]] <- potential_numeric
+      } else {
+        data[[col]] <- round(potential_numeric, 2)
+      }
     }
   })
 }

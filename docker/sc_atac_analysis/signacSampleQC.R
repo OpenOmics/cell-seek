@@ -31,15 +31,15 @@ option_list <- list(
 
   ###### SAMPLE INFORMATION ######
   # Example **filter file** format:
-  #   > Sample,nFeature_RNA_low,nFeature_RNA_high,percent.mito_high
-  #   > sample1,500,6000,15
-  #   > sample2,500,6000,5
-  #   > sample4,500,6000,5
+  #   > Sample,TSS.enrichment_low,nucleosome_signal_high,pct_reads_in_peaks_low
+  #   > sample1,2.345,,
+  #   > sample2,,4.125,
+  #   > sample4,,,15.5
   make_option(
     c("--filterfile"),
     type = 'character',
     default = NA,
-    help = "CSV file containing filters to be applied"
+    help = "CSV of per-sample numeric overrides; omitted or blank bounds use automatic defaults"
   ),
   # Example **metadata** file format:
   #   > Sample,Type,batch
@@ -306,7 +306,6 @@ dev.off()
 figures$PreFilter_Feature_Plot <- plot1 + plot2
 
 ## ----Cell Quality Thresholds - Default----
-thresh <- list()
 defaultThreshold <- function(seur) {
   thresh <- list()
   thresh['nFeature_peaks_low'] <- expm1(
@@ -340,86 +339,77 @@ defaultThreshold <- function(seur) {
       3 * mad(log1p(seur$pct_reads_in_peaks))
   )
 
-  cellsToRemove <- colnames(seur)[which(
-    seur$nFeature_peaks < thresh['nFeature_peaks_low'] |
-      seur$nFeature_peaks > thresh['nFeature_peaks_high']
-  )]
-  cellsToRemove <- union(
-    cellsToRemove,
-    colnames(seur)[which(
-      seur$nCount_peaks < thresh['nCount_peaks_low'] |
-        seur$nCount_peaks > thresh['nCount_peaks_high']
-    )]
-  )
-  cellsToRemove <- union(
-    cellsToRemove,
-    colnames(seur)[which(seur$TSS.enrichment < thresh['TSS.enrichment_low'])]
-  )
-  cellsToRemove <- union(
-    cellsToRemove,
-    colnames(seur)[which(
-      seur$nucleosome_signal > thresh['nucleosome_signal_high']
-    )]
-  )
-  cellsToRemove <- union(
-    cellsToRemove,
-    colnames(seur)[which(
-      seur$pct_reads_in_peaks < thresh['pct_reads_in_peaks_low']
-    )]
-  )
-
-  thresh['numCellsRemove'] <- length(cellsToRemove)
-  thresh['pctCellsRemove'] <- length(cellsToRemove) / dim(seur)[2] * 100
-  return(list(threshold = thresh, filter = cellsToRemove))
+  return(thresh)
 }
 
-# Calculate thresholds for the sample provided via command line
+thresh <- defaultThreshold(seur)
+threshold_sources <- setNames(rep('automatic 3 MAD calculation', length(thresh)), names(thresh))
 if (!is.na(opt$filterfile)){
   thresholds <- read.csv(opt$filterfile)
   index <- grep("Sample", colnames(thresholds), ignore.case=T)
   if (sum(thresholds[,index] == opt$sample) == 1) {
     thresh_orig <- thresholds[which(thresholds[,index] == opt$sample),]
     thresh_orig[index] <- NULL
-    
-    thresh <- list()
-    cellsToRemove <- character()
-    
-    for (i in colnames(thresh_orig)) {
-      try({
-        if (length(grep("_high$", i, ignore.case=T, value=T)) > 0 | length(grep("_low$", i, ignore.case=T, value=T)) > 0) {
-          colname <- (i %>% strsplit(split="_"))[[1]] %>% head(n=-1) %>% paste(collapse="_")
-          direction <- (i %>% strsplit(split="_"))[[1]] %>% tail(n=1) %>% str_to_lower
-          if(direction == "low") {
-            cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] < thresh_orig[[i]])])
-            thresh[i] <- thresh_orig[i]
-          }
-          if (direction == "high") {
-            cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] > thresh_orig[[i]])])
-            thresh[i] <- thresh_orig[i]
-          }
-        }
-      })
+
+    threshold_columns <- grep(
+      '_(high|low)$', names(thresh_orig),
+      ignore.case=TRUE, value=TRUE
+    )
+
+    for (column in threshold_columns) {
+      value <- thresh_orig[[column]]
+      if (is.na(value) || trimws(as.character(value)) == "") next
+
+      value <- suppressWarnings(as.numeric(as.character(value)))
+      if (is.na(value)) {
+        stop(sprintf("Sample '%s': threshold '%s' must be numeric.",
+                     opt$sample, column))
+      }
+
+      metric <- sub('_(high|low)$', '', column, ignore.case=TRUE)
+      direction <- tolower(sub('.*_', '', column))
+      threshold_name <- paste(metric, direction, sep='_')
+      thresh[[threshold_name]] <- value
+      threshold_sources[[threshold_name]] <- sprintf("CSV '%s', column '%s'", opt$filterfile, column)
     }
-    thresh["numCellsRemove"] <- length(cellsToRemove)
-    thresh["pctCellsRemove"] <- length(cellsToRemove) / ncol(seur) * 100
-    thresh["Sample"] <- opt$sample
-  } else {
-    result <- defaultThreshold(seur)
-    thresh <- result$threshold
-    cellsToRemove <- result$filter
-    thresh["Sample"] <- opt$sample
   }
-} else {
-  result <- defaultThreshold(seur)
-  thresh <- result$threshold
-  cellsToRemove <- result$filter
-  thresh["Sample"] <- opt$sample
 }
 
-# Write threshold information to CSV
-if(!is.null(thresh) && length(thresh) > 0) {
-  write.csv(as.data.frame(thresh), file.path(opt$output, "cell_filter_info.csv"), row.names=FALSE)
+# Validate the final bounds after applying all manual overrides.
+for (low in grep('_low$', names(thresh), value=TRUE)) {
+  high <- sub('_low$', '_high', low)
+  if (!(high %in% names(thresh))) next
+
+  if (!isTRUE(thresh[[high]] > thresh[[low]])) {
+    stop(
+      paste(
+        paste("Sample:", opt$sample),
+        paste(high, "=", thresh[[high]], "from", threshold_sources[[high]]),
+        paste(low, "=", thresh[[low]], "from", threshold_sources[[low]]),
+        "The high cutoff must be greater than the low cutoff.",
+        "Provide or update --filter with corrected bounds.",
+        sep = "\n"
+      ),
+      call. = FALSE
+    )
+  }
 }
+
+# Apply thresholds only after all manual overrides have been merged.
+cellsToRemove <- character()
+for (i in names(thresh)) {
+  colname <- sub('_(high|low)$', '', i)
+  if (endsWith(i, '_low')) {
+    cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] < thresh[[i]])])
+  } else {
+    cellsToRemove <- union(cellsToRemove, colnames(seur)[which(seur[[colname]] > thresh[[i]])])
+  }
+}
+thresh['numCellsRemove'] <- length(cellsToRemove)
+thresh['pctCellsRemove'] <- length(cellsToRemove) / ncol(seur) * 100
+thresh['Sample'] <- opt$sample
+
+write.csv(as.data.frame(thresh), file.path(opt$output, "cell_filter_info.csv"), row.names=FALSE)
 
 ## ----Pre-Filter ATAC Violin Plot-------
 doVlnPlot <- function(aspect, seur, thresh) {
